@@ -784,18 +784,47 @@ def test_setting_merge():
     merged = setting.append_entry(
         original, "AllItems",
         [("GUID", "333"), ("DisplayName", "Fresh")], "Items",
+        setting.MARKER_NEW, "333",
     )
 
     check("\r\n" in merged and "\n\n" not in merged,
           "the file keeps its CRLF endings")
     check("=SomeFieldWeHaveNeverHeardOf:True" in merged,
           "a field the add-on does not understand survives")
-    check("  s3\r\n" in merged, "the count went from 2 to 3",
+
+    # The size line counts the positional entries. Touching it on a list the
+    # base game fills is what made the game drop everything else.
+    check("  s2\r\n" in merged, "the count line is left exactly as it was",
           [l for l in merged.split("\r\n") if l.strip().startswith("s")])
-    check("  i8\r\n" in merged, "the new index avoids the used ones",
-          [l for l in merged.split("\r\n") if l.strip().startswith("i")])
-    check(merged.count("=GUID:111") == 1 and merged.count("=GUID:333") == 1,
+    check("  @333\r\n" in merged, "the new entry is added by GUID",
+          [l for l in merged.split("\r\n") if l.strip().startswith("@")])
+    check("=GUID:333" not in merged,
+          "and the GUID is not repeated as a field", merged)
+    check(merged.count("=GUID:111") == 1 and merged.count("=DisplayName:Fresh") == 1,
           "both the old and the new entry are there")
+
+    # Positional stays available, and still behaves the old way.
+    positional = setting.append_entry(
+        original, "AllItems",
+        [("GUID", "333"), ("DisplayName", "Fresh")], "Items",
+        setting.MARKER_POSITIONAL,
+    )
+    check("  s3\r\n" in positional, "positional still bumps the count")
+    check("  i8\r\n" in positional, "and avoids the used indices",
+          [l for l in positional.split("\r\n") if l.strip().startswith("i")])
+
+    # A fresh file gets no size line either, unless it is positional.
+    fresh = setting.append_entry(
+        "", "Items", [("GUID", "9"), ("Key", "K"), ("Value", "V")],
+        "Translations", setting.MARKER_NEW, "9",
+    )
+    check("s1" not in fresh, "a new file declares no size", fresh)
+    check(" @9" in fresh, "and identifies its entry by GUID", fresh)
+
+    # Finding it again has to work through the marker, not a GUID field.
+    lines = fresh.replace("\r\n", "\n").split("\n")
+    check(setting.entry_span(lines, "Items", "GUID", "9") is not None,
+          "the entry is found by its marker")
 
     # Every original line still present, in order.
     before = [l for l in original.split("\r\n") if l.strip()]

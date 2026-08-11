@@ -115,6 +115,39 @@ def pick(french, english):
 
 
 FR = {
+    # -- Merging into the game's lists ------------------------------------
+    "Merge style": "Style de fusion",
+
+    "How an entry is added to a list the base game already fills. Leave this "
+    "alone unless the game misbehaves":
+        "Comment une entrée est ajoutée à une liste que le jeu remplit déjà. "
+        "À ne pas toucher, sauf si le jeu se comporte mal",
+
+    "Add to the game's list": "Ajouter à la liste du jeu",
+    "Adds a member, identified by its GUID. What a content mod wants":
+        "Ajoute un membre, identifié par son GUID. Ce que veut un mod de "
+        "contenu",
+
+    "Extend an existing entry": "Étendre une entrée existante",
+    "Merges fields onto an entry that already exists. How the game's own "
+    "French.mod writes translations":
+        "Fusionne des champs sur une entrée qui existe déjà. C'est ainsi que "
+        "le French.mod du jeu écrit ses traductions",
+
+    "Positional (dangerous)": "Positionnel (dangereux)",
+    "Numbered entry with a size line. On a list the base game fills, this "
+    "makes the game keep only what the mod wrote and drop everything else":
+        "Entrée numérotée avec une ligne de taille. Sur une liste que le jeu "
+        "remplit, le jeu ne garde alors que ce que le mod a écrit et jette "
+        "tout le reste",
+
+    "A mod adds to lists the game already fills. Getting this wrong makes "
+    "the game keep only what the mod wrote, which is how every menu label "
+    "turns into a raw key.":
+        "Un mod ajoute à des listes que le jeu remplit déjà. Se tromper ici "
+        "fait que le jeu ne garde que ce que le mod a écrit, et c'est ainsi "
+        "que chaque libellé de menu devient une clé brute.",
+
     # -- Surfaces and colour zones ----------------------------------------
     # Why an item can be in the catalogue and still draw nothing. See spec.py.
     "The colour zones were left out of the FBX on purpose. A non "

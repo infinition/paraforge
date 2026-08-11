@@ -437,6 +437,17 @@ class PARAFORGE_PT_options(_Base, Panel):
         layout.prop(settings, "swatch_group", text=_("Swatch group"))
         layout.prop(settings, "write_recipe", text=_("Write the recipe file"))
 
+        layout.separator()
+        column = layout.column(align=True)
+        column.scale_y = 0.72
+        for line in util.wrap(_(
+            "A mod adds to lists the game already fills. Getting this wrong "
+            "makes the game keep only what the mod wrote, which is how every "
+            "menu label turns into a raw key."), 40
+        ):
+            column.label(text=line)
+        layout.prop(settings, "merge_marker", text="")
+
         box = layout.box()
         box.scale_y = 0.72
         box.label(text=_("Fixed by the Paralives spec:"))

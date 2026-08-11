@@ -35,8 +35,14 @@ import re
 
 INDENT = " "
 
+#: How a mod adds to a collection the base game already fills. See
+#: entry_lines for what each one does and why it matters.
+MARKER_NEW = "@"
+MARKER_EXTEND = "g"
+MARKER_POSITIONAL = "i"
+
 _LIST_LENGTH = re.compile(r"^(\s*)s(\d+)\s*$")
-_ENTRY = re.compile(r"^(\s*)i(\d+)\s*$")
+_ENTRY = re.compile(r"^(\s*)([ig@])(\d+)\s*$")
 
 
 def line_ending(text):
@@ -76,13 +82,32 @@ def block(depth, *lines):
     return [(INDENT * depth) + line for line in lines]
 
 
-def entry_lines(depth, index, fields):
-    """One i<n> entry and its key/value pairs.
+def entry_lines(depth, index, fields, marker="i"):
+    """One entry and its key/value pairs.
 
     fields is a list of (key, value) where a value of None opens a nested
     block whose own lines are supplied already indented.
+
+    marker decides how the game treats the entry, and it matters more than
+    anything else in this file:
+
+      i<index>   positional. Authoring a collection from scratch. Used by a
+                 mod on a collection the base game also fills, it makes the
+                 game drop the base collection and keep only what the mod
+                 wrote.
+      @<GUID>    add a new member to a collection the base game already
+                 fills. This is what a content mod wants.
+      g<GUID>    merge fields onto a member that already exists. The game's
+                 own French.mod extends Translations this way, with no size
+                 line above it.
+
+    A GUID carried in the marker is not repeated as a =GUID field, which is
+    how French.mod writes it.
     """
-    out = [(INDENT * depth) + "i" + str(index)]
+    head = marker + str(index)
+    out = [(INDENT * depth) + head]
+    if marker != "i":
+        fields = [(key, value) for key, value in fields if key != "GUID"]
     for key, value in fields:
         if isinstance(value, list):
             out.append((INDENT * (depth + 1)) + "=" + key)
@@ -125,12 +150,17 @@ def find_list(lines, key):
 
 
 def used_indices(lines, start, indent):
-    """Every i<n> at the list's own depth, from start to the end of it."""
+    """Every positional index at the list's own depth, from start onwards.
+
+    Only i<n> entries are counted: an @<GUID> or g<GUID> member has no
+    position, so it neither takes an index nor shifts the ones after it.
+    """
     found = set()
     for line in lines[start:]:
         match = _ENTRY.match(line)
         if match and match.group(1) == indent:
-            found.add(int(match.group(2)))
+            if match.group(2) == MARKER_POSITIONAL:
+                found.add(int(match.group(3)))
             continue
         # A line indented less than the list means the list is over.
         stripped = line.strip()
@@ -161,6 +191,7 @@ def entry_span(lines, list_key, unique_key, unique_value):
     spans = []
     start = None
     index = 0
+    marker = MARKER_POSITIONAL
     for position in range(key_index + 1, len(lines) + 1):
         line = lines[position] if position < len(lines) else ""
         match = _ENTRY.match(line) if position < len(lines) else None
@@ -173,15 +204,23 @@ def entry_span(lines, list_key, unique_key, unique_value):
         )
         if at_depth or ended:
             if start is not None:
-                spans.append((start, position, index))
+                spans.append((start, position, index, marker))
             if ended:
                 break
             start = position
-            index = int(match.group(2))
+            marker = match.group(2)
+            index = int(match.group(3))
 
-    for start, end, index in spans:
-        if any(line.strip() == wanted for line in lines[start:end]):
-            return start, end, index, depth
+    # A GUID carried in the marker is not repeated as a field, so an entry
+    # matches either on its own marker line or on a field inside it.
+    for start, end, index, marker in spans:
+        by_marker = (
+            unique_key == "GUID"
+            and marker != MARKER_POSITIONAL
+            and str(index) == str(unique_value)
+        )
+        if by_marker or any(line.strip() == wanted for line in lines[start:end]):
+            return start, end, index, depth, marker
     return None
 
 
@@ -201,21 +240,33 @@ def replace_entry(text, list_key, unique_key, unique_value, fields):
     if span is None:
         return None
 
-    start, end, index, depth = span
-    lines[start:end] = entry_lines(depth, index, fields)
+    start, end, index, depth, marker = span
+    lines[start:end] = entry_lines(depth, index, fields, marker)
     return ending.join(lines) + ending
 
 
-def append_entry(text, list_key, fields, setting_name):
+def append_entry(text, list_key, fields, setting_name,
+                 marker=MARKER_NEW, key=None):
     """Add one entry to a list, creating the whole file when it is missing.
+
+    The size line is the dangerous part. A mod that declares "s1" on a
+    collection the base game fills with two thousand entries is telling the
+    game the collection has one member, and the rest go away. The game's own
+    French.mod extends Translations with no size line at all, which is the
+    shape written here for anything but a positional entry.
 
     Returns the new text, or None when nothing needed doing.
     """
     ending = line_ending(text)
+    sized = marker == MARKER_POSITIONAL
+    if key is None:
+        key = 0
+
     if not text.strip():
-        lines = [header(setting_name), INDENT + "=" + list_key,
-                 (INDENT * 2) + "s1"]
-        lines.extend(entry_lines(2, 0, fields))
+        lines = [header(setting_name), INDENT + "=" + list_key]
+        if sized:
+            lines.append((INDENT * 2) + "s1")
+        lines.extend(entry_lines(2, key, fields, marker))
         return ending.join(lines) + ending
 
     lines = text.replace("\r\n", "\n").split("\n")
@@ -226,20 +277,27 @@ def append_entry(text, list_key, fields, setting_name):
     if found is None:
         # The file exists but holds a different section. Append the list.
         lines.append(INDENT + "=" + list_key)
-        lines.append((INDENT * 2) + "s1")
-        lines.extend(entry_lines(2, 0, fields))
+        if sized:
+            lines.append((INDENT * 2) + "s1")
+        lines.extend(entry_lines(2, key, fields, marker))
         return ending.join(lines) + ending
 
-    key_index, count_index, count, indent = found
+    key_index, count_index, _count, indent = found
     depth = len(indent) // len(INDENT) if INDENT else 2
     taken = used_indices(lines, key_index + 1, indent)
-    index = (max(taken) + 1) if taken else 0
 
-    new_lines = entry_lines(depth, index, fields)
+    if sized:
+        key = (max(taken) + 1) if taken else 0
+    new_lines = entry_lines(depth, key, fields, marker)
+
     if count_index is None:
-        lines[key_index + 1:key_index + 1] = [indent + "s1"] + new_lines
-    else:
+        lines[key_index + 1:key_index + 1] = new_lines
+    elif sized:
         lines[count_index] = indent + "s" + str(len(taken) + 1)
+        lines[count_index + 1:count_index + 1] = new_lines
+    else:
+        # A size line is already there. Leave it alone and add after it: it
+        # counts the positional entries, and this one is not positional.
         lines[count_index + 1:count_index + 1] = new_lines
 
     return ending.join(lines) + ending

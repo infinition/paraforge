@@ -185,6 +185,27 @@ class ParaForgeSettings(PropertyGroup):
         default="BasicWood",
     )
 
+    merge_marker: EnumProperty(
+        name=_("Merge style"),
+        description=_(
+            "How an entry is added to a list the base game already fills. "
+            "Leave this alone unless the game misbehaves"
+        ),
+        items=(
+            ("@", _("Add to the game's list"),
+             _("Adds a member, identified by its GUID. What a content mod "
+               "wants")),
+            ("g", _("Extend an existing entry"),
+             _("Merges fields onto an entry that already exists. How the "
+               "game's own French.mod writes translations")),
+            ("i", _("Positional (dangerous)"),
+             _("Numbered entry with a size line. On a list the base game "
+               "fills, this makes the game keep only what the mod wrote and "
+               "drop everything else")),
+        ),
+        default="@",
+    )
+
     write_recipe: BoolProperty(
         name=_("Write the recipe file"),
         description=_(

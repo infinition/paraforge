@@ -254,15 +254,20 @@ def generate(mod_path, name, settings, report, zone_count=1):
             "without one", swatch_name,
         ))
 
+    marker = getattr(settings, "merge_marker", setting.MARKER_NEW)
+
     _merge(run, result, settings_path(mod_path, ITEMS_FILE), "Items",
            "AllItems", "GUID", item_guid,
            item_fields(name, item_guid, prefab_guid, tag_guid, swatch_guid,
-                       zone_count, seed, recolourable))
+                       zone_count, seed, recolourable),
+           marker, item_guid)
 
     key = TRANSLATION_PREFIX + name
+    translation_guid = sidecar.guid_for(seed, "translation", key)
     _merge(run, result, settings_path(mod_path, TRANSLATIONS_FILE),
            "Translations", "Items", "Key", key,
-           translation_fields(key, _readable(name), seed))
+           translation_fields(key, _readable(name), seed),
+           marker, translation_guid)
 
     run.record()
     return result
@@ -402,7 +407,7 @@ def _texture_guid(mod_path, report, suffix):
 
 
 def _merge(run, result, path, section, list_key, unique_key, unique_value,
-           fields):
+           fields, marker=setting.MARKER_NEW, key=None):
     """Add the entry, or repair the one already carrying the same key.
 
     Skipping an existing entry was wrong: an entry written by an earlier
@@ -410,7 +415,15 @@ def _merge(run, result, path, section, list_key, unique_key, unique_value,
     """
     text = setting.read(path)
     lines = text.replace("\r\n", "\n").split("\n")
-    if setting.contains_value(lines, unique_key, unique_value):
+
+    present = setting.contains_value(lines, unique_key, unique_value)
+    if not present and marker != setting.MARKER_POSITIONAL:
+        # The GUID lives in the marker line rather than in a field.
+        present = setting.entry_span(
+            lines, list_key, unique_key, unique_value
+        ) is not None
+
+    if present:
         repaired = setting.replace_entry(
             text, list_key, unique_key, unique_value, fields
         )
@@ -423,7 +436,7 @@ def _merge(run, result, path, section, list_key, unique_key, unique_value,
         return
 
     run.will_modify(path)
-    merged = setting.append_entry(text, list_key, fields, section)
+    merged = setting.append_entry(text, list_key, fields, section, marker, key)
     setting.write(path, merged)
     result.files.append(path)
 
