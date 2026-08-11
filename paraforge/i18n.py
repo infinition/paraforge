@@ -578,6 +578,10 @@ FR = {
     "No swatch group called {0} in the game, the item is written without one":
         "Aucun groupe de swatches nommé {0} dans le jeu, l'objet est écrit "
         "sans",
+    "No texture in the mod, the item will render with the game's default "
+    "surface":
+        "Aucune texture dans le mod, l'objet utilisera la surface par défaut "
+        "du jeu",
     "Never inside the game installation":
         "Jamais dans l'installation du jeu",
     "Custom": "Personnalisé",

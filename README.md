@@ -85,7 +85,7 @@ python build.py --blender "C:/Program Files/Blender Foundation/Blender 5.2/blend
 ```
 
 Puis dans Blender : `Edit > Preferences > Add-ons > Install from Disk`, et
-choisir `dist/paraforge-0.5.1.zip`.
+choisir `dist/paraforge-0.6.0.zip`.
 
 Le panneau apparaît dans la barre latérale de la vue 3D, onglet **ParaForge**
 (`N` pour l'ouvrir).
@@ -149,9 +149,18 @@ Un objet Paralives, c'est trois morceaux de texte, tous **dans ton propre
 mod** :
 
 ```
-<Mod>/<Nom>.prefab               l'arbre d'objets, sa taille, son mesh
-<Mod>/Settings/Items.setting     l'entrée de catalogue, le tag, les swatches
-<Mod>/Settings/Translations...   le libellé que le joueur lit
+<Mod>/<Nom>.prefab                 l'arbre d'objets, sa taille, son mesh
+<Mod>/Settings/Items.setting       l'entrée de catalogue, le tag, les swatches
+<Mod>/Settings/Surfaces.setting    la surface, sans laquelle rien ne s'affiche
+<Mod>/Settings/Translations...     le libellé que le joueur lit
+```
+
+La surface n'est pas optionnelle. Un mesh sans elle se charge, occupe sa place
+au sol, et ne dessine rien. Le jeu le dit dans son log :
+
+```
+Material builder got given parameters that don't match any shaders -
+ShaderType:GrayMask ZoneDefinition:None ...
 ```
 
 Un mod ne porte que ce qu'il ajoute et le jeu fusionne le tout : le mod de

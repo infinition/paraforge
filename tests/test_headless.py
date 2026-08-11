@@ -847,8 +847,10 @@ def test_generate_item():
     mesh_guid = sidecar.asset_guid(mod, "OldWoodenChair.fbx")
     check("AssetMesh:" + mesh_guid in text, "the prefab points at the mesh",
           text)
-    check("DetailMap:" + sidecar.asset_guid(mod, "OldWoodenChairDetail.png")
-          in text, "and carries the Detail map, which the wiki does by hand")
+    # With no GrayMask the Detail map is the base, so it belongs on the
+    # surface rather than as an overlay on top of itself.
+    check("DetailMap:" not in text,
+          "the Detail is the base, not an overlay on top of it", text)
     check("Size:(1.0000, 1.0000, 1.0000)" in text,
           "with the measured bounding box",
           [l for l in text.splitlines() if "Size" in l])
@@ -861,6 +863,20 @@ def test_generate_item():
           "with the real Armchairs tag")
     check("=SwatchGroup:" + catalog.SWATCH_BY_NAME["BasicWood"] in entry,
           "and the real BasicWood swatch group")
+
+    # Without a surface the mesh loads and draws nothing. The game says so:
+    # "Material builder got given parameters that don't match any shaders".
+    surfaces = os.path.join(mod, "Settings", "Surfaces.setting")
+    check(os.path.isfile(surfaces), "a surface was written")
+    surface = open(surfaces, encoding="utf-8").read()
+    check("=Texture:" + sidecar.asset_guid(mod, "OldWoodenChairDetail.png")
+          in surface, "pointing at the item's own texture", surface)
+    check("ShaderType" not in surface,
+          "with no ShaderType, which is the ordinary opaque shader")
+    surface_guid = [l.split(":", 1)[1].strip() for l in surface.splitlines()
+                    if l.strip().startswith("=GUID:")][0]
+    check("Value:" + surface_guid in text,
+          "and the prefab references it", text)
 
     label = open(translations, encoding="utf-8").read()
     check("=Key:Item_OldWoodenChair" in label, "the translation key is right")

@@ -27,6 +27,7 @@ _ = i18n.t
 SETTINGS_FOLDER = "Settings"
 ITEMS_FILE = "Items.setting"
 TRANSLATIONS_FILE = "Translations.setting"
+SURFACES_FILE = "Surfaces.setting"
 
 #: Item.DisplayName is an identifier; the label comes from this translation.
 TRANSLATION_PREFIX = "Item_"
@@ -40,8 +41,32 @@ def settings_path(mod_path, name):
 # The prefab
 
 
+def surface_fields(name, surface_guid, texture_guid):
+    """One surface: a texture, and the default shader.
+
+    A mesh with no surface does not render. The game logs it plainly:
+
+        Material builder got given parameters that don't match any shaders -
+        ShaderType:GrayMask ZoneDefinition:None ...
+
+    ShaderType is deliberately absent. Roughly 1400 of the 944 surface
+    entries the game ships omit it, across GrayMask, Detail and Master
+    textures alike, so leaving it out is the ordinary opaque item shader
+    rather than an oversight.
+    """
+    fields = [
+        ("GUID", surface_guid),
+        ("DisplayName", name),
+    ]
+    if texture_guid:
+        fields.append(("Texture", texture_guid))
+    fields.append(("DefaultSwatchGroup", 0))
+    fields.append(("DefaultSwatch", 0))
+    return fields
+
+
 def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
-                pivot=(0.5, 0.5, 0.5), root_guid=""):
+                pivot=(0.5, 0.5, 0.5), root_guid="", surface_guid=""):
     """One root object holding one mesh, which is what an item minimally is.
 
     Size is in metres, in the game's axis order: width, height, depth. Blender
@@ -66,6 +91,13 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
         " Size:({0:.4f}, {1:.4f}, {2:.4f})".format(*size),
         "ItemMeshReference:",
     ]
+    if surface_guid:
+        lines.extend([
+            " Surfaces:",
+            "  Surface:",
+            "   GUID:" + sidecar.guid_for("paraforge", "surfacelink", root),
+            "   Value:" + surface_guid,
+        ])
     if detail_guid:
         lines.append(" DetailMap:" + detail_guid)
     if colorzone_guid:
@@ -172,14 +204,34 @@ def generate(mod_path, name, settings, report, zone_count=1):
 
     # The Detail and ColorZone maps are assigned on the mesh reference, which
     # is the step the wiki tells you to do by hand in the Prefab Editor.
+    gray_guid = _texture_guid(mod_path, report, "GrayMask")
     detail_guid = _texture_guid(mod_path, report, "Detail")
     colorzone_guid = _texture_guid(mod_path, report, "ColorZone")
+
+    # The surface carries the base texture. A recolourable item bases itself
+    # on the GrayMask and keeps the Detail as a separate overlay; an item that
+    # is not recolourable has only the Detail, and that becomes the base.
+    surface_texture = gray_guid or detail_guid
+    overlay_guid = detail_guid if gray_guid else ""
+
+    surface_guid = ""
+    if surface_texture:
+        surface_guid = sidecar.guid_for(seed, "surface", name)
+        _merge(run, result, settings_path(mod_path, SURFACES_FILE), "Surfaces",
+               "AllSurfaces", "GUID", surface_guid,
+               surface_fields(name, surface_guid, surface_texture))
+    else:
+        result.notes.append(_(
+            "No texture in the mod, the item will render with the game's "
+            "default surface"
+        ))
 
     size = game_size(getattr(report, "measurement", None))
 
     # Regenerating an unchanged item must be a no-op, otherwise every press
     # of the button adds a step to the undo history that undoes nothing.
-    wanted = prefab_text(name, mesh_guid, size, detail_guid, colorzone_guid)
+    wanted = prefab_text(name, mesh_guid, size, overlay_guid, colorzone_guid,
+                         surface_guid=surface_guid)
     if setting.read(prefab_path) != wanted:
         run.will_modify(prefab_path)
         setting.write(prefab_path, wanted)
