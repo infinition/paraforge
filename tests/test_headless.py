@@ -925,6 +925,58 @@ def test_generate_item():
     return temp, mod, before
 
 
+def test_export_units():
+    """The mesh must leave Blender in centimetres, or it is invisible in game.
+
+    The game multiplies raw FBX coordinates by 0.01 and ignores node scaling.
+    A 2 m cube therefore has to reach the file as 200 units across.
+    """
+    section("Export units")
+    fresh_scene()
+    obj = make_cube(size=2.0)
+    obj.location = (0.0, 0.0, 1.0)
+
+    check(abs(spec.FBX_UNITS_PER_METRE - 100.0) < 1e-9,
+          "a metre is a hundred FBX units", str(spec.FBX_UNITS_PER_METRE))
+
+    copies = exporter.scaled_copies(
+        bpy.context, [obj], spec.FBX_UNITS_PER_METRE, "Rock"
+    )
+    try:
+        check(len(copies) == 1, "one copy per object")
+        copy = copies[0]
+        coords = np.array([v.co for v in copy.data.vertices])
+        size = coords.max(axis=0) - coords.min(axis=0)
+
+        check(all(abs(float(v) - 200.0) < 1e-3 for v in size),
+              "a 2 m cube becomes 200 units across",
+              str(tuple(round(float(v), 3) for v in size)))
+        check(abs(float(coords[:, 2].min())) < 1e-3,
+              "the base still sits at zero after scaling",
+              str(float(coords[:, 2].min())))
+        check(copy.name == "Rock" and copy.data.name == "Rock",
+              "the mesh is named after the item, as the game's own files are",
+              copy.name)
+        check(all(abs(v - 1.0) < 1e-6 for v in copy.scale),
+              "with an identity node, since the game ignores node scaling")
+
+        # The world transform has to be baked in, not left on the object.
+        check(abs(float(coords[:, 2].max()) - 200.0) < 1e-3,
+              "the object's own location is baked into the geometry",
+              str(float(coords[:, 2].max())))
+    finally:
+        exporter.discard(copies)
+
+    check(not any(o.name == "Rock" for o in bpy.data.objects),
+          "and the copies are cleaned up afterwards")
+    check(obj.name in bpy.data.objects, "the original is untouched")
+
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    measurement = geo.measure([obj], depsgraph)
+    check(abs(float(measurement.size[0]) - 2.0) < 1e-6,
+          "and it is still 2 m, so the prefab Size stays in metres")
+
+
 def test_repair_stale_entry():
     """An entry an earlier version wrote badly has to be corrected, not kept."""
     section("Repairing a stale entry")
@@ -1178,6 +1230,7 @@ def main():
         test_language_reload()
         temp, mod = test_export()
         test_inspector(mod)
+        test_export_units()
         test_repair_stale_entry()
         test_surface_cleanup()
         _t, item_mod, _b = test_generate_item()

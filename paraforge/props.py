@@ -185,6 +185,19 @@ class ParaForgeSettings(PropertyGroup):
         default="BasicWood",
     )
 
+    fbx_unit_scale: FloatProperty(
+        name=_("FBX units per metre"),
+        description=_(
+            "The game multiplies the raw coordinates of an FBX by 0.01, so a "
+            "mesh has to leave Blender in centimetres or it arrives a hundred "
+            "times too small and cannot be seen. Measured in the game's own "
+            "imported assets. Only change this if a game update changes it"
+        ),
+        default=spec.FBX_UNITS_PER_METRE,
+        min=0.001,
+        soft_max=1000.0,
+    )
+
     merge_marker: EnumProperty(
         name=_("Merge style"),
         description=_(

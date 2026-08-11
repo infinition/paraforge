@@ -513,6 +513,7 @@ class PARAFORGE_PT_calibration(_Base, Panel):
 
         layout.prop(settings, "tile_size", text=_("Tile size"))
         layout.prop(settings, "triangle_budget", text=_("Triangle budget"))
+        layout.prop(settings, "fbx_unit_scale", text=_("FBX units per metre"))
         layout.operator("paraforge.decimate_to_budget",
                         text=_("Reduce to the budget"), icon="MOD_DECIM")
 

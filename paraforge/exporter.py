@@ -114,7 +114,9 @@ def export(context, settings, objects, report=None):
         raise ValueError("File already exists and overwrite is off: " + fbx_path)
 
     _export_fbx(context, objects, fbx_path, settings.triangulate,
-                settings.recolourable)
+                settings.recolourable,
+                getattr(settings, "fbx_unit_scale", spec.FBX_UNITS_PER_METRE),
+                name)
     result.files.append(fbx_path)
 
     # Worth saying only when there was something to leave out.
@@ -162,6 +164,59 @@ def export(context, settings, objects, report=None):
     return result
 
 
+def scaled_copies(context, objects, factor, name=""):
+    """Throwaway objects holding the geometry, baked and scaled.
+
+    The world transform is baked in and the result multiplied by factor, so
+    the FBX carries centimetre sized vertices with an identity node. That is
+    what the game reads: it scales raw coordinates by 0.01 and ignores node
+    scaling, so putting the factor on the node instead would change nothing.
+
+    Modifiers are evaluated here rather than by the exporter, because scaling
+    the base mesh underneath a modifier would change what the modifier does.
+    """
+    from mathutils import Matrix
+
+    depsgraph = context.evaluated_depsgraph_get()
+    scale = Matrix.Scale(factor, 4)
+    created = []
+
+    for index, obj in enumerate(objects):
+        evaluated = obj.evaluated_get(depsgraph)
+        mesh = bpy.data.meshes.new_from_object(
+            evaluated, preserve_all_data_layers=True, depsgraph=depsgraph
+        )
+        mesh.transform(obj.matrix_world)
+        mesh.transform(scale)
+
+        # The game's own files name the mesh after the item, not after
+        # whatever the artist left in the outliner.
+        label = name or obj.name
+        if len(objects) > 1:
+            label = "{0}_{1}".format(label, index)
+        mesh.name = label
+
+        copy = bpy.data.objects.new(label, mesh)
+        context.scene.collection.objects.link(copy)
+        created.append(copy)
+
+    return created
+
+
+def discard(objects):
+    for obj in objects:
+        mesh = obj.data
+        try:
+            bpy.data.objects.remove(obj, do_unlink=True)
+        except (ReferenceError, RuntimeError):
+            continue
+        if mesh is not None and mesh.users == 0:
+            try:
+                bpy.data.meshes.remove(mesh)
+            except (ReferenceError, RuntimeError):
+                pass
+
+
 def _has_color_attribute(objects):
     for obj in objects:
         if getattr(obj, "type", None) != "MESH":
@@ -171,22 +226,35 @@ def _has_color_attribute(objects):
     return False
 
 
-def _export_fbx(context, objects, filepath, triangulate, vertex_colors=False):
+def _export_fbx(context, objects, filepath, triangulate, vertex_colors=False,
+                unit_scale=spec.FBX_UNITS_PER_METRE, name=""):
     """Select exactly the target objects, export, then restore the selection."""
     view_layer = context.view_layer
     previous_selection = [o for o in context.selected_objects]
     previous_active = view_layer.objects.active
+    temporary = []
 
     try:
         for obj in previous_selection:
             obj.select_set(False)
-        for obj in objects:
+
+        if unit_scale and abs(unit_scale - 1.0) > 1e-9:
+            temporary = scaled_copies(context, objects, unit_scale, name)
+            exported = temporary
+        else:
+            exported = objects
+
+        for obj in exported:
             obj.select_set(True)
-        view_layer.objects.active = objects[0]
+        view_layer.objects.active = exported[0]
 
         kwargs = _supported(fbx_settings(filepath, triangulate, vertex_colors))
+        if temporary:
+            # The copies already carry their modifiers and their transform.
+            kwargs["use_mesh_modifiers"] = False
         bpy.ops.export_scene.fbx(**kwargs)
     finally:
+        discard(temporary)
         for obj in context.selected_objects:
             obj.select_set(False)
         for obj in previous_selection:

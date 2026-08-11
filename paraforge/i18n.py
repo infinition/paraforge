@@ -115,6 +115,19 @@ def pick(french, english):
 
 
 FR = {
+    # -- Units --------------------------------------------------------------
+    "FBX units per metre": "Unités FBX par mètre",
+
+    "The game multiplies the raw coordinates of an FBX by 0.01, so a mesh has "
+    "to leave Blender in centimetres or it arrives a hundred times too small "
+    "and cannot be seen. Measured in the game's own imported assets. Only "
+    "change this if a game update changes it":
+        "Le jeu multiplie les coordonnées brutes d'un FBX par 0,01 : un mesh "
+        "doit donc sortir de Blender en centimètres, sinon il arrive cent "
+        "fois trop petit et reste invisible. Mesuré dans les assets importés "
+        "par le jeu lui-même. À ne changer que si une mise à jour du jeu le "
+        "change",
+
     # -- Merging into the game's lists ------------------------------------
     "Merge style": "Style de fusion",
 

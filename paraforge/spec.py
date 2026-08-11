@@ -19,6 +19,28 @@ Sources (Paralives Wiki, checked against game build 0.1.6b, July 2026):
 FBX_AXIS_FORWARD = "Z"
 FBX_AXIS_UP = "Y"
 
+# The game multiplies the raw vertex coordinates of an FBX by 0.01. It ignores
+# both the file's unit declaration and any scaling on the node, so a mesh
+# authored in metres arrives a hundred times too small: present, correctly
+# placed, with the right footprint, and far too small to see.
+#
+# Measured in the game's own processed assets rather than guessed. A .import
+# file is what the game made of an FBX, and its coordinates read:
+#
+#   CityGravelPile   prefab Size 4.4642 m    coordinates around 2.24
+#   Cereal box       roughly 0.3 m           coordinates around 0.15
+#   our first rock   prefab Size 1.9086 m    coordinates around 0.0088
+#
+# The shipped meshes agree with their prefabs; ours was out by a factor of a
+# hundred. Re-importing the game's FBX files into Blender says the same thing
+# from the other side: they carry a 0.01 node scale over centimetre sized
+# vertices, so 446 raw units is the 4.4642 m the prefab declares.
+#
+# So the mesh has to leave Blender in centimetres. No FBX export option does
+# it (Blender puts the factor on the node, which the game ignores), and the
+# geometry is scaled on a throwaway copy instead.
+FBX_UNITS_PER_METRE = 100.0
+
 #: Items must face Y+ before export.
 FACING_AXIS = "Y+"
 
