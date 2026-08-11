@@ -144,10 +144,17 @@ def item_fields(name, item_guid, prefab_guid, tag_guid, swatch_guid,
         fields.append(("HasSwatches", "False"))
 
     if tag_guid:
+        # The GUID of a list element is its identity, and it has to be the
+        # item's own. Deriving it from the mod and the tag alone gave every
+        # item in a mod filed under the same catalogue tag one shared element,
+        # and the game folded them together: adding a vase turned the chair
+        # already in the catalogue into a vase. Found by reading seven real
+        # items whose Tag blocks all carried GUID:8509043764253587081.
         fields.append((
             "Tag",
             setting.linked_list(4, [
-                (sidecar.guid_for(link_seed, "tag", tag_guid), tag_guid),
+                (sidecar.guid_for(link_seed, "tag", item_guid, tag_guid),
+                 tag_guid),
             ]),
         ))
 

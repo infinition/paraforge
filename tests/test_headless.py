@@ -7,6 +7,7 @@ Exits non zero on the first failure, so it works as a CI step.
 """
 
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -1003,6 +1004,80 @@ def test_export_units():
           "and it is still 2 m, so the prefab Size stays in metres")
 
 
+def test_two_items_share_nothing():
+    """Two items in one mod must not share a single identifier of their own.
+
+    A shared Tag element GUID made the game fold two items together: adding a
+    vase turned the chair already in the catalogue into a vase.
+    """
+    section("Two items in one mod")
+    from paraforge import item, setting
+
+    temp = tempfile.mkdtemp(prefix="paraforge_pair_")
+    mod = os.path.join(temp, "Pair_8.mod")
+    os.makedirs(mod)
+    seed = sidecar.mod_name(mod)
+    tag = catalog.BY_NAME["Armchairs"]
+
+    made = {}
+    for name in ("Chair", "Vase"):
+        guid = sidecar.guid_for(seed, "item", name)
+        made[name] = item.item_fields(
+            name, guid, sidecar.asset_guid(mod, name + ".prefab"), tag, "",
+            1, seed, False,
+        )
+
+    def identifiers(fields):
+        found = set()
+        for key, value in fields:
+            if isinstance(value, list):
+                for line in value:
+                    match = re.search(r"=(?:GUID|Value):(\d+)", line)
+                    if match:
+                        found.add(match.group(1))
+            elif str(value).isdigit() and len(str(value)) > 6:
+                found.add(str(value))
+        return found
+
+    chair = identifiers(made["Chair"])
+    vase = identifiers(made["Vase"])
+    shared = sorted(chair & vase)
+    # The catalogue tag itself is meant to be the same on both.
+    unexpected = [g for g in shared if g != tag]
+
+    check(not unexpected, "the two entries share no identifier of their own",
+          ", ".join(unexpected))
+    check(tag in chair and tag in vase,
+          "while both still point at the same catalogue tag")
+
+    # And the same through the whole generation, on disk.
+    for name, size in (("Chair", 1.0), ("Vase", 2.0)):
+        fresh_scene()
+        obj = make_cube(size=size)
+        image = build_texture(name + "Detail", (0.3, 0.3, 0.3))
+        attach_material(obj, image)
+        settings = props.settings(bpy.context)
+        settings.asset_name = name
+        settings.item_type = "FLOOR"
+        settings.catalog_tag = tag
+        settings.mod_folder = mod
+        settings.facing_confirmed = True
+        bpy.ops.paraforge.fix_all()
+        bpy.ops.paraforge.export(ignore_failures=True)
+        bpy.ops.paraforge.generate_item()
+
+    text = open(os.path.join(mod, "Settings", "Items.setting"),
+                encoding="utf-8").read()
+    tag_guids = re.findall(r"=GUID:(\d+)\s*\r?\n\s*=Value:" + tag, text)
+    check(len(tag_guids) == 2, "both items are in the catalogue",
+          str(len(tag_guids)))
+    check(len(set(tag_guids)) == 2,
+          "each with its own tag element, not one shared between them",
+          str(tag_guids))
+
+    shutil.rmtree(temp, ignore_errors=True)
+
+
 def test_asset_name_guard():
     """A borrowed name is how one item silently replaces another."""
     section("Asset name")
@@ -1343,6 +1418,7 @@ def main():
         temp, mod = test_export()
         test_inspector(mod)
         test_export_units()
+        test_two_items_share_nothing()
         test_asset_name_guard()
         test_shared_surface_fallback()
         test_repair_stale_entry()

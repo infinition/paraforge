@@ -9,6 +9,21 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.13.0]
+
+### Fixed
+
+- **A new item replaced the one already in the catalogue.** The GUID of a list
+  element is its identity, and the item's `Tag` entry derived its own from the
+  mod and the catalogue tag alone. Every item in a mod filed under the same tag
+  therefore shared one element, and the game folded them together: adding a
+  vase turned the chair already in the catalogue into a vase. Found by reading
+  seven real items whose `Tag` blocks all carried
+  `GUID:8509043764253587081`. The element is now derived from the item as well.
+
+  Items written by an earlier version keep the shared GUID until they are
+  generated again.
+
 ## [0.12.0]
 
 ### Added
