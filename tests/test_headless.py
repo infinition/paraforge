@@ -951,8 +951,17 @@ def test_export_units():
         check(all(abs(float(v) - 200.0) < 1e-3 for v in size),
               "a 2 m cube becomes 200 units across",
               str(tuple(round(float(v), 3) for v in size)))
-        check(abs(float(coords[:, 2].min())) < 1e-3,
-              "the base still sits at zero after scaling",
+
+        # The game's meshes are Y up with their base on zero, and it reads the
+        # geometry rather than the node, so the rotation is baked in here.
+        check(abs(float(coords[:, 1].min())) < 1e-3,
+              "the base sits at zero on Y, the game's up axis",
+              str(float(coords[:, 1].min())))
+        check(abs(float(coords[:, 1].max()) - 200.0) < 1e-3,
+              "and the height runs up Y",
+              str(float(coords[:, 1].max())))
+        check(abs(float(coords[:, 2].min()) + 100.0) < 1e-3,
+              "while Z became depth, centred on zero",
               str(float(coords[:, 2].min())))
         check(copy.name == "Rock" and copy.data.name == "Rock",
               "the mesh is named after the item, as the game's own files are",
@@ -960,10 +969,11 @@ def test_export_units():
         check(all(abs(v - 1.0) < 1e-6 for v in copy.scale),
               "with an identity node, since the game ignores node scaling")
 
-        # The world transform has to be baked in, not left on the object.
-        check(abs(float(coords[:, 2].max()) - 200.0) < 1e-3,
+        # The world transform has to be baked in, not left on the object: the
+        # cube was moved up by 1 m, so its base is on zero rather than at -100.
+        check(float(coords[:, 1].min()) > -1e-3,
               "the object's own location is baked into the geometry",
-              str(float(coords[:, 2].max())))
+              str(float(coords[:, 1].min())))
     finally:
         exporter.discard(copies)
 

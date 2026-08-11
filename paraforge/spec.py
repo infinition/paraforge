@@ -19,6 +19,23 @@ Sources (Paralives Wiki, checked against game build 0.1.6b, July 2026):
 FBX_AXIS_FORWARD = "Z"
 FBX_AXIS_UP = "Y"
 
+# That setting is not enough on its own. Blender expresses the conversion as a
+# rotation on the exported node rather than in the vertex data, and the game
+# ignores what the node says exactly as it ignores the node's scale. The mesh
+# then arrives Z-up in a Y-up world, lying on its back.
+#
+# Measured by importing with the conversion switched off, so the coordinates
+# are the file's own:
+#
+#   CityGravelPile.fbx   base sits on Y=0    node rotation 180 deg about Z
+#   Barbecue.fbx         base sits on Y=0    node rotation 180 deg about Z
+#   our export           base sits on Z=0    node rotation  90 deg about X
+#
+# So the rotation is baked into the geometry too, and the exporter is then
+# told to convert nothing.
+FBX_IDENTITY_FORWARD = "-Y"
+FBX_IDENTITY_UP = "Z"
+
 # The game multiplies the raw vertex coordinates of an FBX by 0.01. It ignores
 # both the file's unit declaration and any scaling on the node, so a mesh
 # authored in metres arrives a hundred times too small: present, correctly

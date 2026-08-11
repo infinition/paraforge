@@ -21,7 +21,8 @@ class ExportResult:
         return bool(self.files)
 
 
-def fbx_settings(filepath, triangulate=True, vertex_colors=False):
+def fbx_settings(filepath, triangulate=True, vertex_colors=False,
+                 baked_axes=False):
     """Every FBX option Paralives cares about, in one place.
 
     vertex_colors is off by default on purpose. The game reads the presence of
@@ -46,9 +47,13 @@ def fbx_settings(filepath, triangulate=True, vertex_colors=False):
         "prioritize_active_color": True,
         "path_mode": "STRIP",
         "embed_textures": False,
-        # The wiki is explicit: Z Forward, Y Up.
-        "axis_forward": spec.FBX_AXIS_FORWARD,
-        "axis_up": spec.FBX_AXIS_UP,
+        # The wiki says Z Forward, Y Up, and that is what the exporter is asked
+        # for when it has to do the conversion itself. When the geometry has
+        # already been rotated and scaled on a copy, the exporter must convert
+        # nothing or it would undo the work on the node.
+        "axis_forward": (spec.FBX_IDENTITY_FORWARD if baked_axes
+                         else spec.FBX_AXIS_FORWARD),
+        "axis_up": spec.FBX_IDENTITY_UP if baked_axes else spec.FBX_AXIS_UP,
         "apply_unit_scale": True,
         "apply_scale_options": "FBX_SCALE_NONE",
         "global_scale": 1.0,
@@ -175,10 +180,14 @@ def scaled_copies(context, objects, factor, name=""):
     Modifiers are evaluated here rather than by the exporter, because scaling
     the base mesh underneath a modifier would change what the modifier does.
     """
+    import math
+
     from mathutils import Matrix
 
     depsgraph = context.evaluated_depsgraph_get()
     scale = Matrix.Scale(factor, 4)
+    # Blender is Z up, the game's meshes are Y up: (x, y, z) becomes (x, z, -y).
+    to_y_up = Matrix.Rotation(math.radians(-90.0), 4, "X")
     created = []
 
     for index, obj in enumerate(objects):
@@ -187,6 +196,7 @@ def scaled_copies(context, objects, factor, name=""):
             evaluated, preserve_all_data_layers=True, depsgraph=depsgraph
         )
         mesh.transform(obj.matrix_world)
+        mesh.transform(to_y_up)
         mesh.transform(scale)
 
         # The game's own files name the mesh after the item, not after
@@ -248,7 +258,9 @@ def _export_fbx(context, objects, filepath, triangulate, vertex_colors=False,
             obj.select_set(True)
         view_layer.objects.active = exported[0]
 
-        kwargs = _supported(fbx_settings(filepath, triangulate, vertex_colors))
+        kwargs = _supported(fbx_settings(
+            filepath, triangulate, vertex_colors, baked_axes=bool(temporary)
+        ))
         if temporary:
             # The copies already carry their modifiers and their transform.
             kwargs["use_mesh_modifiers"] = False
