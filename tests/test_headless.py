@@ -7,6 +7,7 @@ Exits non zero on the first failure, so it works as a CI step.
 """
 
 import os
+import shutil
 import sys
 import tempfile
 import traceback
@@ -317,7 +318,12 @@ def test_export():
     settings_used = exporter.fbx_settings("x.fbx")
     check(settings_used["axis_forward"] == "Z", "FBX forward is Z")
     check(settings_used["axis_up"] == "Y", "FBX up is Y")
-    check(settings_used["colors_type"] == "SRGB", "vertex colours are exported")
+    # Any colour attribute at all makes the mesh ZoneDefinition:VertexZones,
+    # which a plain surface has no shader for, and the item goes invisible.
+    check(settings_used["colors_type"] == "NONE",
+          "vertex colours are left out by default")
+    check(exporter.fbx_settings("x.fbx", vertex_colors=True)["colors_type"]
+          == "SRGB", "and exported only for a recolourable item")
 
     return temp, mod
 
@@ -847,13 +853,21 @@ def test_generate_item():
     mesh_guid = sidecar.asset_guid(mod, "OldWoodenChair.fbx")
     check("AssetMesh:" + mesh_guid in text, "the prefab points at the mesh",
           text)
-    # With no GrayMask the Detail map is the base, so it belongs on the
-    # surface rather than as an overlay on top of itself.
-    check("DetailMap:" not in text,
-          "the Detail is the base, not an overlay on top of it", text)
+
+    # The shape copied from the game's own CityGravelPile.prefab: a shared
+    # surface, with the item's own texture laid over it as a DetailMap.
+    check("Value:" + spec.DEFAULT_SURFACE_GUID in text,
+          "it points at the game's shared surface", text)
+    check("DetailMap:" + sidecar.asset_guid(mod, "OldWoodenChairDetail.png")
+          in text, "and lays its own texture over it", text)
     check("Size:(1.0000, 1.0000, 1.0000)" in text,
           "with the measured bounding box",
           [l for l in text.splitlines() if "Size" in l])
+
+    # A mod that defines a surface crashes the game during startup, in
+    # SurfaceThumbnailManager.Start().
+    surfaces = os.path.join(mod, "Settings", "Surfaces.setting")
+    check(not os.path.isfile(surfaces), "no surface is written into the mod")
 
     entry = open(items, encoding="utf-8").read()
     check("=DisplayName:OldWoodenChair" in entry, "the item is named", entry)
@@ -861,22 +875,12 @@ def test_generate_item():
           in entry, "and points at its prefab")
     check("=Value:" + catalog.BY_NAME["Armchairs"] in entry,
           "with the real Armchairs tag")
-    check("=SwatchGroup:" + catalog.SWATCH_BY_NAME["BasicWood"] in entry,
-          "and the real BasicWood swatch group")
-
-    # Without a surface the mesh loads and draws nothing. The game says so:
-    # "Material builder got given parameters that don't match any shaders".
-    surfaces = os.path.join(mod, "Settings", "Surfaces.setting")
-    check(os.path.isfile(surfaces), "a surface was written")
-    surface = open(surfaces, encoding="utf-8").read()
-    check("=Texture:" + sidecar.asset_guid(mod, "OldWoodenChairDetail.png")
-          in surface, "pointing at the item's own texture", surface)
-    check("ShaderType" not in surface,
-          "with no ShaderType, which is the ordinary opaque shader")
-    surface_guid = [l.split(":", 1)[1].strip() for l in surface.splitlines()
-                    if l.strip().startswith("=GUID:")][0]
-    check("Value:" + surface_guid in text,
-          "and the prefab references it", text)
+    check("=HasSwatches:False" in entry,
+          "and says it has no swatches, like every non recolourable item",
+          entry)
+    check("=SwatchGroup:" not in entry,
+          "so no swatch group is claimed for colourways it cannot produce",
+          entry)
 
     label = open(translations, encoding="utf-8").read()
     check("=Key:Item_OldWoodenChair" in label, "the translation key is right")
@@ -890,6 +894,118 @@ def test_generate_item():
           "generating twice does not duplicate the item")
 
     return temp, mod, before
+
+
+def test_repair_stale_entry():
+    """An entry an earlier version wrote badly has to be corrected, not kept."""
+    section("Repairing a stale entry")
+    from paraforge import setting
+
+    stale = "\r\n".join([
+        "#Setting.Items",
+        " =AllItems",
+        "  s1",
+        "  i0",
+        "   =GUID:12345",
+        "   =DisplayName:OldWoodenChair",
+        "   =Prefab:999",
+        "   =SwatchGroup:777",
+        "   =SwatchColorZoneCount:1",
+    ]) + "\r\n"
+
+    repaired = setting.replace_entry(
+        stale, "AllItems", "GUID", "12345",
+        [("GUID", "12345"), ("DisplayName", "OldWoodenChair"),
+         ("Prefab", "111"), ("HasSwatches", "False")],
+    )
+    check(repaired is not None, "the entry was found")
+    check("=SwatchGroup:" not in repaired, "the bad field is gone", repaired)
+    check("=HasSwatches:False" in repaired, "the right one is there")
+    check("=Prefab:111" in repaired and "=Prefab:999" not in repaired,
+          "and the changed value took", repaired)
+    check(repaired.count("i0") == 1 and "  s1" in repaired,
+          "the list length and index are untouched", repaired)
+
+    missing = setting.replace_entry(
+        stale, "AllItems", "GUID", "nope", [("GUID", "nope")]
+    )
+    check(missing is None, "an absent entry reports itself rather than guessing")
+
+
+def test_surface_cleanup():
+    """The Surfaces.setting 0.6.0 wrote crashes the game, so it has to go."""
+    section("Removing a surface written by an earlier version")
+    from paraforge import item, journal, setting
+
+    temp = tempfile.mkdtemp(prefix="paraforge_surface_")
+    mod = os.path.join(temp, "Cleanup_7.mod")
+    os.makedirs(os.path.join(mod, "Settings"))
+    seed = sidecar.mod_name(mod)
+
+    ours = sidecar.guid_for(seed, "surface", "Chair")
+    text = "\r\n".join([
+        "#Setting.Surfaces",
+        " =AllSurfaces",
+        "  s1",
+        "  i0",
+        "   =GUID:" + ours,
+        "   =DisplayName:Chair",
+        "   =Texture:4242",
+    ]) + "\r\n"
+
+    mine, foreign = item.our_surface_entries(text, seed)
+    check(len(mine) == 1 and not foreign, "a surface we wrote is recognised")
+
+    handwritten = text.replace("=GUID:" + ours, "=GUID:5150")
+    mine, foreign = item.our_surface_entries(handwritten, seed)
+    check(not mine and len(foreign) == 1,
+          "one somebody else wrote is not claimed")
+
+    path = os.path.join(mod, "Settings", "Surfaces.setting")
+    setting.write(path, text)
+    sidecar.write(path, spec.META_TYPE_SETTING, "1")
+
+    # A second item whose prefab points at the surface about to disappear.
+    other = os.path.join(mod, "Stool.prefab")
+    setting.write(other, "\r\n".join([
+        "ItemMeshReference:",
+        " Surfaces:",
+        "  Surface:",
+        "   GUID:4242",
+        "   Value:" + ours,
+        "---",
+    ]) + "\r\n")
+
+    run = journal.Run(mod, "Chair")
+    result = item.Result()
+    item._drop_our_surfaces(run, result, mod, seed)
+    run.record()
+
+    check(not os.path.isfile(path), "ours is deleted")
+    check(not os.path.isfile(path + ".meta"), "with its meta")
+
+    other_text = setting.read(other)
+    check("Value:" + spec.DEFAULT_SURFACE_GUID in other_text,
+          "a prefab left dangling is repointed at the shared surface",
+          other_text)
+    check("Value:" + ours not in other_text,
+          "and no longer names the surface that went away")
+    check(any("Removed" in note or "Retir" in note for note in result.notes),
+          "and it is reported, not done silently", str(result.notes))
+
+    restored = journal.undo_last(mod)
+    check(restored is not None and os.path.isfile(path),
+          "undo puts it back", str(restored))
+
+    # A file we did not write is left alone.
+    setting.write(path, handwritten)
+    run = journal.Run(mod, "Chair")
+    result = item.Result()
+    item._drop_our_surfaces(run, result, mod, seed)
+    check(os.path.isfile(path), "a foreign surface file survives")
+    check(bool(result.notes), "and the user is told why", str(result.notes))
+
+    shutil.rmtree(temp, ignore_errors=True)
 
 
 def test_undo(mod):
@@ -980,14 +1096,28 @@ def test_create_mod():
 def test_language():
     section("Language")
     check(i18n.DEFAULT == "fr", "French is the default")
-    check(i18n.t("Export to Paralives") == "Exporter vers Paralives",
-          "the catalogue is wired up", i18n.t("Export to Paralives"))
-    check(i18n.t("{0} ok   {1} warn   {2} blocking", 1, 2, 3)
-          == "1 ok   2 alerte   3 bloquant",
-          "arguments are formatted after translation",
-          i18n.t("{0} ok   {1} warn   {2} blocking", 1, 2, 3))
-    check(i18n.t("a string nobody translated") == "a string nobody translated",
-          "a missing key falls back instead of raising")
+
+    # The language is saved in the user's Blender config, so the assertions
+    # below have to pin it. Without this the suite passes or fails depending
+    # on which language the person running it last picked in the panel.
+    previous = i18n._current
+    try:
+        i18n._current = "fr"
+        check(i18n.t("Export to Paralives") == "Exporter vers Paralives",
+              "the catalogue is wired up", i18n.t("Export to Paralives"))
+        check(i18n.t("{0} ok   {1} warn   {2} blocking", 1, 2, 3)
+              == "1 ok   2 alerte   3 bloquant",
+              "arguments are formatted after translation",
+              i18n.t("{0} ok   {1} warn   {2} blocking", 1, 2, 3))
+        check(i18n.t("a string nobody translated")
+              == "a string nobody translated",
+              "a missing key falls back instead of raising")
+
+        i18n._current = "en"
+        check(i18n.t("Export to Paralives") == "Export to Paralives",
+              "English is the source text, untouched")
+    finally:
+        i18n._current = previous
 
 
 # --------------------------------------------------------------------------
@@ -1019,6 +1149,8 @@ def main():
         test_language_reload()
         temp, mod = test_export()
         test_inspector(mod)
+        test_repair_stale_entry()
+        test_surface_cleanup()
         _t, item_mod, _b = test_generate_item()
         test_undo(item_mod)
     except Exception:

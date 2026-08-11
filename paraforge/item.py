@@ -19,6 +19,7 @@ instead of orphaning it.
 """
 
 import os
+import re
 
 from . import catalog, i18n, journal, setting, sidecar, spec, textures
 
@@ -39,30 +40,6 @@ def settings_path(mod_path, name):
 
 # --------------------------------------------------------------------------
 # The prefab
-
-
-def surface_fields(name, surface_guid, texture_guid):
-    """One surface: a texture, and the default shader.
-
-    A mesh with no surface does not render. The game logs it plainly:
-
-        Material builder got given parameters that don't match any shaders -
-        ShaderType:GrayMask ZoneDefinition:None ...
-
-    ShaderType is deliberately absent. Roughly 1400 of the 944 surface
-    entries the game ships omit it, across GrayMask, Detail and Master
-    textures alike, so leaving it out is the ordinary opaque item shader
-    rather than an oversight.
-    """
-    fields = [
-        ("GUID", surface_guid),
-        ("DisplayName", name),
-    ]
-    if texture_guid:
-        fields.append(("Texture", texture_guid))
-    fields.append(("DefaultSwatchGroup", 0))
-    fields.append(("DefaultSwatch", 0))
-    return fields
 
 
 def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
@@ -119,13 +96,27 @@ def game_size(measurement):
 
 
 def item_fields(name, item_guid, prefab_guid, tag_guid, swatch_guid,
-                zone_count, link_seed):
-    """The Items.setting entry, in the order the game writes it."""
+                zone_count, link_seed, recolourable=False):
+    """The Items.setting entry, in the order the game writes it.
+
+    An item that is not recolourable says so and stops there. CityGravelPile,
+    which is the shape ParaForge copies, is exactly:
+
+        =GUID / =DisplayName / =Prefab / =HasSwatches:False / =Tag
+
+    Declaring a swatch group on an item with no recolourable zones asks the
+    game for colourways that its material cannot produce, so it is written
+    only when the item really is recolourable.
+    """
     fields = [
         ("GUID", item_guid),
         ("DisplayName", name),
         ("Prefab", prefab_guid),
     ]
+
+    if not (recolourable and swatch_guid):
+        fields.append(("HasSwatches", "False"))
+
     if tag_guid:
         fields.append((
             "Tag",
@@ -133,7 +124,8 @@ def item_fields(name, item_guid, prefab_guid, tag_guid, swatch_guid,
                 (sidecar.guid_for(link_seed, "tag", tag_guid), tag_guid),
             ]),
         ))
-    if swatch_guid:
+
+    if recolourable and swatch_guid:
         fields.append(("SwatchGroup", swatch_guid))
         fields.append(("SwatchColorZoneCount", max(0, int(zone_count))))
         # 1 is what the game uses for a single colour thumbnail, which is
@@ -208,22 +200,28 @@ def generate(mod_path, name, settings, report, zone_count=1):
     detail_guid = _texture_guid(mod_path, report, "Detail")
     colorzone_guid = _texture_guid(mod_path, report, "ColorZone")
 
-    # The surface carries the base texture. A recolourable item bases itself
-    # on the GrayMask and keeps the Detail as a separate overlay; an item that
-    # is not recolourable has only the Detail, and that becomes the base.
-    surface_texture = gray_guid or detail_guid
-    overlay_guid = detail_guid if gray_guid else ""
+    # A mod must not define its own surface: the game throws
+    # NullReferenceException in SurfaceThumbnailManager.Start() on startup when
+    # it finds one. Its own items point at a shared surface and lay their
+    # texture over it through DetailMap, which is what happens here.
+    _drop_our_surfaces(run, result, mod_path, seed)
+    surface_guid = spec.DEFAULT_SURFACE_GUID
 
-    surface_guid = ""
-    if surface_texture:
-        surface_guid = sidecar.guid_for(seed, "surface", name)
-        _merge(run, result, settings_path(mod_path, SURFACES_FILE), "Surfaces",
-               "AllSurfaces", "GUID", surface_guid,
-               surface_fields(name, surface_guid, surface_texture))
-    else:
+    overlay_guid = detail_guid
+    if gray_guid and not detail_guid:
+        # A GrayMask is the recolourable base, and the base lives on the
+        # surface, which is the one thing a mod cannot supply. Say so rather
+        # than write an item that renders as plain gray.
         result.notes.append(_(
-            "No texture in the mod, the item will render with the game's "
-            "default surface"
+            "{0} is a GrayMask. A mod cannot define the surface that would "
+            "carry it, so the item points at {1} instead. Recolourable "
+            "textures still need a Surface built in the Control Panel",
+            name, spec.DEFAULT_SURFACE_NAME,
+        ))
+    elif not detail_guid:
+        result.notes.append(_(
+            "No texture in the mod, the item will render with {0}",
+            spec.DEFAULT_SURFACE_NAME,
         ))
 
     size = game_size(getattr(report, "measurement", None))
@@ -249,7 +247,8 @@ def generate(mod_path, name, settings, report, zone_count=1):
     result.item_guid = item_guid
     tag_guid = resolve_tag(settings)
     swatch_guid, swatch_name = resolve_swatch(settings)
-    if (settings.swatch_group or "").strip() and not swatch_guid:
+    recolourable = bool(getattr(settings, "recolourable", False))
+    if recolourable and (settings.swatch_group or "").strip() and not swatch_guid:
         result.notes.append(_(
             "No swatch group called {0} in the game, the item is written "
             "without one", swatch_name,
@@ -258,7 +257,7 @@ def generate(mod_path, name, settings, report, zone_count=1):
     _merge(run, result, settings_path(mod_path, ITEMS_FILE), "Items",
            "AllItems", "GUID", item_guid,
            item_fields(name, item_guid, prefab_guid, tag_guid, swatch_guid,
-                       zone_count, seed))
+                       zone_count, seed, recolourable))
 
     key = TRANSLATION_PREFIX + name
     _merge(run, result, settings_path(mod_path, TRANSLATIONS_FILE),
@@ -267,6 +266,121 @@ def generate(mod_path, name, settings, report, zone_count=1):
 
     run.record()
     return result
+
+
+def our_surface_entries(text, seed):
+    """Split a Surfaces.setting into (ours, foreign) by GUID.
+
+    An entry is ours when its GUID is the one guid_for would derive from its
+    own DisplayName. Anything else was put there by a human or another tool and
+    is left alone.
+    """
+    ours, foreign = [], []
+    current = None
+    for raw in text.replace("\r\n", "\n").split("\n"):
+        line = raw.strip()
+        if re.fullmatch(r"i\d+", line):
+            if current is not None:
+                (ours if _is_ours(current, seed) else foreign).append(current)
+            current = {}
+            continue
+        if line.startswith("=") and current is not None:
+            key, _sep, value = line[1:].partition(":")
+            current[key.strip()] = value.strip()
+    if current is not None:
+        (ours if _is_ours(current, seed) else foreign).append(current)
+    return ours, foreign
+
+
+def _is_ours(entry, seed):
+    name = entry.get("DisplayName", "")
+    guid = entry.get("GUID", "")
+    if not name or not guid:
+        return False
+    return guid == sidecar.guid_for(seed, "surface", name)
+
+
+def _drop_our_surfaces(run, result, mod_path, seed):
+    """Remove a Surfaces.setting this add-on wrote in an earlier version.
+
+    Version 0.6.0 defined a surface per item, which turned out to crash the
+    game during startup:
+
+        NullReferenceException at SurfaceThumbnailManager.Start()
+
+    Leaving the file in place would keep that crash alive on every launch, so
+    it goes. The journal keeps a copy, and Undo puts it back.
+    """
+    path = settings_path(mod_path, SURFACES_FILE)
+    text = setting.read(path)
+    if not text.strip():
+        return
+
+    ours, foreign = our_surface_entries(text, seed)
+    if foreign or not ours:
+        result.notes.append(_(
+            "{0} holds surfaces this add-on did not write, so it was left "
+            "alone. A mod defined surface crashes the game at startup, remove "
+            "it by hand if the game does not start", SURFACES_FILE,
+        ))
+        return
+
+    run.will_modify(path)
+    os.remove(path)
+    result.files.append(path)
+
+    meta = path + ".meta"
+    if os.path.isfile(meta):
+        run.will_modify(meta)
+        os.remove(meta)
+        result.files.append(meta)
+
+    result.notes.append(_(
+        "Removed the {0} written by an earlier version: it made the game "
+        "throw at startup and the item render as nothing. The item now points "
+        "at the game's own {1}", SURFACES_FILE, spec.DEFAULT_SURFACE_NAME,
+    ))
+
+    # Every prefab that pointed at one of those surfaces now points at
+    # nothing, which is how the item became invisible in the first place.
+    # Only this item is being regenerated, so the others are repaired here or
+    # they stay broken until someone remembers them.
+    removed = {entry.get("GUID", "") for entry in ours if entry.get("GUID")}
+    repointed = _repoint_prefabs(run, result, mod_path, removed)
+    if repointed:
+        result.notes.append(_(
+            "Repointed {0} other prefab(s) at {1}, they referenced a surface "
+            "that no longer exists", repointed, spec.DEFAULT_SURFACE_NAME,
+        ))
+
+
+def _repoint_prefabs(run, result, mod_path, removed_guids):
+    """Send prefabs referencing a deleted surface to the shared one."""
+    if not removed_guids:
+        return 0
+
+    count = 0
+    for name in sorted(os.listdir(mod_path)):
+        if not name.endswith(".prefab"):
+            continue
+        path = os.path.join(mod_path, name)
+        text = setting.read(path)
+        if not text:
+            continue
+
+        patched = text
+        for guid in removed_guids:
+            patched = patched.replace(
+                "Value:" + guid, "Value:" + spec.DEFAULT_SURFACE_GUID
+            )
+        if patched == text:
+            continue
+
+        run.will_modify(path)
+        setting.write(path, patched)
+        result.files.append(path)
+        count += 1
+    return count
 
 
 def existing_guid(mod_path, filename):
@@ -289,11 +403,23 @@ def _texture_guid(mod_path, report, suffix):
 
 def _merge(run, result, path, section, list_key, unique_key, unique_value,
            fields):
-    """Add an entry unless one with the same key is already there."""
+    """Add the entry, or repair the one already carrying the same key.
+
+    Skipping an existing entry was wrong: an entry written by an earlier
+    version stayed wrong forever, and the button still reported success.
+    """
     text = setting.read(path)
     lines = text.replace("\r\n", "\n").split("\n")
     if setting.contains_value(lines, unique_key, unique_value):
-        result.skipped.append(os.path.basename(path))
+        repaired = setting.replace_entry(
+            text, list_key, unique_key, unique_value, fields
+        )
+        if repaired is None or repaired == text:
+            result.skipped.append(os.path.basename(path))
+            return
+        run.will_modify(path)
+        setting.write(path, repaired)
+        result.files.append(path)
         return
 
     run.will_modify(path)

@@ -21,8 +21,16 @@ class ExportResult:
         return bool(self.files)
 
 
-def fbx_settings(filepath, triangulate=True):
-    """Every FBX option Paralives cares about, in one place."""
+def fbx_settings(filepath, triangulate=True, vertex_colors=False):
+    """Every FBX option Paralives cares about, in one place.
+
+    vertex_colors is off by default on purpose. The game reads the presence of
+    a colour attribute, not its contents: any attribute at all makes the mesh
+    ZoneDefinition:VertexZones and demands a recolourable shader. Shipping one
+    all-white zone therefore makes an item invisible rather than plain, and the
+    game's own non recolourable meshes carry no colour attribute at all. See
+    spec.py for the log lines and the meshes that were checked.
+    """
     return {
         "filepath": filepath,
         "check_existing": False,
@@ -33,8 +41,8 @@ def fbx_settings(filepath, triangulate=True):
         "mesh_smooth_type": "FACE",
         "use_triangles": triangulate,
         "use_tspace": True,
-        # Vertex colours carry the Paralives colour zones, they must survive.
-        "colors_type": "SRGB",
+        # Only a recolourable item wants its colour zones in the FBX.
+        "colors_type": "SRGB" if vertex_colors else "NONE",
         "prioritize_active_color": True,
         "path_mode": "STRIP",
         "embed_textures": False,
@@ -105,8 +113,16 @@ def export(context, settings, objects, report=None):
     if not settings.overwrite and os.path.exists(fbx_path):
         raise ValueError("File already exists and overwrite is off: " + fbx_path)
 
-    _export_fbx(context, objects, fbx_path, settings.triangulate)
+    _export_fbx(context, objects, fbx_path, settings.triangulate,
+                settings.recolourable)
     result.files.append(fbx_path)
+
+    # Worth saying only when there was something to leave out.
+    if not settings.recolourable and _has_color_attribute(objects):
+        result.warnings.append(_(
+            "The colour zones were left out of the FBX on purpose. A non "
+            "recolourable item that carries them does not render in game"
+        ))
     if settings.write_sidecars:
         result.files.append(sidecar.write_for_mesh(mod_path, fbx_path))
 
@@ -146,7 +162,16 @@ def export(context, settings, objects, report=None):
     return result
 
 
-def _export_fbx(context, objects, filepath, triangulate):
+def _has_color_attribute(objects):
+    for obj in objects:
+        if getattr(obj, "type", None) != "MESH":
+            continue
+        if len(getattr(obj.data, "color_attributes", ())):
+            return True
+    return False
+
+
+def _export_fbx(context, objects, filepath, triangulate, vertex_colors=False):
     """Select exactly the target objects, export, then restore the selection."""
     view_layer = context.view_layer
     previous_selection = [o for o in context.selected_objects]
@@ -159,7 +184,7 @@ def _export_fbx(context, objects, filepath, triangulate):
             obj.select_set(True)
         view_layer.objects.active = objects[0]
 
-        kwargs = _supported(fbx_settings(filepath, triangulate))
+        kwargs = _supported(fbx_settings(filepath, triangulate, vertex_colors))
         bpy.ops.export_scene.fbx(**kwargs)
     finally:
         for obj in context.selected_objects:

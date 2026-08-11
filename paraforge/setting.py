@@ -145,6 +145,67 @@ def contains_value(lines, key, value):
     return any(line.strip() == wanted for line in lines)
 
 
+def entry_span(lines, list_key, unique_key, unique_value):
+    """Locate the entry that holds "=<unique_key>:<unique_value>".
+
+    Returns (start, end, index, depth), where start and end bound the whole
+    i<n> block including its own line. None when there is no such entry.
+    """
+    found = find_list(lines, list_key)
+    if found is None:
+        return None
+    key_index, _count_index, _count, indent = found
+    depth = len(indent) // len(INDENT) if INDENT else 2
+    wanted = "={0}:{1}".format(unique_key, unique_value)
+
+    spans = []
+    start = None
+    index = 0
+    for position in range(key_index + 1, len(lines) + 1):
+        line = lines[position] if position < len(lines) else ""
+        match = _ENTRY.match(line) if position < len(lines) else None
+        at_depth = match is not None and match.group(1) == indent
+        stripped = line.strip()
+        # A non-empty line shallower than the list means the list has ended.
+        ended = (
+            position >= len(lines)
+            or (stripped and not line.startswith(indent) and not at_depth)
+        )
+        if at_depth or ended:
+            if start is not None:
+                spans.append((start, position, index))
+            if ended:
+                break
+            start = position
+            index = int(match.group(2))
+
+    for start, end, index in spans:
+        if any(line.strip() == wanted for line in lines[start:end]):
+            return start, end, index, depth
+    return None
+
+
+def replace_entry(text, list_key, unique_key, unique_value, fields):
+    """Rewrite one entry in place, keeping its index and the list length.
+
+    Returns the new text, or None when the entry is not there. Used so that
+    regenerating an item repairs an entry an earlier version wrote badly,
+    rather than leaving it and reporting success.
+    """
+    ending = line_ending(text)
+    lines = text.replace("\r\n", "\n").split("\n")
+    while lines and not lines[-1].strip():
+        lines.pop()
+
+    span = entry_span(lines, list_key, unique_key, unique_value)
+    if span is None:
+        return None
+
+    start, end, index, depth = span
+    lines[start:end] = entry_lines(depth, index, fields)
+    return ending.join(lines) + ending
+
+
 def append_entry(text, list_key, fields, setting_name):
     """Add one entry to a list, creating the whole file when it is missing.
 

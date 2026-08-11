@@ -115,6 +115,51 @@ def pick(french, english):
 
 
 FR = {
+    # -- Surfaces and colour zones ----------------------------------------
+    # Why an item can be in the catalogue and still draw nothing. See spec.py.
+    "The colour zones were left out of the FBX on purpose. A non "
+    "recolourable item that carries them does not render in game":
+        "Les zones de couleur ont été volontairement exclues du FBX. Un objet "
+        "non recolorable qui les porte ne s'affiche pas dans le jeu",
+
+    "Not used. They stay in Blender and are left out of the FBX, because a "
+    "non recolourable item that carries them does not render":
+        "Inutilisées. Elles restent dans Blender et sont exclues du FBX : un "
+        "objet non recolorable qui les porte ne s'affiche pas",
+
+    "Not used, which is what a non recolourable item wants":
+        "Inutilisées, ce qui est exactement ce que veut un objet non "
+        "recolorable",
+
+    "{0} is a GrayMask. A mod cannot define the surface that would carry it, "
+    "so the item points at {1} instead. Recolourable textures still need a "
+    "Surface built in the Control Panel":
+        "{0} est un GrayMask. Un mod ne peut pas définir la surface qui le "
+        "porterait, l'objet pointe donc {1} à la place. Les textures "
+        "recolorables demandent encore une Surface créée dans le Control Panel",
+
+    "No texture in the mod, the item will render with {0}":
+        "Aucune texture dans le mod, l'objet s'affichera avec {0}",
+
+    "{0} holds surfaces this add-on did not write, so it was left alone. A "
+    "mod defined surface crashes the game at startup, remove it by hand if "
+    "the game does not start":
+        "{0} contient des surfaces que cet add-on n'a pas écrites, il a donc "
+        "été laissé tel quel. Une surface définie par un mod fait planter le "
+        "jeu au démarrage, supprimez-la à la main si le jeu ne se lance pas",
+
+    "Removed the {0} written by an earlier version: it made the game throw at "
+    "startup and the item render as nothing. The item now points at the "
+    "game's own {1}":
+        "Retiré le {0} écrit par une version précédente : il faisait planter "
+        "le jeu au démarrage et l'objet ne s'affichait pas. L'objet pointe "
+        "maintenant le {1} du jeu",
+
+    "Repointed {0} other prefab(s) at {1}, they referenced a surface that no "
+    "longer exists":
+        "{0} autre(s) prefab(s) repointé(s) vers {1}, ils référençaient une "
+        "surface qui n'existe plus",
+
     # -- Panels -----------------------------------------------------------
     "Paralives export": "Export Paralives",
     "Orientation": "Orientation",

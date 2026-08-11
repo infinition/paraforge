@@ -174,6 +174,53 @@ TEXTURE_META_COMMON = {
     "GenerateTextureQualities": "YesWithObjectSettings",
 }
 
+# Why an item can sit in the catalogue, take its footprint, and still draw
+# nothing. The game builds a material from a combination of parameters and
+# says so when the combination has no shader:
+#
+#   Material builder got given parameters that don't match any shaders -
+#   ShaderType:Simple ZoneDefinition:VertexZones ...
+#
+# ShaderType comes from the surface, ZoneDefinition from the mesh. A mesh that
+# carries a vertex colour attribute is VertexZones whatever the attribute
+# contains, so exporting one all-white zone is not neutral: it asks for a
+# recolourable shader that the plain surface cannot provide, and the item goes
+# invisible. Meshes are checked, not assumed. Importing the game's own
+# CityGravelPile.fbx and ClutterKitchenIngredientCereal.fbx back into Blender:
+# zero colour attributes on either.
+#
+# Defining a surface inside a mod is not the way round it. The game crashes
+# during startup on a mod supplied surface:
+#
+#   NullReferenceException at SurfaceThumbnailManager.Start()
+#
+# Its own items do not do that either. Surfaces are a shared material library:
+# 397 of the 2434 shipped prefabs point at GenericGrayMask, 370 of those add
+# their own texture through DetailMap. CityGravelPile.prefab is the whole
+# pattern, and it is exactly what ParaForge writes:
+#
+#   ItemMeshReference:
+#    Surfaces:
+#     Surface:
+#      GUID:4303346223996877069        <- identity of this list entry
+#      Value:6533686579680309849       <- GenericGrayMask
+#    DetailMap:4868737352193020236     <- the item's own texture
+#
+# So: point at a surface the game already defines, put the asset's texture in
+# DetailMap, and keep vertex colours out of the FBX unless the item really is
+# recolourable. Nothing global is written, and nothing crashes.
+
+#: GenericGrayMask, verified in Main.mod/Settings/Surfaces.setting, game build
+#: 0.1.6b. Its own texture is Environments/Items/ItemsTileableTextures/
+#: GenericGrayMask.png, a plain tileable gray the DetailMap covers.
+DEFAULT_SURFACE_GUID = "6533686579680309849"
+DEFAULT_SURFACE_NAME = "GenericGrayMask"
+
+#: ShaderType is a number, not a name, and 1445 of the 1649 surface entries
+#: leave it out entirely. The log prints the default as "Simple". Nothing here
+#: needs to write it, the field is listed only so a reader stops looking.
+SURFACE_SHADER_TYPE_IS_NUMERIC = True
+
 #: Asset type codes used in a .meta file.
 META_TYPE_MESH = 1
 META_TYPE_TEXTURE = 2

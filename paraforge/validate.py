@@ -97,7 +97,7 @@ def run(context, settings):
     _check_origin(measurement, settings, report)
     _check_size(measurement, settings, report)
     _check_facing(settings, report)
-    _check_color_zones(objects, report)
+    _check_color_zones(objects, settings, report)
     _check_uvs(objects, report)
     _check_topology(measurement, settings, report)
     _check_textures(objects, settings, report)
@@ -225,8 +225,29 @@ def _check_facing(settings, report):
         )
 
 
-def _check_color_zones(objects, report):
+def _check_color_zones(objects, settings, report):
     zones, illegal, missing = geo.color_zones(objects)
+
+    # An item that is not recolourable must reach the game with no colour
+    # attribute at all. Any attribute makes the mesh ZoneDefinition:VertexZones
+    # and there is no shader for that on a plain surface, so the item loads,
+    # takes its footprint, and draws nothing. The export strips them, and
+    # offering to create one here would be pointing at the trap.
+    if not settings.recolourable:
+        carried = len(objects) - len(missing)
+        if carried > 0:
+            report.add(
+                "zones", _("Colour zones"), OK,
+                _("Not used. They stay in Blender and are left out of the "
+                  "FBX, because a non recolourable item that carries them "
+                  "does not render"),
+            )
+        else:
+            report.add(
+                "zones", _("Colour zones"), OK,
+                _("Not used, which is what a non recolourable item wants"),
+            )
+        return
 
     if missing and len(missing) == len(objects):
         report.add(
