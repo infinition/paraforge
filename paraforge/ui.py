@@ -151,6 +151,22 @@ class PARAFORGE_PT_main(_Base, Panel):
             column.operator("paraforge.fix_all",
                             text=_("Fix everything safe"), icon="SHADERFX")
 
+        # Seeing the game's own interpretation before writing anything is the
+        # cheapest way to catch a texture problem, since the alternative is a
+        # game restart.
+        from . import preview as preview_module
+
+        objects = validate.target_objects(context)
+        row = layout.row(align=True)
+        row.scale_y = 1.1
+        row.operator(
+            "paraforge.preview",
+            text=(_("Back to my materials") if preview_module.is_on(objects)
+                  else _("Preview as in game")),
+            icon="SHADING_RENDERED",
+            depress=preview_module.is_on(objects),
+        )
+
         # Two steps, always both. Exporting writes the mesh and the textures,
         # generating declares the item. Assets alone sit in the mod without
         # ever showing up in Build Mode, which is exactly the trap.
@@ -529,6 +545,8 @@ class PARAFORGE_PT_calibration(_Base, Panel):
         layout.prop(settings, "tile_size", text=_("Tile size"))
         layout.prop(settings, "triangle_budget", text=_("Triangle budget"))
         layout.prop(settings, "fbx_unit_scale", text=_("FBX units per metre"))
+        layout.prop(settings, "decimate_rebake",
+                    text=_("Bake the look back onto it"))
         layout.operator("paraforge.decimate_to_budget",
                         text=_("Reduce to the budget"), icon="MOD_DECIM")
 

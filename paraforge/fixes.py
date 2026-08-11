@@ -430,10 +430,22 @@ class PARAFORGE_OT_decimate_to_budget(Operator):
         min=100, soft_max=200000, options={"SKIP_SAVE"},
     )
 
+    rebake: BoolProperty(
+        name=_("Bake the look back onto it"),
+        description=_(
+            "Collapsing edges throws the UVs out of shape, which is why the "
+            "texture seems to disappear. This unwraps the reduced mesh and "
+            "bakes the original's colour, relief and roughness onto it"
+        ),
+        default=True,
+        options={"SKIP_SAVE"},
+    )
+
     def invoke(self, context, event):
         settings = props.settings(context)
         if settings is not None:
             self.budget = settings.triangle_budget
+            self.rebake = settings.decimate_rebake
         return self.execute(context)
 
     def execute(self, context):
@@ -447,6 +459,12 @@ class PARAFORGE_OT_decimate_to_budget(Operator):
         if before <= self.budget:
             self.report({"INFO"}, _("Already under the budget"))
             return {"CANCELLED"}
+
+        # A copy of the original has to survive the decimation, or there is
+        # nothing left to bake the look from.
+        keepers = []
+        if self.rebake:
+            keepers = _duplicate_for_bake(context, objects)
 
         ratio = max(min(float(self.budget) / float(before), 1.0), 0.01)
         for obj in objects:
@@ -464,8 +482,66 @@ class PARAFORGE_OT_decimate_to_budget(Operator):
         cache.invalidate()
         depsgraph = context.evaluated_depsgraph_get()
         after = geo.measure(objects, depsgraph).triangles
-        self.report({"INFO"}, _("{0} triangles, down from {1}", after, before))
+
+        baked = ""
+        if keepers:
+            try:
+                baked = _rebake_from(context, objects, keepers)
+            except Exception as error:
+                self.report({"WARNING"}, _("Could not bake it back: {0}", error))
+            finally:
+                _discard(keepers)
+            cache.invalidate()
+
+        self.report({"INFO"},
+                    _("{0} triangles, down from {1}", after, before) + baked)
         return {"FINISHED"}
+
+
+def _duplicate_for_bake(context, objects):
+    """Copies of the originals, hidden away, to bake the look from."""
+    copies = []
+    for obj in objects:
+        copy = obj.copy()
+        copy.data = obj.data.copy()
+        copy.name = obj.name + "_ParaForgeOriginal"
+        context.scene.collection.objects.link(copy)
+        copy.hide_set(True)
+        copies.append(copy)
+    return copies
+
+
+def _discard(objects):
+    for obj in objects:
+        mesh = obj.data
+        try:
+            bpy.data.objects.remove(obj, do_unlink=True)
+        except (ReferenceError, RuntimeError):
+            continue
+        if mesh is not None and mesh.users == 0:
+            try:
+                bpy.data.meshes.remove(mesh)
+            except (ReferenceError, RuntimeError):
+                pass
+
+
+def _rebake_from(context, objects, sources):
+    """Unwrap the reduced mesh and bake the originals onto it."""
+    from . import bake
+
+    for obj in sources:
+        obj.hide_set(False)
+
+    name = objects[0].name
+    bake.repack_uvs(context, objects, name="ParaForgeUV")
+    images = bake.bake_all(
+        context, objects, textures.pascal_case(name),
+        wanted=("DIFFUSE", "NORMAL", "ROUGHNESS", "AO"),
+        sources=sources,
+    )
+    material = bake.build_material(textures.pascal_case(name) + "Baked", images)
+    bake.replace_materials(objects, material)
+    return _(", texture baked back onto it")
 
 
 class PARAFORGE_OT_downscale_textures(Operator):

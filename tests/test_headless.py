@@ -1004,6 +1004,97 @@ def test_export_units():
           "and it is still 2 m, so the prefab Size stays in metres")
 
 
+def test_preview():
+    """The preview must show the exported files, and give the scene back."""
+    section("Preview as in game")
+    from paraforge import preview
+
+    fresh_scene()
+    obj = make_cube()
+    image = build_texture("ChairDetail", (0.5, 0.2, 0.1))
+    attach_material(obj, image, "Original")
+
+    settings = props.settings(bpy.context)
+    settings.asset_name = "Chair"
+
+    original = [s.material.name for s in obj.material_slots]
+    check(original == ["Original"], "the object starts on its own material",
+          str(original))
+    check(not preview.is_on([obj]), "and the preview is off")
+
+    report = cache.get(bpy.context, settings, force=True)
+    material, written = preview.apply(bpy.context, settings, [obj], report)
+
+    check(preview.is_on([obj]), "the preview reports itself on")
+    check("Detail" in written, "the colour map is among what it shows",
+          str(written))
+    check(obj.material_slots[0].material is material,
+          "and the object wears the preview material")
+    check(material.name.endswith(preview.MATERIAL_SUFFIX),
+          "which is named so it cannot be mistaken for yours", material.name)
+
+    # It has to be the written file, not the source image, or the preview
+    # would show the very thing the export is meant to change.
+    images = [n.image for n in material.node_tree.nodes
+              if n.bl_idname == "ShaderNodeTexImage" and n.image]
+    check(images, "with at least one texture wired up")
+    check(all(os.path.isfile(i.filepath) for i in images),
+          "every one of them read back from a written file",
+          str([i.filepath for i in images]))
+    check(any(os.path.basename(i.filepath).startswith("Chair") for i in images),
+          "named as the export would name it",
+          str([os.path.basename(i.filepath) for i in images]))
+
+    restored = preview.restore([obj])
+    check(restored == 1, "restoring reports what it touched")
+    check(not preview.is_on([obj]), "the preview is off again")
+    check([s.material.name for s in obj.material_slots] == original,
+          "and the original material is back",
+          str([s.material.name for s in obj.material_slots]))
+
+    check(preview.restore([obj]) == 0,
+          "restoring twice is harmless")
+
+
+def test_decimate_rebake():
+    """Reducing a mesh must not be what loses its texture."""
+    section("Decimate")
+    from paraforge import bake
+
+    fresh_scene()
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=5, radius=1.0)
+    obj = bpy.context.active_object
+    obj.name = "Boulder"
+    image = build_texture("BoulderDetail", (0.3, 0.5, 0.2))
+    attach_material(obj, image)
+
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    before = geo.measure([obj], depsgraph).triangles
+    check(before > 4000, "the test mesh is over the budget", str(before))
+
+    # Without the rebake, which is the cheap path and must still work.
+    bpy.ops.paraforge.decimate_to_budget(budget=1000, rebake=False)
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    after = geo.measure([obj], depsgraph).triangles
+    check(after <= 1200, "the mesh came down to the budget", str(after))
+    check(len(obj.material_slots) == 1, "and kept its material")
+
+    check(not any(o.name.endswith("_ParaForgeOriginal")
+                  for o in bpy.data.objects),
+          "no working copy is left behind in the scene",
+          str([o.name for o in bpy.data.objects]))
+
+    # The bake path itself: passing sources switches it to selected to active.
+    import inspect
+
+    signature = inspect.signature(bake.bake_all)
+    check("sources" in signature.parameters,
+          "bake_all can bake from another object")
+    signature = inspect.signature(bake._bake)
+    check("sources" in signature.parameters,
+          "and the pass is set up for selected to active")
+
+
 def test_two_items_share_nothing():
     """Two items in one mod must not share a single identifier of their own.
 
@@ -1418,6 +1509,8 @@ def main():
         temp, mod = test_export()
         test_inspector(mod)
         test_export_units()
+        test_preview()
+        test_decimate_rebake()
         test_two_items_share_nothing()
         test_asset_name_guard()
         test_shared_surface_fallback()

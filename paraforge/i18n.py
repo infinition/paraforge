@@ -147,6 +147,44 @@ FR = {
         "Brillance moyennée à {0:.2f}. Le jeu stocke une seule valeur par "
         "surface et n'a aucun emplacement pour une carte de brillance",
 
+    # -- Preview and rebaking -----------------------------------------------
+    "Preview as in game": "Aperçu comme dans le jeu",
+    "Back to my materials": "Revenir à mes matériaux",
+    "Your own materials are back": "Tes propres matériaux sont revenus",
+    "No texture to preview": "Aucune texture à prévisualiser",
+    "Showing {0}": "Affiche {0}",
+
+    "Write the textures exactly as the export would, read them back, and show "
+    "the object through them. What you see is then the data the game is "
+    "handed, not the material the file arrived with. Press again to put your "
+    "own materials back":
+        "Écrit les textures exactement comme le ferait l'export, les relit, et "
+        "affiche l'objet à travers elles. Ce que tu vois est alors la donnée "
+        "remise au jeu, pas le matériau livré avec le fichier. Appuie encore "
+        "pour retrouver tes propres matériaux",
+
+    "No {0}, so the game will not have one either":
+        "Aucune {0}, le jeu n'en aura donc pas non plus",
+
+    "Bake the look back onto it": "Rebaker le rendu dessus",
+
+    "Collapsing edges throws the UVs out of shape, which is why the texture "
+    "seems to disappear. This unwraps the reduced mesh and bakes the "
+    "original's colour, relief and roughness onto it":
+        "Effondrer les arêtes déforme les UV, et c'est pour ça que la texture "
+        "semble disparaître. Ceci déplie le mesh réduit et y bake la couleur, "
+        "le relief et la rugosité de l'original",
+
+    "Collapsing edges throws the UVs out of shape, which is why the texture "
+    "seems to disappear. Unwrap the reduced mesh and bake the original's "
+    "colour, relief and roughness onto it":
+        "Effondrer les arêtes déforme les UV, et c'est pour ça que la texture "
+        "semble disparaître. Déplie le mesh réduit et y bake la couleur, le "
+        "relief et la rugosité de l'original",
+
+    ", texture baked back onto it": ", texture rebakée dessus",
+    "Could not bake it back: {0}": "Impossible de rebaker : {0}",
+
     # -- The asset name is the item's identity ------------------------------
     "Asset name": "Nom de l'objet",
     "Give the item a name": "Donne un nom à l'objet",

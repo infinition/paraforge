@@ -9,6 +9,21 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.14.0]
+
+### Added
+
+- **Preview as in game.** The viewport shows the material the file arrived
+  with, and the game shows something else, because the channels are rebuilt on
+  the way out and the game has no slot for some of them. The preview writes the
+  textures exactly as the export would, reads them back, and shows the object
+  through them, with smoothness turned back into roughness the way the shader
+  does it. Press again to get your own materials back.
+- **Bake the look back after decimating.** Collapsing edges throws the UVs out
+  of shape, which is why the texture seemed to disappear. The reduced mesh is
+  now unwrapped and the original's colour, relief and roughness are baked onto
+  it, from a copy kept aside for the purpose.
+
 ## [0.13.0]
 
 ### Fixed

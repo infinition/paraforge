@@ -86,6 +86,50 @@ class PARAFORGE_OT_export(Operator):
         return {"FINISHED"}
 
 
+class PARAFORGE_OT_preview(Operator):
+    bl_idname = "paraforge.preview"
+    bl_label = _("Preview as in game")
+    bl_description = _(
+        "Write the textures exactly as the export would, read them back, and "
+        "show the object through them. What you see is then the data the game "
+        "is handed, not the material the file arrived with. Press again to put "
+        "your own materials back"
+    )
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return bool(validate.target_objects(context))
+
+    def execute(self, context):
+        from . import preview
+
+        settings = props.settings(context)
+        objects = validate.target_objects(context)
+
+        if preview.is_on(objects):
+            preview.restore(objects)
+            self.report({"INFO"}, _("Your own materials are back"))
+            return {"FINISHED"}
+
+        report = cache.get(context, settings, force=True)
+        try:
+            _material, written = preview.apply(context, settings, objects, report)
+        except Exception as error:
+            self.report({"ERROR"}, str(error))
+            return {"CANCELLED"}
+
+        missing = [s for s in ("NormalOcclusion", "Smoothness")
+                   if s not in written]
+        if missing:
+            self.report({"WARNING"}, _(
+                "No {0}, so the game will not have one either",
+                ", ".join(missing),
+            ))
+        self.report({"INFO"}, _("Showing {0}", ", ".join(written)))
+        return {"FINISHED"}
+
+
 class PARAFORGE_OT_open_mod_folder(Operator):
     bl_idname = "paraforge.open_mod_folder"
     bl_label = _("Open folder")
@@ -417,6 +461,7 @@ def _show_text(context, block):
 
 classes = (
     PARAFORGE_OT_export,
+    PARAFORGE_OT_preview,
     PARAFORGE_OT_open_mod_folder,
     PARAFORGE_OT_create_mod,
     PARAFORGE_OT_refresh,

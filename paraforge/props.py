@@ -185,6 +185,16 @@ class ParaForgeSettings(PropertyGroup):
         default="BasicWood",
     )
 
+    decimate_rebake: BoolProperty(
+        name=_("Bake the look back onto it"),
+        description=_(
+            "Collapsing edges throws the UVs out of shape, which is why the "
+            "texture seems to disappear. Unwrap the reduced mesh and bake the "
+            "original's colour, relief and roughness onto it"
+        ),
+        default=True,
+    )
+
     own_surface: BoolProperty(
         name=_("Give the item its own surface"),
         description=_(

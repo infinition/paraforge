@@ -109,13 +109,22 @@ def _pack_islands(margin):
 
 
 def bake_all(context, objects, base_name, resolution=2048, samples=16,
-             wanted=("DIFFUSE", "NORMAL", "ROUGHNESS", "AO"), margin=8):
-    """Run every requested pass and return {pass: image}."""
+             wanted=("DIFFUSE", "NORMAL", "ROUGHNESS", "AO"), margin=8,
+             sources=None, extrusion=0.05):
+    """Run every requested pass and return {pass: image}.
+
+    With sources given, the passes are baked from those objects onto these
+    ones, which is what carries the look of a full resolution mesh onto a
+    decimated copy of it. The target keeps the image nodes, the sources keep
+    their own materials, and only the target ends up textured.
+    """
     objects = targets(objects)
     if not objects:
         raise BakeError(_("Nothing selected"))
+
+    carriers = targets(sources) if sources else objects
     if any(not obj.material_slots or not any(s.material for s in obj.material_slots)
-           for obj in objects):
+           for obj in carriers):
         raise BakeError(_("Every object needs at least one material to bake"))
 
     results = {}
@@ -126,7 +135,7 @@ def bake_all(context, objects, base_name, resolution=2048, samples=16,
             image = _new_image(base_name + suffix, resolution, is_data, fill)
             nodes = _attach_target(objects, image)
             try:
-                _bake(context, objects, kind, margin)
+                _bake(context, objects, kind, margin, sources, extrusion)
             finally:
                 _detach(nodes)
             textures.set_stored_role(image, role)
@@ -177,21 +186,30 @@ def _detach(nodes):
             pass
 
 
-def _bake(context, objects, kind, margin):
+def _bake(context, objects, kind, margin, sources=None, extrusion=0.05):
     settings = {
         "type": kind,
         # Never clear: the neutral fill put there by _new_image is what the
         # unreached pixels must keep.
         "use_clear": False,
         "margin": margin,
-        "use_selected_to_active": False,
+        "use_selected_to_active": bool(sources),
     }
+    if sources:
+        # How far the ray starts outside the target before it looks inward.
+        # Too small and a decimated hull misses the detail that now sits
+        # outside it; too large and it picks up the far side of the object.
+        settings["cage_extrusion"] = extrusion
+        settings["max_ray_distance"] = extrusion * 2.0
     if kind == "DIFFUSE":
         # Colour only. Lighting baked into the albedo would be baked twice
         # once the game lights the item.
         settings["pass_filter"] = {"COLOR"}
 
-    with _selection(context, objects):
+    # The target has to be the active object, with the sources merely selected.
+    selection = list(objects) + [o for o in (sources or []) if o not in objects]
+
+    with _selection(context, selection):
         try:
             bpy.ops.object.bake(**settings)
         except RuntimeError as error:
