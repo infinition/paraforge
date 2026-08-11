@@ -174,7 +174,13 @@ class _FakePanel:
     def __init__(self, cls):
         self.layout = _FakeLayout()
         for name, value in vars(cls).items():
-            if callable(value) and not name.startswith("bl_"):
+            if name.startswith("bl_"):
+                continue
+            if isinstance(value, (staticmethod, classmethod)):
+                # Already bound the way they need to be; binding again would
+                # pass self as the first argument.
+                setattr(self, name, value.__get__(self, cls))
+            elif callable(value):
                 setattr(self, name, types.MethodType(value, self))
 
 

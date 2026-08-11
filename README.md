@@ -85,7 +85,7 @@ python build.py --blender "C:/Program Files/Blender Foundation/Blender 5.2/blend
 ```
 
 Puis dans Blender : `Edit > Preferences > Add-ons > Install from Disk`, et
-choisir `dist/paraforge-0.5.0.zip`.
+choisir `dist/paraforge-0.5.1.zip`.
 
 Le panneau apparaît dans la barre latérale de la vue 3D, onglet **ParaForge**
 (`N` pour l'ouvrir).
@@ -102,9 +102,10 @@ Le panneau apparaît dans la barre latérale de la vue 3D, onglet **ParaForge**
    l'origine, l'attribut de couleur et les rôles de texture.
 3. Vérifier l'orientation contre la flèche verte, puis confirmer. C'est la
    seule chose qu'aucun outil ne peut deviner.
-4. Choisir le dossier `.mod`, puis **Exporter vers Paralives**.
-5. **Créer l'objet dans le catalogue**. C'est fini : l'objet est en Build Mode,
-   sans passer par le Control Panel.
+4. **1. Exporter vers Paralives** écrit le mesh et les textures.
+5. **2. Créer l'objet dans le catalogue** déclare l'objet. **Les deux étapes
+   sont nécessaires** : sans la seconde, les fichiers sont bien dans le mod
+   mais rien n'apparaît en Build Mode.
 
 Le jeu importe ses assets au lancement, il n'y a pas de rechargement à chaud :
 il faut relancer Paralives après chaque export.

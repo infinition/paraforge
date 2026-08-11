@@ -520,6 +520,13 @@ FR = {
 
     # -- Creating a mod ---------------------------------------------------
     "New mod": "Nouveau mod",
+    "Show every check": "Afficher tous les contrôles",
+    "Twelve green boxes push the buttons off the bottom of the panel. "
+    "Folded, only what still needs attention is listed":
+        "Douze cadres verts poussent les boutons hors du panneau. Replié, "
+        "seul ce qui demande encore de l'attention est listé",
+    "Step 1 first: the mesh is not in the mod yet":
+        "L'étape 1 d'abord : le mesh n'est pas encore dans le mod",
     "Mod name": "Nom du mod",
     "Becomes the folder name, and the name in the game":
         "Devient le nom du dossier, et le nom dans le jeu",

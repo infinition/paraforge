@@ -65,11 +65,14 @@ class PARAFORGE_PT_main(_Base, Panel):
 
         report = cache.get(context, settings)
 
+        # Actions first. They are what the panel is for, and burying them
+        # under a dozen check boxes means never scrolling far enough to find
+        # the one that finishes the job.
         self._draw_target(context, layout, settings)
         layout.separator()
-        self._draw_checklist(context, layout, report)
+        self._draw_actions(context, layout, settings, report)
         layout.separator()
-        self._draw_actions(layout, report)
+        self._draw_checklist(context, layout, settings, report)
 
     def _draw_target(self, context, layout, settings):
         root = prefs.mods_root(context)
@@ -106,19 +109,26 @@ class PARAFORGE_PT_main(_Base, Panel):
             column.prop(settings, "catalog_tag_custom", text="")
         column.prop(settings, "asset_name", text="", icon="OUTLINER_OB_MESH")
 
-    def _draw_checklist(self, context, layout, report):
+    def _draw_checklist(self, context, layout, settings, report):
         counts = report.counts
         header = layout.row(align=True)
         header.alert = counts[validate.FAIL] > 0
-        header.label(
+        header.prop(
+            settings, "show_all_checks",
             text=_("{0} ok   {1} warn   {2} blocking",
                    counts[validate.OK], counts[validate.WARN],
                    counts[validate.FAIL]),
             icon="CHECKMARK" if counts[validate.FAIL] == 0 else "CANCEL",
+            emboss=False,
         )
         header.operator("paraforge.refresh", text="", icon="FILE_REFRESH")
 
-        for check in report.checks:
+        # Once everything passes there are twelve green boxes worth of
+        # nothing to read, so they fold away behind the summary line.
+        shown = report.checks if settings.show_all_checks else [
+            c for c in report.checks if c.status != validate.OK
+        ]
+        for check in shown:
             box = layout.box()
             row = box.row(align=True)
             row.alert = check.status == validate.FAIL
@@ -134,17 +144,21 @@ class PARAFORGE_PT_main(_Base, Panel):
                 row.operator(check.fix, text=check.fix_label or _("Fix"),
                              icon="TOOL_SETTINGS")
 
-    def _draw_actions(self, layout, report):
-        column = layout.column(align=True)
-        column.scale_y = 1.2
-        column.operator("paraforge.fix_all", text=_("Fix everything safe"),
-                        icon="SHADERFX")
+    def _draw_actions(self, context, layout, settings, report):
+        if report.fixable():
+            column = layout.column(align=True)
+            column.scale_y = 1.2
+            column.operator("paraforge.fix_all",
+                            text=_("Fix everything safe"), icon="SHADERFX")
 
+        # Two steps, always both. Exporting writes the mesh and the textures,
+        # generating declares the item. Assets alone sit in the mod without
+        # ever showing up in Build Mode, which is exactly the trap.
         column = layout.column(align=True)
-        column.scale_y = 1.8
+        column.scale_y = 1.6
         column.enabled = report.can_export
-        column.operator("paraforge.export", text=_("Export to Paralives"),
-                        icon="EXPORT")
+        column.operator("paraforge.export",
+                        text="1.  " + _("Export to Paralives"), icon="EXPORT")
 
         if not report.can_export:
             row = layout.row()
@@ -154,15 +168,32 @@ class PARAFORGE_PT_main(_Base, Panel):
             )
             operator.ignore_failures = True
 
+        exported = self._exported(context, settings, report)
         column = layout.column(align=True)
-        column.scale_y = 1.4
+        column.scale_y = 1.6
         column.operator("paraforge.generate_item",
-                        text=_("Create the item in the catalogue"),
+                        text="2.  " + _("Create the item in the catalogue"),
                         icon="OUTLINER_OB_GROUP_INSTANCE")
+        if exported is False:
+            paragraph(layout, context,
+                      _("Step 1 first: the mesh is not in the mod yet"),
+                      scale=0.7)
 
         row = layout.row(align=True)
         row.operator("paraforge.undo_last", text=_("Undo the last write"),
                      icon="LOOP_BACK")
+
+    @staticmethod
+    def _exported(context, settings, report):
+        """True when the FBX is already in the mod, None when unknowable."""
+        from . import exporter
+
+        objects = validate.target_objects(context)
+        mod = (settings.mod_folder or "").strip()
+        if not objects or not mod or not os.path.isdir(mod):
+            return None
+        name = exporter.base_name(settings, objects)
+        return os.path.isfile(os.path.join(mod, name + ".fbx"))
 
 
 class PARAFORGE_PT_facing(_Base, Panel):

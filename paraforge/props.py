@@ -351,6 +351,15 @@ class ParaForgeSettings(PropertyGroup):
         update=_redraw,
     )
 
+    show_all_checks: BoolProperty(
+        name=_("Show every check"),
+        description=_(
+            "Twelve green boxes push the buttons off the bottom of the panel. "
+            "Folded, only what still needs attention is listed"
+        ),
+        default=False,
+    )
+
     hud_only_problems: BoolProperty(
         name=_("Only problems"),
         description=_(
