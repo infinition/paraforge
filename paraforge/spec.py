@@ -178,6 +178,7 @@ TEXTURE_META_COMMON = {
 META_TYPE_MESH = 1
 META_TYPE_TEXTURE = 2
 META_TYPE_PREFAB = 201
+META_TYPE_SETTING = 203
 META_TYPE_MOD = 401
 
 #: Resolutions the game actually ships, most common first: 512, 256, 1024,

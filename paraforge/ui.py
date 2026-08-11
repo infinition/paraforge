@@ -144,6 +144,16 @@ class PARAFORGE_PT_main(_Base, Panel):
             )
             operator.ignore_failures = True
 
+        column = layout.column(align=True)
+        column.scale_y = 1.4
+        column.operator("paraforge.generate_item",
+                        text=_("Create the item in the catalogue"),
+                        icon="OUTLINER_OB_GROUP_INSTANCE")
+
+        row = layout.row(align=True)
+        row.operator("paraforge.undo_last", text=_("Undo the last write"),
+                     icon="LOOP_BACK")
+
 
 class PARAFORGE_PT_facing(_Base, Panel):
     bl_label = _("Orientation")

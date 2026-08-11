@@ -517,6 +517,36 @@ FR = {
         "assets téléchargés ou générés arrivent couramment à un demi-million "
         "de triangles, ce dont aucun meuble n'a besoin",
     "Already under the budget": "Déjà sous le budget",
+
+    # -- Item generation --------------------------------------------------
+    "Create the item in the catalogue": "Créer l'objet dans le catalogue",
+    "Write the prefab and register the item in the mod, so it appears in "
+    "Build Mode without opening the Control Panel. Only files inside the "
+    "target .mod are touched, and every change can be undone":
+        "Écrit le prefab et enregistre l'objet dans le mod, pour qu'il "
+        "apparaisse en Build Mode sans ouvrir le Control Panel. Seuls les "
+        "fichiers du .mod ciblé sont touchés, et tout est annulable",
+    "Undo the last write": "Annuler la dernière écriture",
+    "Put the mod back exactly as it was before the last item was generated: "
+    "created files are removed, edited ones are restored from the copy taken "
+    "beforehand. Press again to step back further":
+        "Remet le mod exactement dans l'état d'avant la dernière génération : "
+        "les fichiers créés sont supprimés, ceux modifiés sont restaurés "
+        "depuis la copie prise avant. Appuie encore pour remonter plus loin",
+    "Nothing to undo in this mod": "Rien à annuler dans ce mod",
+    "{0} undone: {1} file(s) removed, {2} restored":
+        "{0} annulé : {1} fichier(s) supprimé(s), {2} restauré(s)",
+    "{0} is in the catalogue. Restart Paralives to see it":
+        "{0} est dans le catalogue. Relance Paralives pour le voir",
+    "{0} already had this item, left alone":
+        "{0} contenait déjà cet objet, laissé tel quel",
+    "Export the mesh first, {0} is not in the mod folder":
+        "Exporte d'abord le mesh, {0} n'est pas dans le dossier du mod",
+    "No swatch group called {0} in the game, the item is written without one":
+        "Aucun groupe de swatches nommé {0} dans le jeu, l'objet est écrit "
+        "sans",
+    "Never inside the game installation":
+        "Jamais dans l'installation du jeu",
     "Custom": "Personnalisé",
     "Type the tag by hand": "Saisir le tag à la main",
     "Catalogue read from game build {0}":

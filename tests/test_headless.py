@@ -758,6 +758,175 @@ def test_refuses_the_game_folder():
           "and wrote nothing")
 
 
+def test_setting_merge():
+    """Adding an entry must touch the count line and nothing else."""
+    section("Merging a .setting file")
+    from paraforge import setting
+
+    original = (
+        "#Setting.Items\r\n"
+        " =AllItems\r\n"
+        "  s2\r\n"
+        "  i0\r\n"
+        "   =GUID:111\r\n"
+        "   =DisplayName:Existing\r\n"
+        "   =SomeFieldWeHaveNeverHeardOf:True\r\n"
+        "  i7\r\n"
+        "   =GUID:222\r\n"
+        "   =DisplayName:Other\r\n"
+    )
+    merged = setting.append_entry(
+        original, "AllItems",
+        [("GUID", "333"), ("DisplayName", "Fresh")], "Items",
+    )
+
+    check("\r\n" in merged and "\n\n" not in merged,
+          "the file keeps its CRLF endings")
+    check("=SomeFieldWeHaveNeverHeardOf:True" in merged,
+          "a field the add-on does not understand survives")
+    check("  s3\r\n" in merged, "the count went from 2 to 3",
+          [l for l in merged.split("\r\n") if l.strip().startswith("s")])
+    check("  i8\r\n" in merged, "the new index avoids the used ones",
+          [l for l in merged.split("\r\n") if l.strip().startswith("i")])
+    check(merged.count("=GUID:111") == 1 and merged.count("=GUID:333") == 1,
+          "both the old and the new entry are there")
+
+    # Every original line still present, in order.
+    before = [l for l in original.split("\r\n") if l.strip()]
+    after = [l for l in merged.split("\r\n") if l.strip()]
+    kept = [l for l in before if l != "  s2"]
+    check(all(line in after for line in kept), "nothing was dropped")
+
+    # A nested list, the shape the game uses for cross references.
+    nested = setting.append_entry(
+        "", "AllItems",
+        [("GUID", "9"), ("Tag", setting.linked_list(4, [("11", "22")]))],
+        "Items",
+    )
+    check("#Setting.Items" in nested, "a missing file is created whole")
+    check("    s1" in nested and "     =Value:22" in nested,
+          "the nested list is indented under its key", repr(nested))
+
+
+def test_generate_item():
+    section("Generating the item")
+    from paraforge import item, journal
+
+    fresh_scene()
+    obj = make_cube()
+    image = build_texture("ChairDetail", (0.4, 0.3, 0.2))
+    attach_material(obj, image)
+
+    settings = props.settings(bpy.context)
+    settings.asset_name = "OldWoodenChair"
+    settings.item_type = "FLOOR"
+    settings.catalog_tag = catalog.BY_NAME["Armchairs"]
+    settings.swatch_group = "BasicWood"
+    settings.facing_confirmed = True
+
+    temp = tempfile.mkdtemp(prefix="paraforge_item_")
+    mod = os.path.join(temp, "MyPack_9.mod")
+    os.makedirs(mod)
+    settings.mod_folder = mod
+
+    bpy.ops.paraforge.fix_all()
+    bpy.ops.paraforge.export(ignore_failures=True)
+    result = bpy.ops.paraforge.generate_item()
+    check("FINISHED" in result, "the item was generated", str(result))
+
+    prefab = os.path.join(mod, "OldWoodenChair.prefab")
+    items = os.path.join(mod, "Settings", "Items.setting")
+    translations = os.path.join(mod, "Settings", "Translations.setting")
+
+    check(os.path.isfile(prefab), "the prefab exists")
+    check(os.path.isfile(prefab + ".meta"), "with its meta")
+    check(os.path.isfile(items), "the catalogue entry exists")
+    check(os.path.isfile(translations), "and the label")
+
+    text = open(prefab, encoding="utf-8").read()
+    mesh_guid = sidecar.asset_guid(mod, "OldWoodenChair.fbx")
+    check("AssetMesh:" + mesh_guid in text, "the prefab points at the mesh",
+          text)
+    check("DetailMap:" + sidecar.asset_guid(mod, "OldWoodenChairDetail.png")
+          in text, "and carries the Detail map, which the wiki does by hand")
+    check("Size:(1.0000, 1.0000, 1.0000)" in text,
+          "with the measured bounding box",
+          [l for l in text.splitlines() if "Size" in l])
+
+    entry = open(items, encoding="utf-8").read()
+    check("=DisplayName:OldWoodenChair" in entry, "the item is named", entry)
+    check("=Prefab:" + sidecar.asset_guid(mod, "OldWoodenChair.prefab")
+          in entry, "and points at its prefab")
+    check("=Value:" + catalog.BY_NAME["Armchairs"] in entry,
+          "with the real Armchairs tag")
+    check("=SwatchGroup:" + catalog.SWATCH_BY_NAME["BasicWood"] in entry,
+          "and the real BasicWood swatch group")
+
+    label = open(translations, encoding="utf-8").read()
+    check("=Key:Item_OldWoodenChair" in label, "the translation key is right")
+    check("=Value:Old Wooden Chair" in label,
+          "and the label is readable", label)
+
+    # Running twice must not double the entry.
+    before = open(items, encoding="utf-8").read()
+    bpy.ops.paraforge.generate_item()
+    check(open(items, encoding="utf-8").read().count("=DisplayName:OldWoodenChair") == 1,
+          "generating twice does not duplicate the item")
+
+    return temp, mod, before
+
+
+def test_undo(mod):
+    """The whole point of touching someone else's file: being able to stop."""
+    section("Undoing")
+    from paraforge import journal
+
+    items = os.path.join(mod, "Settings", "Items.setting")
+    prefab = os.path.join(mod, "OldWoodenChair.prefab")
+
+    # A second item, so undo has to unpick a merge rather than a fresh file.
+    settings = props.settings(bpy.context)
+    settings.asset_name = "SecondThing"
+    fresh = os.path.join(mod, "SecondThing.fbx")
+    with open(fresh, "wb") as handle:
+        handle.write(b"not really an fbx")
+    bpy.ops.paraforge.generate_item()
+
+    two = open(items, encoding="utf-8").read()
+    check(two.count("=DisplayName:") == 2, "two items now", two.count("=DisplayName:"))
+
+    runs = journal.load(mod)
+    check(len(runs) >= 2, "both runs are journalled", str(len(runs)))
+
+    result = bpy.ops.paraforge.undo_last()
+    check("FINISHED" in result, "undo ran", str(result))
+
+    one = open(items, encoding="utf-8").read()
+    check(one.count("=DisplayName:") == 1, "back to one item",
+          one.count("=DisplayName:"))
+    check("OldWoodenChair" in one, "and it is the right one")
+    check(not os.path.isfile(os.path.join(mod, "SecondThing.prefab")),
+          "the prefab it created is gone")
+    check(os.path.isfile(prefab), "the first item's prefab is untouched")
+
+    bpy.ops.paraforge.undo_last()
+    after = open(items, encoding="utf-8").read() if os.path.isfile(items) else ""
+    check("OldWoodenChair" not in after, "a second undo steps back further",
+          after[:60])
+    check(not journal.load(mod), "and the journal is empty")
+    check(not os.path.isdir(os.path.join(mod, "Settings")),
+          "the Settings folder it created is gone too")
+
+    # And the prefab points at the mesh through its own root object, the way
+    # the game's own prefabs do.
+    from paraforge import item as item_module
+
+    text = item_module.prefab_text("X", "123", (1.0, 1.0, 1.0))
+    root = [l for l in text.splitlines() if l.startswith("ItemObject:")][0]
+    check(root != "ItemObject:123", "the root has an identity of its own", root)
+    check("   AssetMesh:123" in text, "and the mesh is still referenced")
+
+
 def test_language():
     section("Language")
     check(i18n.DEFAULT == "fr", "French is the default")
@@ -789,6 +958,7 @@ def main():
         test_catalog()
         test_sidecars()
         test_refuses_the_game_folder()
+        test_setting_merge()
         test_texture_planning()
         test_downloaded_asset()
         test_recolourable_conversion()
@@ -798,6 +968,8 @@ def main():
         test_language_reload()
         temp, mod = test_export()
         test_inspector(mod)
+        _t, item_mod, _b = test_generate_item()
+        test_undo(item_mod)
     except Exception:
         traceback.print_exc()
         FAILURES.append("exception")

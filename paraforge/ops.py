@@ -8,7 +8,10 @@ import bpy
 from bpy.props import BoolProperty, EnumProperty, StringProperty
 from bpy.types import Operator
 
-from . import cache, exporter, i18n, inspector, modfolder, prefs, props, validate
+from . import (
+    cache, exporter, i18n, inspector, journal, modfolder, prefs, props,
+    validate,
+)
 
 _ = i18n.t
 
@@ -165,6 +168,114 @@ def _reload_later():
 
 
 # --------------------------------------------------------------------------
+# The item itself
+#
+# This is the step that used to happen in the Control Panel. An item is three
+# pieces of text inside your own mod, so it can be written from here, and
+# undone from here too.
+
+
+class PARAFORGE_OT_generate_item(Operator):
+    bl_idname = "paraforge.generate_item"
+    bl_label = _("Create the item in the catalogue")
+    bl_description = _(
+        "Write the prefab and register the item in the mod, so it appears in "
+        "Build Mode without opening the Control Panel. Only files inside the "
+        "target .mod are touched, and every change can be undone"
+    )
+    bl_options = {"REGISTER"}
+
+    @classmethod
+    def poll(cls, context):
+        settings = props.settings(context)
+        return bool(settings and settings.mod_folder)
+
+    def execute(self, context):
+        from . import exporter, item
+
+        settings = props.settings(context)
+        objects = validate.target_objects(context)
+        report = cache.get(context, settings, force=True)
+        mod_path = (settings.mod_folder or "").strip()
+
+        if not os.path.isdir(mod_path):
+            self.report({"ERROR"}, _("Pick a valid mod folder first"))
+            return {"CANCELLED"}
+        if modfolder.game_install_above(mod_path):
+            self.report({"ERROR"}, _("Never inside the game installation"))
+            return {"CANCELLED"}
+
+        name = exporter.base_name(settings, objects)
+        try:
+            result = item.generate(
+                mod_path, name, settings, report, _zone_count(report)
+            )
+        except Exception as error:
+            self.report({"ERROR"}, str(error))
+            return {"CANCELLED"}
+
+        for note in result.notes:
+            self.report({"WARNING"}, note)
+        if result.skipped:
+            self.report({"INFO"}, _("{0} already had this item, left alone",
+                                    ", ".join(result.skipped)))
+
+        self.report(
+            {"INFO"},
+            _("{0} is in the catalogue. Restart Paralives to see it",
+              name),
+        )
+        return {"FINISHED"}
+
+
+def _zone_count(report):
+    check = next((c for c in report.checks if c.key == "zones"), None)
+    if check is None:
+        return 1
+    digits = [int(c) for c in check.detail if c.isdigit()]
+    return digits[0] if digits else 1
+
+
+class PARAFORGE_OT_undo_last(Operator):
+    bl_idname = "paraforge.undo_last"
+    bl_label = _("Undo the last write")
+    bl_description = _(
+        "Put the mod back exactly as it was before the last item was "
+        "generated: created files are removed, edited ones are restored from "
+        "the copy taken beforehand. Press again to step back further"
+    )
+    bl_options = {"REGISTER"}
+
+    @classmethod
+    def poll(cls, context):
+        settings = props.settings(context)
+        if not settings or not settings.mod_folder:
+            return False
+        return bool(journal.last(settings.mod_folder))
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
+
+    def execute(self, context):
+        settings = props.settings(context)
+        mod_path = (settings.mod_folder or "").strip()
+
+        result = journal.undo_last(mod_path)
+        if result is None:
+            self.report({"INFO"}, _("Nothing to undo in this mod"))
+            return {"CANCELLED"}
+
+        label, removed, restored = result
+        cache.invalidate()
+        self.report(
+            {"INFO"},
+            _("{0} undone: {1} file(s) removed, {2} restored",
+              label, removed, restored),
+        )
+        return {"FINISHED"}
+
+
+# --------------------------------------------------------------------------
 # Mod folder inspector
 
 
@@ -263,6 +374,8 @@ classes = (
     PARAFORGE_OT_open_mod_folder,
     PARAFORGE_OT_refresh,
     PARAFORGE_OT_set_language,
+    PARAFORGE_OT_generate_item,
+    PARAFORGE_OT_undo_last,
     PARAFORGE_OT_snapshot_mod,
     PARAFORGE_OT_diff_mod,
 )

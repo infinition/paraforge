@@ -33,8 +33,16 @@ TAGS = (
 {rows}
 )
 
+#: (guid, name) for every swatch group the game defines. An item points at
+#: one of these to get its colourways, and the GUID is what it stores.
+SWATCH_GROUPS = (
+{swatches}
+)
+
 BY_GUID = {{guid: (name, parent, depth) for guid, name, parent, depth in TAGS}}
 BY_NAME = {{name: guid for guid, name, _parent, _depth in TAGS}}
+SWATCH_BY_NAME = {{name: guid for guid, name in SWATCH_GROUPS}}
+SWATCH_BY_GUID = {{guid: name for guid, name in SWATCH_GROUPS}}
 
 
 def label(guid):
@@ -120,6 +128,29 @@ def game_version(mod_root):
     return "unknown"
 
 
+def swatch_rows(mod_root):
+    """Swatch groups, so the item can point at one that really exists."""
+    path = os.path.join(mod_root, "Settings", "Swatches.setting")
+    if not os.path.isfile(path):
+        return ""
+    with open(path, encoding="utf-8", errors="replace") as handle:
+        tree = parse(handle.read().splitlines())
+
+    groups = entries(tree.get("SwatchGroups", {}))
+    seen = {}
+    for group in groups:
+        name = group.get("Name") or group.get("DisplayName")
+        guid = group.get("GUID")
+        # Two groups share the name SeatingChairClassicLouise. First wins,
+        # because the name has to stay unique to be usable as an enum.
+        if name and guid and name not in seen:
+            seen[name] = guid
+    return "\n".join(
+        '    ("{0}", "{1}"),'.format(guid, name)
+        for name, guid in sorted(seen.items())
+    )
+
+
 def main(argv):
     if len(argv) < 2:
         raise SystemExit(__doc__)
@@ -182,7 +213,8 @@ def main(argv):
     body = "\n".join(
         '    ("{0}", "{1}", "{2}", {3}),'.format(*row) for row in rows
     )
-    text = HEADER.format(version=game_version(mod_root), rows=body)
+    text = HEADER.format(version=game_version(mod_root), rows=body,
+                         swatches=swatch_rows(mod_root))
 
     target = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
