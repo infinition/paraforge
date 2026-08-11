@@ -900,13 +900,18 @@ def test_generate_item():
     check("s1" not in surface,
           "with no size line, which would drop the game's own surfaces",
           surface)
-    check("=Texture:" + sidecar.asset_guid(mod, "OldWoodenChairDetail.png")
-          in surface, "carrying the item's texture", surface)
+    # The surface's Texture is the base the shader tints, not the colour. With
+    # no GrayMask of its own the item borrows the game's neutral base, and the
+    # colour stays in DetailMap. Swapping the two renders the item white.
+    check("=Texture:" + spec.DEFAULT_BASE_TEXTURE_GUID in surface,
+          "sitting on the game's neutral base", surface)
+    check(sidecar.asset_guid(mod, "OldWoodenChairDetail.png") not in surface,
+          "the colour is not put in the base slot", surface)
     check("ShaderType" not in surface,
           "and no ShaderType, as on 1445 of the game's 1649 entries")
     check("Value:" + own_guid in text, "the prefab points at it", text)
-    check("DetailMap:" not in text,
-          "and does not also lay the base over itself", text)
+    check("DetailMap:" + sidecar.asset_guid(mod, "OldWoodenChairDetail.png")
+          in text, "and the colour still comes through DetailMap", text)
 
 
     entry = open(items, encoding="utf-8").read()
@@ -996,6 +1001,55 @@ def test_export_units():
     measurement = geo.measure([obj], depsgraph)
     check(abs(float(measurement.size[0]) - 2.0) < 1e-6,
           "and it is still 2 m, so the prefab Size stays in metres")
+
+
+def test_asset_name_guard():
+    """A borrowed name is how one item silently replaces another."""
+    section("Asset name")
+    fresh_scene()
+    obj = make_cube()
+    obj.name = "Mesh_0"
+
+    settings = props.settings(bpy.context)
+    settings.asset_name = ""
+
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "name") == validate.FAIL,
+          "an unnamed item on a generic object is blocking",
+          detail_of(report, "name"))
+    check(not report.can_export, "and export is blocked")
+
+    settings.asset_name = "Cube"
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "name") == validate.WARN,
+          "a name the importer chose is a warning",
+          detail_of(report, "name"))
+
+    settings.asset_name = "OldWoodenChair"
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "name") == validate.OK,
+          "a real name passes", detail_of(report, "name"))
+
+    # And a name already in the mod is flagged, since exporting replaces it.
+    temp = tempfile.mkdtemp(prefix="paraforge_name_")
+    mod = os.path.join(temp, "Names_2.mod")
+    os.makedirs(mod)
+    with open(os.path.join(mod, "OldWoodenChair.fbx"), "wb") as handle:
+        handle.write(b"already here")
+    settings.mod_folder = mod
+
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "name") == validate.WARN,
+          "a name already in the mod warns before it replaces anything",
+          detail_of(report, "name"))
+
+    check(spec.looks_generic("Mesh_0") and spec.looks_generic("Cube.001"),
+          "generic names are recognised through their numbering")
+    check(not spec.looks_generic("OldWoodenChair"),
+          "and a real name is not")
+
+    settings.mod_folder = ""
+    shutil.rmtree(temp, ignore_errors=True)
 
 
 def test_shared_surface_fallback():
@@ -1289,6 +1343,7 @@ def main():
         temp, mod = test_export()
         test_inspector(mod)
         test_export_units()
+        test_asset_name_guard()
         test_shared_surface_fallback()
         test_repair_stale_entry()
         test_surface_cleanup()

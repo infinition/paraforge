@@ -328,13 +328,20 @@ map:
  =AllSurfaces
   @2693213273477870343
    =DisplayName:Stool
-   =Texture:8758664685003848031
-   =NormalAndAmbientOcclusionMap:4029771731249536514
+   =Texture:4272001606441780869          the game's neutral gray base
+   =NormalAndAmbientOcclusionMap:...     the item's relief
    =AmbientOcclusionStrength:1
    =SmoothnessValue:0.42
    =DefaultSwatchGroup:0
    =DefaultSwatch:0
 ```
+
+Note that the item's colour is **not** in there. A surface's `Texture` is the
+base the shader tints, and across the game's 925 references it is a GrayMask
+634 times, a Master 100 times, and a Detail 133 times, the last almost always
+under a vegetation or special shader. The colour of an ordinary item arrives
+through `DetailMap` on the prefab, over that base. Putting the colour in
+`Texture` and dropping `DetailMap` renders the item white.
 
 Note the `@` marker and the absent size line. Writing this positionally is what
 made the game throw `NullReferenceException` in `SurfaceThumbnailManager.Start()`

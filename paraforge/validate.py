@@ -97,6 +97,7 @@ def run(context, settings):
     _check_origin(measurement, settings, report)
     _check_size(measurement, settings, report)
     _check_facing(settings, report)
+    _check_asset_name(objects, settings, report)
     _check_color_zones(objects, settings, report)
     _check_uvs(objects, report)
     _check_topology(measurement, settings, report)
@@ -223,6 +224,61 @@ def _check_facing(settings, report):
               "arrow in the viewport, then confirm"),
             fix="paraforge.confirm_facing", fix_label=_("It faces the arrow"),
         )
+
+
+def _check_asset_name(objects, settings, report):
+    """The name is the identity of the item, so a borrowed one is dangerous.
+
+    Every file written into the mod, and every GUID derived for it, comes from
+    this name. Two imports that both answer to Mesh_0 therefore write the same
+    files, and the second silently replaces the first: the chair already in the
+    catalogue starts showing the vase.
+    """
+    import os
+
+    from . import textures
+
+    explicit = (settings.asset_name or "").strip()
+    fallback = objects[0].name if objects else ""
+    resolved = textures.pascal_case(explicit or fallback)
+
+    if not resolved:
+        report.add("name", _("Asset name"), FAIL, _("Give the item a name"))
+        return
+
+    if not explicit and spec.looks_generic(fallback):
+        report.add(
+            "name", _("Asset name"), FAIL,
+            _("No name set, so the object name {0} would be used. Another "
+              "import called the same thing would overwrite this item in the "
+              "game", fallback),
+        )
+        return
+
+    if spec.looks_generic(resolved):
+        report.add(
+            "name", _("Asset name"), WARN,
+            _("{0} is a name an importer chose, not one you did. Anything "
+              "else exported under it replaces this item", resolved),
+        )
+        return
+
+    # Already something of that name in the mod, carrying different geometry?
+    mod_path = (settings.mod_folder or "").strip()
+    existing = os.path.join(mod_path, resolved + ".fbx") if mod_path else ""
+    if existing and os.path.isfile(existing):
+        report.add(
+            "name", _("Asset name"), WARN,
+            _("{0} is already in this mod. Exporting replaces it, which is "
+              "what you want for an update and not for a new item",
+              resolved + ".fbx"),
+        )
+        return
+
+    detail = resolved
+    if not explicit:
+        detail = _("{0}, taken from the object", resolved)
+    report.add("name", _("Asset name"), OK, detail)
 
 
 def _check_color_zones(objects, settings, report):

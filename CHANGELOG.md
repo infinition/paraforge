@@ -9,6 +9,30 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.12.0]
+
+### Added
+
+- **A guard on the asset name**, which is the identity of the item. Every file
+  written into the mod and every GUID derived for it comes from that name, so
+  two imports both answering to `Mesh_0` write the same files and the second
+  silently replaces the first: the chair already in the catalogue starts
+  showing the vase. An unnamed item on a generic object now blocks the export,
+  a name an importer chose warns, and a name already present in the mod says so
+  before it replaces anything.
+
+### Fixed
+
+- **The item rendered white.** 0.11.0 put the item's colour in the surface's
+  `Texture` field and dropped the `DetailMap`. That field is the base the
+  shader tints, not the colour: across the game's 925 references it is a
+  GrayMask 634 times, a Master 100 times, and a Detail 133 times, the last
+  almost always under a vegetation or special shader. The colour of an ordinary
+  item arrives through `DetailMap` on the prefab. An item with no GrayMask of
+  its own now sits on the game's neutral base and keeps its colour in
+  `DetailMap`, which is the path that rendered correctly in 0.10.0, with the
+  surface added on top to carry the relief.
+
 ## [0.11.0]
 
 ### Added

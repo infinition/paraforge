@@ -106,6 +106,23 @@ DEFAULT_ITEM_TYPE = "FLOOR"
 #: Distance below which two coordinates are considered equal, in metres.
 POSITION_TOLERANCE = 1e-4
 
+# Names an object arrives with rather than names anybody chose. Every file in
+# the mod, and every GUID in it, is derived from the asset name, so two
+# imports that both answer to Mesh_0 write the same files and the second
+# quietly becomes the first: the chair in the catalogue turns into a vase.
+GENERIC_NAMES = (
+    "mesh", "object", "cube", "plane", "sphere", "icosphere", "circle",
+    "cylinder", "cone", "torus", "grid", "suzanne", "model", "untitled",
+    "default", "empty", "scene", "node", "group", "geometry", "mesh0",
+    "defaultmaterial", "asset",
+)
+
+
+def looks_generic(name):
+    """True when a name is what an importer produced, not what a human chose."""
+    stem = "".join(c for c in (name or "").lower() if c.isalpha())
+    return stem in GENERIC_NAMES
+
 
 # --------------------------------------------------------------------------
 # Colour zones (vertex colours)
@@ -286,6 +303,22 @@ SURFACE_SHADER_TYPE_IS_NUMERIC = True
 #
 # BuildModeTags is deliberately absent. It is what puts a surface in the
 # in-game picker, and a surface belonging to one item has no business there.
+
+# What goes in a surface's Texture field is the base the shader tints, not the
+# item's colour. Across the 925 shipped references it is a GrayMask 634 times,
+# a Master 100 times, and a Detail 133 times, the last almost always alongside
+# a vegetation or a special shader.
+#
+# The colour of an ordinary item arrives through DetailMap on the prefab, laid
+# over that base. Putting the colour in Texture and dropping DetailMap renders
+# the item white, which is exactly what 0.11.0 did.
+#
+# So an item with no GrayMask of its own borrows the game's neutral one and
+# keeps its colour in DetailMap. That is the 0.10.0 path, which rendered
+# correctly, plus a surface to carry the relief.
+
+#: GenericGrayMask.png, the plain tileable gray GenericGrayMask itself uses.
+DEFAULT_BASE_TEXTURE_GUID = "4272001606441780869"
 
 #: Occlusion comes from the alpha of the NormalOcclusion map, at full strength.
 SURFACE_AMBIENT_OCCLUSION_STRENGTH = 1

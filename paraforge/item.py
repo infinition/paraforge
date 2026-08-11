@@ -234,11 +234,15 @@ def generate(mod_path, name, settings, report, zone_count=1):
     # file left behind by the old form has to go.
     _drop_legacy_surfaces(run, result, mod_path, seed)
 
+    # The colour always travels through DetailMap. The surface's Texture is the
+    # base the shader tints, not the item's colour, and swapping the two
+    # renders the item white.
     overlay_guid = detail_guid
     surface_guid = spec.DEFAULT_SURFACE_GUID
-    base_guid = gray_guid or detail_guid
+    base_guid = gray_guid or spec.DEFAULT_BASE_TEXTURE_GUID
+    has_texture = bool(gray_guid or detail_guid)
 
-    if getattr(settings, "own_surface", False) and base_guid:
+    if getattr(settings, "own_surface", False) and has_texture:
         # The relief and the material live on the surface, not on the prefab:
         # no prefab field anywhere mentions smoothness or occlusion.
         surface_guid = sidecar.guid_for(seed, "surface", name)
@@ -248,15 +252,16 @@ def generate(mod_path, name, settings, report, zone_count=1):
                surface_fields(name, surface_guid, base_guid, normal_guid,
                               smoothness),
                marker, surface_guid)
-        # The base texture is on the surface now, so it must not also be laid
-        # over itself as an overlay.
-        if base_guid == detail_guid:
-            overlay_guid = ""
+        if not gray_guid:
+            result.notes.append(_(
+                "No GrayMask, so the surface sits on the game's neutral base "
+                "and the colour comes through the DetailMap"
+            ))
         if not normal_guid:
             result.notes.append(_(
                 "No NormalOcclusion map, the item will have no relief"
             ))
-    elif not base_guid:
+    elif not has_texture:
         result.notes.append(_(
             "No texture in the mod, the item will render with {0}",
             spec.DEFAULT_SURFACE_NAME,

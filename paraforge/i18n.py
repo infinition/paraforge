@@ -147,8 +147,34 @@ FR = {
         "Brillance moyennée à {0:.2f}. Le jeu stocke une seule valeur par "
         "surface et n'a aucun emplacement pour une carte de brillance",
 
+    # -- The asset name is the item's identity ------------------------------
+    "Asset name": "Nom de l'objet",
+    "Give the item a name": "Donne un nom à l'objet",
+
+    "No name set, so the object name {0} would be used. Another import called "
+    "the same thing would overwrite this item in the game":
+        "Aucun nom saisi : le nom d'objet {0} serait utilisé. Un autre import "
+        "portant le même nom écraserait cet objet dans le jeu",
+
+    "{0} is a name an importer chose, not one you did. Anything else exported "
+    "under it replaces this item":
+        "{0} est un nom choisi par un importeur, pas par toi. Tout ce qui sera "
+        "exporté sous ce nom remplacera cet objet",
+
+    "{0} is already in this mod. Exporting replaces it, which is what you want "
+    "for an update and not for a new item":
+        "{0} est déjà dans ce mod. Exporter le remplace, ce qui est voulu pour "
+        "une mise à jour et pas pour un nouvel objet",
+
+    "{0}, taken from the object": "{0}, repris de l'objet",
+
     "No NormalOcclusion map, the item will have no relief":
         "Aucune carte NormalOcclusion, l'objet n'aura pas de relief",
+
+    "No GrayMask, so the surface sits on the game's neutral base and the "
+    "colour comes through the DetailMap":
+        "Aucun GrayMask : la surface repose donc sur la base neutre du jeu et "
+        "la couleur passe par le DetailMap",
 
     "Using the game's {0}. The NormalOcclusion and Smoothness maps have no "
     "slot on a shared surface, so the item has no relief. Turn on its own "
