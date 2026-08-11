@@ -150,18 +150,50 @@ mod** :
 
 ```
 <Mod>/<Nom>.prefab                 l'arbre d'objets, sa taille, son mesh
-<Mod>/Settings/Items.setting       l'entrée de catalogue, le tag, les swatches
-<Mod>/Settings/Surfaces.setting    la surface, sans laquelle rien ne s'affiche
+<Mod>/Settings/Items.setting       l'entrée de catalogue et son tag
 <Mod>/Settings/Translations...     le libellé que le joueur lit
 ```
 
-La surface n'est pas optionnelle. Un mesh sans elle se charge, occupe sa place
-au sol, et ne dessine rien. Le jeu le dit dans son log :
+### Pourquoi il ne faut surtout pas écrire de surface
+
+Un mod ne doit **pas** définir de surface. Le jeu plante au démarrage dès qu'il
+en trouve une :
+
+```
+NullReferenceException at SurfaceThumbnailManager.Start ()
+```
+
+Le jeu ne donne pas non plus une surface par objet. Les surfaces sont une
+bibliothèque de matériaux partagée : 397 de ses 2434 prefabs pointent
+`GenericGrayMask`, et 370 d'entre eux posent leur propre texture par-dessus via
+`DetailMap`. C'est la forme que ParaForge écrit, copiée sur
+`CityGravelPile.prefab` :
+
+```
+ItemMeshReference:
+ Surfaces:
+  Surface:
+   GUID:4303346223996877069        identité de l'entrée de liste
+   Value:6533686579680309849       GenericGrayMask
+ DetailMap:4868737352193020236     la texture de l'objet
+```
+
+### Et pourquoi les vertex colors sortent du FBX
+
+Le jeu lit la **présence** d'un attribut de couleur, pas son contenu.
+N'importe quel attribut fait passer le mesh en `ZoneDefinition:VertexZones` et
+réclame un shader recolorable que la surface simple n'a pas :
 
 ```
 Material builder got given parameters that don't match any shaders -
-ShaderType:GrayMask ZoneDefinition:None ...
+ShaderType:Simple ZoneDefinition:VertexZones ...
 ```
+
+L'objet se charge alors, occupe sa place au sol, et ne dessine rien. Exporter
+une seule zone blanche n'est donc pas neutre, c'est ce qui le rend invisible.
+Les meshes du jeu réimportés dans Blender le confirment : `CityGravelPile.fbx`
+et `ClutterKitchenIngredientCereal.fbx` n'ont aucun attribut de couleur.
+ParaForge n'en écrit que si l'objet est réellement recolorable.
 
 Un mod ne porte que ce qu'il ajoute et le jeu fusionne le tout : le mod de
 traduction française du jeu ne contient rien d'autre qu'un
