@@ -1,0 +1,14 @@
+# Normalise line endings in the repository, and check out whatever the
+# platform prefers. Without this, editing on Windows rewrites whole files.
+* text=auto eol=lf
+
+# Shell scripts run inside the workflows, they must keep LF.
+*.sh text eol=lf
+*.yml text eol=lf
+
+# Binary, never touched.
+*.png binary
+*.jpg binary
+*.zip binary
+*.fbx binary
+*.blend binary

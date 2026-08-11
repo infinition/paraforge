@@ -1,0 +1,134 @@
+name: Release
+
+# Tag a commit to publish. The tag has to match the version inside
+# paraforge/blender_manifest.toml, which is checked before anything is built,
+# so a release can never claim a version the add-on does not report.
+#
+#   git tag v0.10.0
+#   git push origin v0.10.0
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build, for example v0.10.0'
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  BLENDER_SERIES: Blender5.2
+  BLENDER_VERSION: 5.2.0
+  BLENDER_DOWNLOAD: https://download.blender.org/release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Read the version from the manifest
+        id: manifest
+        run: |
+          set -euo pipefail
+          version=$(sed -n 's/^version *= *"\(.*\)"/\1/p' \
+            paraforge/blender_manifest.toml)
+          if [ -z "${version}" ]; then
+            echo "No version in blender_manifest.toml" >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "Manifest version: ${version}"
+
+      - name: Check the tag agrees with the manifest
+        run: |
+          set -euo pipefail
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          expected="v${{ steps.manifest.outputs.version }}"
+          if [ "${tag}" != "${expected}" ]; then
+            echo "Tag ${tag} does not match the manifest, which says ${expected}" >&2
+            exit 1
+          fi
+
+      - name: Cache Blender
+        id: cache-blender
+        uses: actions/cache@v4
+        with:
+          path: ~/blender
+          key: blender-${{ env.BLENDER_VERSION }}-linux-x64
+
+      - name: Download Blender
+        if: steps.cache-blender.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          archive="blender-${BLENDER_VERSION}-linux-x64.tar.xz"
+          curl -fsSL -o "${archive}" \
+            "${BLENDER_DOWNLOAD}/${BLENDER_SERIES}/${archive}"
+          mkdir -p ~/blender
+          tar -xf "${archive}" -C ~/blender --strip-components=1
+
+      - name: Run the test suites
+        run: |
+          set -euo pipefail
+          ~/blender/blender --background --factory-startup \
+            --python tests/test_headless.py
+          ~/blender/blender --background --factory-startup \
+            --python tests/test_i18n.py
+          ~/blender/blender --background --factory-startup \
+            --python tests/test_ui_contract.py
+
+      - name: Build the extension
+        id: build
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          ~/blender/blender --command extension build \
+            --source-dir paraforge --output-dir dist
+          asset=$(ls dist/*.zip | head -n 1)
+          echo "asset=${asset}" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(sha256sum "${asset}" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          ls -l dist
+
+      - name: Collect the changes since the previous tag
+        id: notes
+        run: |
+          set -euo pipefail
+          previous=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
+          {
+            echo 'body<<RELEASE_NOTES'
+            if [ -n "${previous}" ]; then
+              echo "### Changes since ${previous}"
+              echo
+              git log --no-merges --pretty='- %s' "${previous}..HEAD"
+            else
+              echo '### First release'
+              echo
+              git log --no-merges --pretty='- %s' | head -n 40
+            fi
+            echo
+            echo '### Install'
+            echo
+            echo 'Blender, Edit > Preferences > Get Extensions > Install from Disk,'
+            echo 'then pick the zip below. Requires Blender 4.2 or newer.'
+            echo
+            echo "SHA256 \`${{ steps.build.outputs.sha256 }}\`"
+            echo RELEASE_NOTES
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          gh release create "${tag}" "${{ steps.build.outputs.asset }}" \
+            --title "ParaForge ${tag}" \
+            --notes "${{ steps.notes.outputs.body }}"

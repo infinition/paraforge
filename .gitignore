@@ -1,5 +1,78 @@
+# Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib60/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Packaged add-on. Built by build.py or by the release workflow, and
+# published on the Releases page rather than committed.
 dist/
+*.zip
+
+# Test and type checking caches
+.pytest_cache/
 .mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# ParaForge working data. Snapshots of a mod folder can contain the contents
+# of someone's own mod, so they never belong in the repository.
+.paraforge/
+*.snapshot.json
+*.diff.md
+
+# Blender
+*.blend1
+*.blend2
+*.blend@
+blender_icons*.py
+
+# Assets pulled in for local testing, never redistributed
+scratch/
+sandbox/
+samples/
+*.fbx
+*.obj
+*.psd
+!docs/**/*.png
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Logs
+*.log
