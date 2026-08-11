@@ -1,0 +1,19 @@
+schema_version = "1.0.0"
+
+id = "paraforge"
+version = "0.2.0"
+name = "ParaForge"
+tagline = "Convert and export Paralives Build Mode assets in one click"
+maintainer = "infinition"
+
+type = "add-on"
+tags = ["Pipeline", "Import-Export", "3D View"]
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:GPL-3.0-or-later"]
+
+website = "https://github.com/infinition/paraforge"
+
+[permissions]
+files = "Write meshes and textures into the Paralives mods folder"
