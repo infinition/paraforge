@@ -42,6 +42,32 @@ def settings_path(mod_path, name):
 # The prefab
 
 
+def surface_fields(name, surface_guid, texture_guid, normal_guid="",
+                   smoothness=None):
+    """One surface, in the shape the game writes them.
+
+    Copied from TextileQuiltedSquares, which is a shipped surface carrying a
+    real normal map. ShaderType is left out, as it is on 1445 of the 1649
+    entries, and BuildModeTags too, since a surface belonging to a single item
+    has no business in the in-game surface picker.
+    """
+    fields = [
+        ("GUID", surface_guid),
+        ("DisplayName", name),
+    ]
+    if texture_guid:
+        fields.append(("Texture", texture_guid))
+    if normal_guid:
+        fields.append(("NormalAndAmbientOcclusionMap", normal_guid))
+        fields.append(("AmbientOcclusionStrength",
+                       spec.SURFACE_AMBIENT_OCCLUSION_STRENGTH))
+    if smoothness is not None:
+        fields.append(("SmoothnessValue", "{0:.4g}".format(float(smoothness))))
+    fields.append(("DefaultSwatchGroup", 0))
+    fields.append(("DefaultSwatch", 0))
+    return fields
+
+
 def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
                 pivot=(0.5, 0.5, 0.5), root_guid="", surface_guid=""):
     """One root object holding one mesh, which is what an item minimally is.
@@ -200,27 +226,46 @@ def generate(mod_path, name, settings, report, zone_count=1):
     detail_guid = _texture_guid(mod_path, report, "Detail")
     colorzone_guid = _texture_guid(mod_path, report, "ColorZone")
 
-    # A mod must not define its own surface: the game throws
-    # NullReferenceException in SurfaceThumbnailManager.Start() on startup when
-    # it finds one. Its own items point at a shared surface and lay their
-    # texture over it through DetailMap, which is what happens here.
-    _drop_our_surfaces(run, result, mod_path, seed)
-    surface_guid = spec.DEFAULT_SURFACE_GUID
+    normal_guid = _texture_guid(mod_path, report, "NormalOcclusion")
+    marker = getattr(settings, "merge_marker", setting.MARKER_NEW)
+
+    # A surface written positionally replaced the game's own 950 and threw at
+    # startup. One written with the merge marker adds to them. Either way, a
+    # file left behind by the old form has to go.
+    _drop_legacy_surfaces(run, result, mod_path, seed)
 
     overlay_guid = detail_guid
-    if gray_guid and not detail_guid:
-        # A GrayMask is the recolourable base, and the base lives on the
-        # surface, which is the one thing a mod cannot supply. Say so rather
-        # than write an item that renders as plain gray.
-        result.notes.append(_(
-            "{0} is a GrayMask. A mod cannot define the surface that would "
-            "carry it, so the item points at {1} instead. Recolourable "
-            "textures still need a Surface built in the Control Panel",
-            name, spec.DEFAULT_SURFACE_NAME,
-        ))
-    elif not detail_guid:
+    surface_guid = spec.DEFAULT_SURFACE_GUID
+    base_guid = gray_guid or detail_guid
+
+    if getattr(settings, "own_surface", False) and base_guid:
+        # The relief and the material live on the surface, not on the prefab:
+        # no prefab field anywhere mentions smoothness or occlusion.
+        surface_guid = sidecar.guid_for(seed, "surface", name)
+        smoothness = getattr(settings, "smoothness", None)
+        _merge(run, result, settings_path(mod_path, SURFACES_FILE), "Surfaces",
+               "AllSurfaces", "GUID", surface_guid,
+               surface_fields(name, surface_guid, base_guid, normal_guid,
+                              smoothness),
+               marker, surface_guid)
+        # The base texture is on the surface now, so it must not also be laid
+        # over itself as an overlay.
+        if base_guid == detail_guid:
+            overlay_guid = ""
+        if not normal_guid:
+            result.notes.append(_(
+                "No NormalOcclusion map, the item will have no relief"
+            ))
+    elif not base_guid:
         result.notes.append(_(
             "No texture in the mod, the item will render with {0}",
+            spec.DEFAULT_SURFACE_NAME,
+        ))
+    else:
+        result.notes.append(_(
+            "Using the game's {0}. The NormalOcclusion and Smoothness maps "
+            "have no slot on a shared surface, so the item has no relief. "
+            "Turn on its own surface to give it one",
             spec.DEFAULT_SURFACE_NAME,
         ))
 
@@ -305,20 +350,26 @@ def _is_ours(entry, seed):
     return guid == sidecar.guid_for(seed, "surface", name)
 
 
-def _drop_our_surfaces(run, result, mod_path, seed):
-    """Remove a Surfaces.setting this add-on wrote in an earlier version.
+def _drop_legacy_surfaces(run, result, mod_path, seed):
+    """Remove a Surfaces.setting written the dangerous way.
 
-    Version 0.6.0 defined a surface per item, which turned out to crash the
-    game during startup:
+    Version 0.6.0 wrote its surface positionally, "s1" then "i0", which tells
+    the game the surface collection has one member and makes its own 950 go
+    away. The symptom was a crash at every launch:
 
         NullReferenceException at SurfaceThumbnailManager.Start()
 
-    Leaving the file in place would keep that crash alive on every launch, so
-    it goes. The journal keeps a copy, and Undo puts it back.
+    A file written with the merge marker adds to the collection instead and is
+    left alone, so this only clears the old form. The journal keeps a copy
+    either way, and Undo puts it back.
     """
     path = settings_path(mod_path, SURFACES_FILE)
     text = setting.read(path)
     if not text.strip():
+        return
+
+    lines = text.replace("\r\n", "\n").split("\n")
+    if not setting.has_positional_entries(lines, "AllSurfaces"):
         return
 
     ours, foreign = our_surface_entries(text, seed)

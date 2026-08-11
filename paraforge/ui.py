@@ -434,6 +434,21 @@ class PARAFORGE_PT_options(_Base, Panel):
         column.prop(settings, "write_sidecars", text=_("Write the .meta files"))
 
         layout.separator()
+        box = layout.box()
+        box.prop(settings, "own_surface", text=_("Give the item its own surface"))
+        column = box.column(align=True)
+        column.scale_y = 0.72
+        column.enabled = settings.own_surface
+        for line in util.wrap_to(context, _(
+            "Carries the normal map and the smoothness. Without it the item "
+            "borrows the game's shared surface and has no relief."), 6
+        ):
+            column.label(text=line)
+        row = box.row()
+        row.enabled = settings.own_surface
+        row.prop(settings, "smoothness", text=_("Smoothness"), slider=True)
+
+        layout.separator()
         layout.prop(settings, "swatch_group", text=_("Swatch group"))
         layout.prop(settings, "write_recipe", text=_("Write the recipe file"))
 

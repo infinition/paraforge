@@ -306,7 +306,8 @@ de matériaux partagée : 397 de ses 2434 prefabs pointent `GenericGrayMask`, et
 486 textures DetailMap, 344 ne servent qu'à un seul prefab et vivent à côté de
 leur mesh : c'est bien le slot propre à l'objet.
 
-C'est la forme que ParaForge écrit, copiée sur `CityGravelPile.prefab` :
+C'est l'une des deux formes que ParaForge écrit, copiée sur
+`CityGravelPile.prefab` :
 
 ```
 ItemMeshReference:
@@ -316,6 +317,36 @@ ItemMeshReference:
    Value:6533686579680309849       GenericGrayMask
  DetailMap:4868737352193020236     la texture de l'objet
 ```
+
+L'autre forme donne à l'objet sa propre surface, seul endroit où une normal map
+et une brillance peuvent vivre. Aucun champ de prefab ne mentionne la
+brillance, le métallique ou l'occlusion, vérifié sur 300 prefabs : un objet qui
+emprunte une surface partagée n'a donc aucun relief. L'entrée est calquée sur
+`TextileQuiltedSquares`, l'une des 75 surfaces livrées qui portent une vraie
+normal map :
+
+```
+#Setting.Surfaces
+ =AllSurfaces
+  @2693213273477870343
+   =DisplayName:Stool
+   =Texture:8758664685003848031
+   =NormalAndAmbientOcclusionMap:4029771731249536514
+   =AmbientOcclusionStrength:1
+   =SmoothnessValue:0.42
+   =DefaultSwatchGroup:0
+   =DefaultSwatch:0
+```
+
+Noter le marqueur `@` et l'absence de ligne de taille. L'écrire
+positionnellement est ce qui faisait lever au jeu un
+`NullReferenceException` dans `SurfaceThumbnailManager.Start()` à chaque
+lancement : le mod n'ajoutait pas une surface, il remplaçait les 950 par une
+seule.
+
+Il n'existe **aucun emplacement pour une texture de brillance**, seulement une
+`SmoothnessValue` par surface, employée par 329 de celles du jeu. Une carte
+Smoothness y est donc moyennée à l'export.
 
 ### Les vertex colors ne sont pas gratuites
 
@@ -386,12 +417,11 @@ Trois valeurs que les développeurs n'ont jamais publiées vivent dans le pannea
 - **Les mods script sont hors sujet.** Les développeurs ne fournissent aucun
   outil pour eux et ils sont interdits sur le Steam Workshop. ParaForge ne
   produit que des mods publiables.
-- **Les objets recolorables ne sont supportés qu'en partie.** Une base GrayMask
-  appartient à une Surface, et la définition d'une surface par un mod est
-  encore à l'étude : une texture recolorable peut donc encore demander une
-  Surface créée dans le Control Panel.
-- **Les cartes normal et smoothness sont écrites mais pas encore branchées.**
-  Ce sont des champs de la Surface, donc la même étude les couvre.
+- **Une carte de brillance devient un seul nombre.** Le jeu n'a aucun
+  emplacement pour une texture de brillance, seulement une valeur par surface.
+- **Les objets recolorables sont moins testés.** La base GrayMask et les zones
+  de couleur sont écrites, mais les groupes de swatches ont beaucoup moins
+  servi que le chemin simple.
 - **Le format n'est pas un contrat publié.** Paralives est en accès anticipé.
   Chaque constat ci-dessus est enregistré avec la version du jeu sur laquelle
   il a été mesuré.

@@ -153,6 +153,22 @@ def export(context, settings, objects, report=None):
                     sidecar.write_for_texture(mod_path, written, output.suffix)
                 )
 
+        # There is no slot for a smoothness texture anywhere in the game's
+        # data, only one value per surface, so the map is averaged into it.
+        for output in plan.by_suffix("Smoothness"):
+            average = average_smoothness(
+                os.path.join(target_dir, output.target_name)
+            )
+            if average is None:
+                continue
+            settings.smoothness = average
+            result.warnings.append(_(
+                "Smoothness averaged to {0:.2f}. The game stores one value "
+                "per surface and has no slot for a smoothness map",
+                average,
+            ))
+            break
+
         for source in plan.unknown:
             result.warnings.append(_(
                 "{0} has no known suffix, Paralives will not auto configure it",
@@ -223,6 +239,41 @@ def discard(objects):
         if mesh is not None and mesh.users == 0:
             try:
                 bpy.data.meshes.remove(mesh)
+            except (ReferenceError, RuntimeError):
+                pass
+
+
+def average_smoothness(path):
+    """The mean of a written Smoothness map, or None.
+
+    The game keeps a single SmoothnessValue per surface, used by 329 of its own
+    surfaces, and no field anywhere takes a smoothness texture. Averaging is
+    therefore the whole of what can be carried over.
+
+    The file on disk is read rather than the source image, because the map is
+    often rebuilt on the way out, from roughness for instance, and it is the
+    written result that the game would have used.
+    """
+    import numpy as np
+
+    if not path or not os.path.isfile(path):
+        return None
+
+    image = None
+    try:
+        image = bpy.data.images.load(path, check_existing=False)
+        width, height = image.size
+        if width <= 0 or height <= 0:
+            return None
+        flat = np.empty(width * height * 4, dtype=np.float32)
+        image.pixels.foreach_get(flat)
+        return float(np.clip(flat.reshape(-1, 4)[:, :3].mean(), 0.0, 1.0))
+    except (RuntimeError, ValueError, AttributeError, TypeError):
+        return None
+    finally:
+        if image is not None:
+            try:
+                bpy.data.images.remove(image)
             except (ReferenceError, RuntimeError):
                 pass
 

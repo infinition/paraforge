@@ -115,6 +115,48 @@ def pick(french, english):
 
 
 FR = {
+    # -- The item's own surface ---------------------------------------------
+    "Give the item its own surface": "Donner sa propre surface à l'objet",
+
+    "Write a Surface for this item so it carries its own normal map and "
+    "smoothness. Without one the item borrows the game's shared surface and "
+    "has no relief. Turn it off if the game refuses to start, and use Undo "
+    "the last write":
+        "Écrit une Surface pour cet objet, afin qu'il porte sa propre normal "
+        "map et sa brillance. Sans elle, l'objet emprunte la surface partagée "
+        "du jeu et n'a aucun relief. À désactiver si le jeu refuse de "
+        "démarrer, avec Annuler la dernière écriture",
+
+    "Carries the normal map and the smoothness. Without it the item borrows "
+    "the game's shared surface and has no relief.":
+        "Porte la normal map et la brillance. Sans elle, l'objet emprunte la "
+        "surface partagée du jeu et n'a aucun relief.",
+
+    "Smoothness": "Brillance",
+
+    "How glossy the surface is, 0 matte and 1 mirror. The game stores one "
+    "value per surface and has no slot for a smoothness texture, so a "
+    "Smoothness map is averaged into this on export":
+        "À quel point la surface est brillante, 0 mat et 1 miroir. Le jeu "
+        "stocke une seule valeur par surface et n'a aucun emplacement pour "
+        "une texture de brillance : une carte Smoothness y est donc moyennée "
+        "à l'export",
+
+    "Smoothness averaged to {0:.2f}. The game stores one value per surface "
+    "and has no slot for a smoothness map":
+        "Brillance moyennée à {0:.2f}. Le jeu stocke une seule valeur par "
+        "surface et n'a aucun emplacement pour une carte de brillance",
+
+    "No NormalOcclusion map, the item will have no relief":
+        "Aucune carte NormalOcclusion, l'objet n'aura pas de relief",
+
+    "Using the game's {0}. The NormalOcclusion and Smoothness maps have no "
+    "slot on a shared surface, so the item has no relief. Turn on its own "
+    "surface to give it one":
+        "Utilise le {0} du jeu. Les cartes NormalOcclusion et Smoothness "
+        "n'ont pas d'emplacement sur une surface partagée, l'objet n'a donc "
+        "aucun relief. Active sa propre surface pour lui en donner un",
+
     # -- Units --------------------------------------------------------------
     "FBX units per metre": "Unités FBX par mètre",
 
@@ -176,13 +218,6 @@ FR = {
     "Not used, which is what a non recolourable item wants":
         "Inutilisées, ce qui est exactement ce que veut un objet non "
         "recolorable",
-
-    "{0} is a GrayMask. A mod cannot define the surface that would carry it, "
-    "so the item points at {1} instead. Recolourable textures still need a "
-    "Surface built in the Control Panel":
-        "{0} est un GrayMask. Un mod ne peut pas définir la surface qui le "
-        "porterait, l'objet pointe donc {1} à la place. Les textures "
-        "recolorables demandent encore une Surface créée dans le Control Panel",
 
     "No texture in the mod, the item will render with {0}":
         "Aucune texture dans le mod, l'objet s'affichera avec {0}",
@@ -669,10 +704,6 @@ FR = {
     "No swatch group called {0} in the game, the item is written without one":
         "Aucun groupe de swatches nommé {0} dans le jeu, l'objet est écrit "
         "sans",
-    "No texture in the mod, the item will render with the game's default "
-    "surface":
-        "Aucune texture dans le mod, l'objet utilisera la surface par défaut "
-        "du jeu",
     "Never inside the game installation":
         "Jamais dans l'installation du jeu",
     "Custom": "Personnalisé",

@@ -260,6 +260,41 @@ DEFAULT_SURFACE_NAME = "GenericGrayMask"
 #: needs to write it, the field is listed only so a reader stops looking.
 SURFACE_SHADER_TYPE_IS_NUMERIC = True
 
+# A surface of one's own, for the relief and the material.
+#
+# Pointing at GenericGrayMask and putting the item's texture in DetailMap makes
+# the item render, but the normal and the smoothness have nowhere to go: they
+# are fields on the surface, not on the prefab. Checked across 300 prefabs, no
+# prefab field mentions smoothness, metallic or occlusion at all.
+#
+# 0.6.0 wrote a surface and the game threw NullReferenceException in
+# SurfaceThumbnailManager.Start() at every launch. That was not because a mod
+# may not define a surface. It was the positional marker bug: the entry was
+# written as "s1" then "i0", which told the game the surface collection had one
+# member, and its own 950 went away. A thumbnail manager walking an empty
+# surface library is exactly what would throw. With the @<GUID> marker the
+# collection is extended rather than replaced.
+#
+# The shape below is TextileQuiltedSquares, one of the 75 shipped surfaces that
+# carry a real normal map, with the fields no simple item needs removed:
+#
+#   =GUID:2837101404810957891
+#   =DisplayName:TextileQuiltedSquares
+#   =Texture:1228250718176622809
+#   =NormalAndAmbientOcclusionMap:1794374427089866391
+#   =AmbientOcclusionStrength:1
+#
+# BuildModeTags is deliberately absent. It is what puts a surface in the
+# in-game picker, and a surface belonging to one item has no business there.
+
+#: Occlusion comes from the alpha of the NormalOcclusion map, at full strength.
+SURFACE_AMBIENT_OCCLUSION_STRENGTH = 1
+
+#: There is no slot for a smoothness texture anywhere: the game stores a single
+#: scalar per surface, SmoothnessValue, used by 329 of the shipped surfaces. A
+#: smoothness map is therefore averaged down to one number.
+DEFAULT_SMOOTHNESS = 0.5
+
 #: Asset type codes used in a .meta file.
 META_TYPE_MESH = 1
 META_TYPE_TEXTURE = 2

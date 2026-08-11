@@ -9,6 +9,28 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.11.0]
+
+### Added
+
+- **The item gets a surface of its own**, which is the only place a normal map
+  and a smoothness value can live. No prefab field anywhere mentions
+  smoothness, metallic or occlusion, checked across 300 prefabs, so an item
+  borrowing the shared surface has no relief at all. The entry is modelled on
+  `TextileQuiltedSquares`, one of the 75 shipped surfaces with a real normal
+  map, and written with the `@<GUID>` marker so it extends the game's list
+  rather than replacing it. This is what 0.6.0 got wrong: it was not that a mod
+  may not define a surface, it was the positional marker.
+- A `Smoothness` map is averaged into `SmoothnessValue` on export. The game has
+  no slot for a smoothness texture, only one value per surface.
+- Toggle and smoothness slider in the export options, so a mod can fall back to
+  the shared surface without a new release.
+
+### Fixed
+
+- The cleanup of a `Surfaces.setting` left by 0.6.0 now only removes one
+  written in the old positional form, instead of removing any at all.
+
 ## [0.10.0]
 
 ### Fixed

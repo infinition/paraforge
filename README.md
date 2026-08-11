@@ -304,7 +304,8 @@ and 370 of those lay their own texture over it through `DetailMap`. Of the 486
 DetailMap textures, 344 are used by exactly one prefab and live next to their
 mesh, so it really is the per item slot.
 
-That is the shape ParaForge writes, copied from `CityGravelPile.prefab`:
+That is one of the two shapes ParaForge writes, copied from
+`CityGravelPile.prefab`:
 
 ```
 ItemMeshReference:
@@ -314,6 +315,35 @@ ItemMeshReference:
    Value:6533686579680309849       GenericGrayMask
  DetailMap:4868737352193020236     the item's own texture
 ```
+
+The other shape gives the item a surface of its own, which is the only place a
+normal map and a smoothness value can live. No prefab field anywhere mentions
+smoothness, metallic or occlusion, checked across 300 prefabs, so an item
+borrowing a shared surface has no relief at all. The entry is modelled on
+`TextileQuiltedSquares`, one of the 75 shipped surfaces carrying a real normal
+map:
+
+```
+#Setting.Surfaces
+ =AllSurfaces
+  @2693213273477870343
+   =DisplayName:Stool
+   =Texture:8758664685003848031
+   =NormalAndAmbientOcclusionMap:4029771731249536514
+   =AmbientOcclusionStrength:1
+   =SmoothnessValue:0.42
+   =DefaultSwatchGroup:0
+   =DefaultSwatch:0
+```
+
+Note the `@` marker and the absent size line. Writing this positionally is what
+made the game throw `NullReferenceException` in `SurfaceThumbnailManager.Start()`
+at every launch: the mod was not adding a surface, it was replacing all 950 of
+them with one.
+
+There is **no slot for a smoothness texture** anywhere, only a single
+`SmoothnessValue` per surface, used by 329 of the shipped ones. A Smoothness map
+is therefore averaged into that number on export.
 
 ### Vertex colours are not free
 
@@ -382,11 +412,11 @@ panel, so a game update can be absorbed without a new release:
 - **Script mods are out of scope.** The developers provide no tools for them
   and they are not allowed on the Steam Workshop. ParaForge only ever produces
   mods that can be uploaded.
-- **Recolourable items are only partly supported.** A GrayMask base belongs on
-  a Surface, and a surface defined by a mod is still being investigated, so a
-  recolourable texture may still need a Surface built in the Control Panel.
-- **Normal and smoothness maps are written but not yet wired.** They are fields
-  on the Surface, so the same investigation covers them.
+- **A smoothness map becomes one number.** The game has no slot for a
+  smoothness texture, only a value per surface.
+- **Recolourable items are only partly tested.** The GrayMask base and the
+  colour zones are written, but swatch groups have had far less use than the
+  plain path.
 - **The format is not a published contract.** Paralives is in early access.
   Every finding above is recorded with the game build it was measured on.
 

@@ -185,6 +185,31 @@ class ParaForgeSettings(PropertyGroup):
         default="BasicWood",
     )
 
+    own_surface: BoolProperty(
+        name=_("Give the item its own surface"),
+        description=_(
+            "Write a Surface for this item so it carries its own normal map "
+            "and smoothness. Without one the item borrows the game's shared "
+            "surface and has no relief. Turn it off if the game refuses to "
+            "start, and use Undo the last write"
+        ),
+        default=True,
+        update=_invalidate,
+    )
+
+    smoothness: FloatProperty(
+        name=_("Smoothness"),
+        description=_(
+            "How glossy the surface is, 0 matte and 1 mirror. The game stores "
+            "one value per surface and has no slot for a smoothness texture, "
+            "so a Smoothness map is averaged into this on export"
+        ),
+        default=spec.DEFAULT_SMOOTHNESS,
+        min=0.0,
+        max=1.0,
+        subtype="FACTOR",
+    )
+
     fbx_unit_scale: FloatProperty(
         name=_("FBX units per metre"),
         description=_(

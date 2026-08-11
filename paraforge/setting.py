@@ -169,6 +169,28 @@ def used_indices(lines, start, indent):
     return found
 
 
+def has_positional_entries(lines, list_key):
+    """True when the list holds i<n> entries, the form that replaces.
+
+    Used to tell a file written by an older version, which has to go, from one
+    written with a merge marker, which is safe and gets extended.
+    """
+    found = find_list(lines, list_key)
+    if found is None:
+        return False
+    key_index, _count_index, _count, indent = found
+    for line in lines[key_index + 1:]:
+        match = _ENTRY.match(line)
+        if match and match.group(1) == indent:
+            if match.group(2) == MARKER_POSITIONAL:
+                return True
+            continue
+        stripped = line.strip()
+        if stripped and not line.startswith(indent):
+            break
+    return False
+
+
 def contains_value(lines, key, value):
     """True when "=<key>:<value>" is already somewhere in the file."""
     wanted = "={0}:{1}".format(key, value)

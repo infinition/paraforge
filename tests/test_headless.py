@@ -883,20 +883,31 @@ def test_generate_item():
     check("AssetMesh:" + mesh_guid in text, "the prefab points at the mesh",
           text)
 
-    # The shape copied from the game's own CityGravelPile.prefab: a shared
-    # surface, with the item's own texture laid over it as a DetailMap.
-    check("Value:" + spec.DEFAULT_SURFACE_GUID in text,
-          "it points at the game's shared surface", text)
-    check("DetailMap:" + sidecar.asset_guid(mod, "OldWoodenChairDetail.png")
-          in text, "and lays its own texture over it", text)
     check("Size:(1.0000, 1.0000, 1.0000)" in text,
           "with the measured bounding box",
           [l for l in text.splitlines() if "Size" in l])
 
-    # A mod that defines a surface crashes the game during startup, in
-    # SurfaceThumbnailManager.Start().
+    # By default the item gets a surface of its own, which is the only place
+    # the normal map and the smoothness can live.
     surfaces = os.path.join(mod, "Settings", "Surfaces.setting")
-    check(not os.path.isfile(surfaces), "no surface is written into the mod")
+    check(os.path.isfile(surfaces), "a surface of its own is written")
+    surface = open(surfaces, encoding="utf-8").read()
+    own_guid = sidecar.guid_for(sidecar.mod_name(mod), "surface",
+                                "OldWoodenChair")
+
+    check("@" + own_guid in surface,
+          "added to the game's list by GUID, never positionally", surface)
+    check("s1" not in surface,
+          "with no size line, which would drop the game's own surfaces",
+          surface)
+    check("=Texture:" + sidecar.asset_guid(mod, "OldWoodenChairDetail.png")
+          in surface, "carrying the item's texture", surface)
+    check("ShaderType" not in surface,
+          "and no ShaderType, as on 1445 of the game's 1649 entries")
+    check("Value:" + own_guid in text, "the prefab points at it", text)
+    check("DetailMap:" not in text,
+          "and does not also lay the base over itself", text)
+
 
     entry = open(items, encoding="utf-8").read()
     check("=DisplayName:OldWoodenChair" in entry, "the item is named", entry)
@@ -987,6 +998,43 @@ def test_export_units():
           "and it is still 2 m, so the prefab Size stays in metres")
 
 
+def test_shared_surface_fallback():
+    """With its own surface off, the item borrows the game's shared one."""
+    section("Falling back to the shared surface")
+
+    fresh_scene()
+    obj = make_cube()
+    image = build_texture("StoolDetail", (0.4, 0.3, 0.2))
+    attach_material(obj, image)
+
+    settings = props.settings(bpy.context)
+    settings.asset_name = "Stool"
+    settings.item_type = "FLOOR"
+    settings.catalog_tag = catalog.BY_NAME["Armchairs"]
+    settings.facing_confirmed = True
+    settings.own_surface = False
+
+    temp = tempfile.mkdtemp(prefix="paraforge_shared_")
+    mod = os.path.join(temp, "Shared_3.mod")
+    os.makedirs(mod)
+    settings.mod_folder = mod
+
+    bpy.ops.paraforge.fix_all()
+    bpy.ops.paraforge.export(ignore_failures=True)
+    bpy.ops.paraforge.generate_item()
+
+    text = open(os.path.join(mod, "Stool.prefab"), encoding="utf-8").read()
+    check("Value:" + spec.DEFAULT_SURFACE_GUID in text,
+          "the prefab points at the game's shared surface", text)
+    check("DetailMap:" + sidecar.asset_guid(mod, "StoolDetail.png") in text,
+          "and lays the texture over it instead", text)
+    check(not os.path.isfile(os.path.join(mod, "Settings", "Surfaces.setting")),
+          "nothing is written into Surfaces.setting")
+
+    settings.own_surface = True
+    shutil.rmtree(temp, ignore_errors=True)
+
+
 def test_repair_stale_entry():
     """An entry an earlier version wrote badly has to be corrected, not kept."""
     section("Repairing a stale entry")
@@ -1069,7 +1117,7 @@ def test_surface_cleanup():
 
     run = journal.Run(mod, "Chair")
     result = item.Result()
-    item._drop_our_surfaces(run, result, mod, seed)
+    item._drop_legacy_surfaces(run, result, mod, seed)
     run.record()
 
     check(not os.path.isfile(path), "ours is deleted")
@@ -1092,7 +1140,7 @@ def test_surface_cleanup():
     setting.write(path, handwritten)
     run = journal.Run(mod, "Chair")
     result = item.Result()
-    item._drop_our_surfaces(run, result, mod, seed)
+    item._drop_legacy_surfaces(run, result, mod, seed)
     check(os.path.isfile(path), "a foreign surface file survives")
     check(bool(result.notes), "and the user is told why", str(result.notes))
 
@@ -1241,6 +1289,7 @@ def main():
         temp, mod = test_export()
         test_inspector(mod)
         test_export_units()
+        test_shared_surface_fallback()
         test_repair_stale_entry()
         test_surface_cleanup()
         _t, item_mod, _b = test_generate_item()
