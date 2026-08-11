@@ -12,7 +12,8 @@ import bpy
 from bpy.types import Panel
 
 from . import (
-    cache, catalog, i18n, prefs, props, spec, textures, util, validate,
+    cache, catalog, i18n, modfolder, prefs, props, spec, textures, util,
+    validate,
 )
 
 _ = i18n.t
@@ -83,11 +84,20 @@ class PARAFORGE_PT_main(_Base, Panel):
         else:
             row = box.row(align=True)
             row.prop(settings, "mod_picker", text="", icon="FILE_FOLDER")
+            row.operator("paraforge.create_mod", text="", icon="ADD")
             row.operator("paraforge.open_mod_folder", text="", icon="FILEBROWSER")
             if settings.mod_folder:
                 sub = box.row()
                 sub.scale_y = 0.7
                 sub.label(text=os.path.basename(os.path.normpath(settings.mod_folder)))
+                if modfolder.is_system_mod(settings.mod_folder):
+                    warning = box.column(align=True)
+                    warning.alert = True
+                    paragraph(warning, context, _(
+                        "This is one of the game's own folders. It works for "
+                        "trying things out, but it cannot be uploaded to the "
+                        "Workshop. Press + for a mod of your own."
+                    ), scale=0.75)
 
         column = box.column(align=True)
         column.prop(settings, "item_type", text="")

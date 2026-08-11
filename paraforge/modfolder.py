@@ -6,8 +6,10 @@ game's data folder. Importing an asset means dropping the file into that
 directory, which is why this add-on never needs the game to be running.
 """
 
+import datetime
 import os
 import platform
+import re
 import shutil
 
 from . import spec
@@ -74,6 +76,69 @@ def list_mods(root):
         if name.endswith(spec.MOD_FOLDER_SUFFIX) and os.path.isdir(path):
             found.append((name, path))
     return found
+
+
+#: A .NET DateTime tick is 100 nanoseconds since the first of January, year 1.
+#: The game writes CreationTime in those, so a mod created from here has to.
+_TICKS_PER_SECOND = 10_000_000
+_EPOCH = datetime.datetime(1, 1, 1)
+
+
+def dotnet_ticks(moment=None):
+    moment = moment or datetime.datetime.now()
+    delta = moment - _EPOCH
+    return int(delta.total_seconds() * _TICKS_PER_SECOND)
+
+
+def create_mod(root, name):
+    """Make a new, empty, publishable mod folder.
+
+    The game creates these from its Control Panel, but there is no reason to
+    launch it just for that: a mod is a folder and a manifest. The manifest
+    below is the one the game writes, minus the Workshop fields it fills in
+    itself on upload.
+
+    IsSystemMod stays False on purpose. The Local.mod that ships with the game
+    is a system mod, a scratch folder, and content put there cannot be
+    uploaded to the Workshop.
+    """
+    from . import sidecar, spec
+
+    clean = re.sub(r"[^0-9A-Za-z_ -]+", "", name or "").strip() or "MyMod"
+    folder = os.path.join(root, clean + spec.MOD_FOLDER_SUFFIX)
+    if os.path.isdir(folder):
+        return folder, False
+
+    os.makedirs(folder)
+    ticks = dotnet_ticks()
+    sidecar.write(
+        os.path.join(folder, clean + spec.MOD_FOLDER_SUFFIX),
+        spec.META_TYPE_MOD,
+        sidecar.guid_for("paraforge", "mod", clean, ticks),
+        {
+            "ModName": clean,
+            "Enabled": "True",
+            "IsSystemMod": "False",
+            "CreationTime": ticks,
+            "LastEditTime": ticks,
+            "LastUploadTime": 0,
+            "IsFromWorkshop": "False",
+            "PublishedFileId": 0,
+            "CreatorId": "",
+            "WorkshopUserTags": "",
+            "WorkshopDescription": "",
+        },
+    )
+    return folder, True
+
+
+def is_system_mod(mod_path):
+    """True for the game's own scratch folders, which cannot be published."""
+    from . import sidecar
+
+    name = os.path.basename(os.path.normpath(mod_path or ""))
+    meta = sidecar.read(os.path.join(mod_path, name))
+    return meta.get("IsSystemMod", "").lower() == "true"
 
 
 def mod_display_name(folder_name):

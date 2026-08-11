@@ -161,7 +161,10 @@ def generate(mod_path, name, settings, report, zone_count=1):
     run = journal.Run(mod_path, name)
     seed = sidecar.mod_name(mod_path)
 
-    mesh_guid = sidecar.asset_guid(mod_path, mesh_file)
+    # Once the game has imported an asset it owns its GUID. Ours matches, but
+    # an asset that arrived some other way would not, and the prefab has to
+    # point at whatever is actually on disk.
+    mesh_guid = existing_guid(mod_path, mesh_file)
     prefab_file = name + ".prefab"
     prefab_path = os.path.join(mod_path, prefab_file)
     prefab_guid = sidecar.asset_guid(mod_path, prefab_file)
@@ -214,13 +217,21 @@ def generate(mod_path, name, settings, report, zone_count=1):
     return result
 
 
+def existing_guid(mod_path, filename):
+    """The GUID already on disk, or the one this add-on would derive."""
+    written = sidecar.read(os.path.join(mod_path, filename)).get("GUID", "")
+    if written.isdigit() and written != "0":
+        return written
+    return sidecar.asset_guid(mod_path, filename)
+
+
 def _texture_guid(mod_path, report, suffix):
     plan = getattr(report, "texture_plan", None)
     if plan is None:
         return ""
     for output in plan.by_suffix(suffix):
         if os.path.isfile(os.path.join(mod_path, output.target_name)):
-            return sidecar.asset_guid(mod_path, output.target_name)
+            return existing_guid(mod_path, output.target_name)
     return ""
 
 

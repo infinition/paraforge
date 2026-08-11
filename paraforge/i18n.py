@@ -518,6 +518,32 @@ FR = {
         "de triangles, ce dont aucun meuble n'a besoin",
     "Already under the budget": "Déjà sous le budget",
 
+    # -- Creating a mod ---------------------------------------------------
+    "New mod": "Nouveau mod",
+    "Mod name": "Nom du mod",
+    "Becomes the folder name, and the name in the game":
+        "Devient le nom du dossier, et le nom dans le jeu",
+    "Create an empty mod folder and select it. A mod is a folder and a "
+    "manifest, so the game does not have to be launched to make one. Use this "
+    "rather than Local.mod, which is the game's own scratch folder and cannot "
+    "be uploaded to the Workshop":
+        "Crée un dossier de mod vide et le sélectionne. Un mod, c'est un "
+        "dossier et un manifeste, donc pas besoin de lancer le jeu pour en "
+        "faire un. À utiliser plutôt que Local.mod, qui est le bac à sable du "
+        "jeu et ne peut pas être publié sur le Workshop",
+    "{0} created": "{0} créé",
+    "{0} already existed, selected it": "{0} existait déjà, sélectionné",
+    "Paralives folder not found. Run the game once, or set the folder in the "
+    "add-on preferences":
+        "Dossier Paralives introuvable. Lance le jeu une fois, ou renseigne le "
+        "dossier dans les préférences de l'extension",
+    "This is one of the game's own folders. It works for trying things out, "
+    "but it cannot be uploaded to the Workshop. Press + for a mod of your "
+    "own.":
+        "C'est un dossier du jeu lui-même. Ça marche pour essayer, mais ça ne "
+        "peut pas être publié sur le Workshop. Appuie sur + pour ton propre "
+        "mod.",
+
     # -- Item generation --------------------------------------------------
     "Create the item in the catalogue": "Créer l'objet dans le catalogue",
     "Write the prefab and register the item in the mod, so it appears in "

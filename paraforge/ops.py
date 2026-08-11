@@ -104,6 +104,52 @@ class PARAFORGE_OT_open_mod_folder(Operator):
         return {"FINISHED"}
 
 
+class PARAFORGE_OT_create_mod(Operator):
+    bl_idname = "paraforge.create_mod"
+    bl_label = _("New mod")
+    bl_description = _(
+        "Create an empty mod folder and select it. A mod is a folder and a "
+        "manifest, so the game does not have to be launched to make one. Use "
+        "this rather than Local.mod, which is the game's own scratch folder "
+        "and cannot be uploaded to the Workshop"
+    )
+    bl_options = {"REGISTER"}
+
+    name: StringProperty(
+        name=_("Mod name"),
+        description=_("Becomes the folder name, and the name in the game"),
+        default="MyPack",
+    )
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=380)
+
+    def execute(self, context):
+        settings = props.settings(context)
+        root = prefs.mods_root(context)
+        if not root:
+            self.report({"ERROR"}, _(
+                "Paralives folder not found. Run the game once, or set the "
+                "folder in the add-on preferences"
+            ))
+            return {"CANCELLED"}
+
+        try:
+            folder, created = modfolder.create_mod(root, self.name)
+        except OSError as error:
+            self.report({"ERROR"}, str(error))
+            return {"CANCELLED"}
+
+        settings.mod_folder = folder
+        cache.invalidate()
+        if not created:
+            self.report({"INFO"}, _("{0} already existed, selected it",
+                                    os.path.basename(folder)))
+        else:
+            self.report({"INFO"}, _("{0} created", os.path.basename(folder)))
+        return {"FINISHED"}
+
+
 class PARAFORGE_OT_refresh(Operator):
     bl_idname = "paraforge.refresh"
     bl_label = _("Refresh")
@@ -372,6 +418,7 @@ def _show_text(context, block):
 classes = (
     PARAFORGE_OT_export,
     PARAFORGE_OT_open_mod_folder,
+    PARAFORGE_OT_create_mod,
     PARAFORGE_OT_refresh,
     PARAFORGE_OT_set_language,
     PARAFORGE_OT_generate_item,

@@ -85,13 +85,17 @@ python build.py --blender "C:/Program Files/Blender Foundation/Blender 5.2/blend
 ```
 
 Puis dans Blender : `Edit > Preferences > Add-ons > Install from Disk`, et
-choisir `dist/paraforge-0.4.0.zip`.
+choisir `dist/paraforge-0.5.0.zip`.
 
 Le panneau apparaît dans la barre latérale de la vue 3D, onglet **ParaForge**
 (`N` pour l'ouvrir).
 
 ## Utilisation
 
+0. Choisir le mod cible, ou en créer un avec le **+** à côté du sélecteur.
+   Les mods vivent dans `AppData\LocalLow\Paralives\Paralives\`. Évite
+   `Local.mod` : c'est le bac à sable du jeu, il marche pour essayer mais ne
+   peut pas être publié sur le Workshop.
 1. Sélectionner le mesh. La checklist s'affiche dans le panneau et en
    surimpression dans la vue.
 2. **Tout corriger sans risque** règle l'échelle, les transformations,

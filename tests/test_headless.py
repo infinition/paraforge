@@ -927,6 +927,40 @@ def test_undo(mod):
     check("   AssetMesh:123" in text, "and the mesh is still referenced")
 
 
+def test_create_mod():
+    section("Creating a mod")
+    from paraforge import modfolder
+
+    root = tempfile.mkdtemp(prefix="paraforge_root_")
+    folder, created = modfolder.create_mod(root, "My Pack!")
+    check(created, "a fresh mod was created")
+    check(folder.endswith("My Pack.mod"),
+          "the name is cleaned but kept readable", folder)
+
+    meta = sidecar.read(os.path.join(folder, os.path.basename(folder)))
+    check(meta.get("Type") == str(spec.META_TYPE_MOD), "typed as a mod",
+          str(meta))
+    check(meta.get("IsSystemMod") == "False",
+          "and not a system mod, so it can go on the Workshop")
+    check(meta.get("Enabled") == "True", "and enabled")
+    check(meta.get("CreationTime", "").isdigit(), "with a .NET timestamp",
+          meta.get("CreationTime"))
+    # 2020 in .NET ticks, a sanity floor that will not drift.
+    check(int(meta["CreationTime"]) > 637_000_000_000_000_000,
+          "that is actually in this century", meta.get("CreationTime"))
+
+    again, created_again = modfolder.create_mod(root, "My Pack!")
+    check(again == folder and not created_again,
+          "asking twice selects the existing one")
+
+    check(not modfolder.is_system_mod(folder), "ours is not a system mod")
+    system = os.path.join(root, "Local.mod")
+    os.makedirs(system)
+    sidecar.write(os.path.join(system, "Local.mod"), spec.META_TYPE_MOD, "1",
+                  {"IsSystemMod": "True"})
+    check(modfolder.is_system_mod(system), "the game's scratch folder is")
+
+
 def test_language():
     section("Language")
     check(i18n.DEFAULT == "fr", "French is the default")
@@ -959,6 +993,7 @@ def main():
         test_sidecars()
         test_refuses_the_game_folder()
         test_setting_merge()
+        test_create_mod()
         test_texture_planning()
         test_downloaded_asset()
         test_recolourable_conversion()
