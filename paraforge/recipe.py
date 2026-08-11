@@ -14,7 +14,7 @@ a generator would consume.
 import datetime
 import os
 
-from . import i18n, spec
+from . import catalog, i18n, spec
 
 _ = i18n.t
 
@@ -22,12 +22,9 @@ FOLDER = "_paraforge"
 
 
 def catalog_label(settings):
-    if settings.catalog_tag == "CUSTOM":
+    if settings.catalog_tag == spec.CUSTOM_TAG:
         return settings.catalog_tag_custom.strip() or _("(not set)")
-    for key, label, _description in spec.CATALOG_TAGS:
-        if key == settings.catalog_tag:
-            return label
-    return settings.catalog_tag
+    return catalog.path(settings.catalog_tag) or settings.catalog_tag
 
 
 def build(settings, name, report, files):

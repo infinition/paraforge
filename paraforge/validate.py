@@ -383,17 +383,48 @@ def _check_textures(objects, settings, report):
             + _(". Run Auto-detect, or set the role by hand"),
             fix="paraforge.detect_roles", fix_label=_("Auto-detect"),
         )
-    elif missing:
+    elif missing and len(missing) == len(spec.ALBEDO_SUFFIXES):
+        # Missing every albedo means the item has no colour at all.
         report.add(
             "textures", _("Texture naming"), WARN,
-            _("{0} texture(s) ready, missing {1}",
-              len(plan.outputs), ", ".join(missing)),
+            _("No Detail or GrayMask map, the item will have no colour of "
+              "its own"),
         )
     else:
         report.add(
             "textures", _("Texture naming"), OK,
             _("{0} texture(s), all roles recognised", len(plan.outputs)),
         )
+
+    _check_texture_size(plan, report)
+
+
+def _check_texture_size(plan, report):
+    """Downloads arrive at 4K. Nothing in the game is bigger than 2K."""
+    from . import imaging
+
+    largest = 0
+    worst = ""
+    for source in plan.sources:
+        width, height = imaging.dimensions(source.image)
+        if max(width, height) > largest:
+            largest = max(width, height)
+            worst = source.stem
+
+    if not largest:
+        return
+    if largest > spec.MAX_SENSIBLE_TEXTURE_SIZE:
+        report.add(
+            "texsize", _("Texture size"), WARN,
+            _("{0} is {1} px. Paralives ships 256 to 1024, and nothing above "
+              "{2}. Downscaling costs nothing visible on an item this size",
+              worst, largest, spec.MAX_SENSIBLE_TEXTURE_SIZE),
+            fix="paraforge.downscale_textures",
+            fix_label=_("Downscale to {0} px", spec.MAX_SENSIBLE_TEXTURE_SIZE),
+        )
+    else:
+        report.add("texsize", _("Texture size"), OK,
+                   _("largest is {0} px", largest))
 
 
 def _check_destination(settings, report):

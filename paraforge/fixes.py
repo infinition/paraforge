@@ -468,6 +468,49 @@ class PARAFORGE_OT_decimate_to_budget(Operator):
         return {"FINISHED"}
 
 
+class PARAFORGE_OT_downscale_textures(Operator):
+    bl_idname = "paraforge.downscale_textures"
+    bl_label = _("Downscale the textures")
+    bl_description = _(
+        "Halve oversized textures until they fit. Paralives ships 256 to "
+        "1024 px maps and nothing above 2048, so a 4K download is four times "
+        "the largest texture in the game for no visible gain"
+    )
+    bl_options = {"REGISTER", "UNDO"}
+
+    limit: IntProperty(
+        name=_("Longest side"), default=spec.MAX_SENSIBLE_TEXTURE_SIZE,
+        min=64, max=8192,
+    )
+
+    def execute(self, context):
+        from . import imaging
+
+        objects = _targets(context)
+        if not objects:
+            self.report({"ERROR"}, _("Nothing selected"))
+            return {"CANCELLED"}
+
+        touched = []
+        for _material, sources in textures.gather(objects):
+            for source in sources:
+                image = source.image
+                width, height = imaging.dimensions(image)
+                if max(width, height) <= self.limit:
+                    continue
+                ratio = self.limit / float(max(width, height))
+                image.scale(max(1, int(width * ratio)), max(1, int(height * ratio)))
+                touched.append(source.stem)
+
+        cache.invalidate()
+        if not touched:
+            self.report({"INFO"}, _("Every texture already fits"))
+            return {"CANCELLED"}
+        self.report({"INFO"}, _("{0} texture(s) downscaled to {1} px",
+                                len(touched), self.limit))
+        return {"FINISHED"}
+
+
 class PARAFORGE_OT_bake_to_atlas(Operator):
     bl_idname = "paraforge.bake_to_atlas"
     bl_label = _("Bake into one surface")
@@ -623,6 +666,7 @@ classes = (
     PARAFORGE_OT_detect_roles,
     PARAFORGE_OT_set_texture_role,
     PARAFORGE_OT_decimate_to_budget,
+    PARAFORGE_OT_downscale_textures,
     PARAFORGE_OT_bake_to_atlas,
     PARAFORGE_OT_fix_all,
 )

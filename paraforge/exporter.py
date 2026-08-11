@@ -5,7 +5,7 @@ import os
 
 import bpy
 
-from . import i18n, modfolder, prefs, recipe, spec, textures
+from . import i18n, modfolder, prefs, recipe, sidecar, spec, textures
 
 _ = i18n.t
 
@@ -78,6 +78,15 @@ def export(context, settings, objects, report=None):
     if not objects:
         raise ValueError("Nothing to export")
 
+    # Assets go in a mod, never in the installation.
+    install = modfolder.game_install_above(mod_path)
+    if install:
+        raise ValueError(_(
+            "That folder is inside the Paralives installation ({0}). Assets "
+            "belong in a mod under AppData, or a game update will wipe them "
+            "and they cannot be shared", install,
+        ))
+
     preferences = prefs.get(context)
     subfolder = preferences.asset_subfolder if preferences else ""
     target_dir = modfolder.ensure_subfolder(mod_path, subfolder)
@@ -98,6 +107,8 @@ def export(context, settings, objects, report=None):
 
     _export_fbx(context, objects, fbx_path, settings.triangulate)
     result.files.append(fbx_path)
+    if settings.write_sidecars:
+        result.files.append(sidecar.write_for_mesh(mod_path, fbx_path))
 
     if settings.export_textures:
         plan = (report.texture_plan if report else None) or textures.build_plan(
@@ -114,6 +125,10 @@ def export(context, settings, objects, report=None):
                 )
                 continue
             result.files.append(written)
+            if settings.write_sidecars:
+                result.files.append(
+                    sidecar.write_for_texture(mod_path, written, output.suffix)
+                )
 
         for source in plan.unknown:
             result.warnings.append(_(

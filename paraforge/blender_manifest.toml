@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "paraforge"
-version = "0.2.0"
+version = "0.3.0"
 name = "ParaForge"
 tagline = "Convert and export Paralives Build Mode assets in one click"
 maintainer = "infinition"

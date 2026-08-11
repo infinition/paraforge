@@ -85,7 +85,7 @@ python build.py --blender "C:/Program Files/Blender Foundation/Blender 5.2/blend
 ```
 
 Puis dans Blender : `Edit > Preferences > Add-ons > Install from Disk`, et
-choisir `dist/paraforge-0.2.0.zip`.
+choisir `dist/paraforge-0.3.0.zip`.
 
 Le panneau apparaît dans la barre latérale de la vue 3D, onglet **ParaForge**
 (`N` pour l'ouvrir).
@@ -105,17 +105,49 @@ Le panneau apparaît dans la barre latérale de la vue 3D, onglet **ParaForge**
 Le jeu importe ses assets au lancement, il n'y a pas de rechargement à chaud :
 il faut relancer Paralives après chaque export.
 
-## Ce qui n'est pas documenté par les développeurs
+## Ce que le wiki ne dit pas, et que le jeu dit
 
-Le budget de triangles et la taille d'une tuile ne sont publiés nulle part. Ils
-sont exposés dans le panneau **Calibrage** plutôt que codés en dur. Pour les
-régler une bonne fois : importer un mesh officiel du jeu dans Blender et le
-mesurer.
+Paralives livre son propre contenu sous forme de mod : `Main.mod`, dans le
+dossier d'installation, est un dossier ordinaire de FBX, de PNG et de texte.
+C'est de là que viennent les chiffres ci-dessous, mesurés et non supposés.
 
-L'onglet **Inspecteur du dossier mod** sert à trancher une autre question
-ouverte, celle de savoir si les définitions d'objets sont générables. Prendre
-un instantané du dossier, créer un objet dans le jeu, quitter, comparer. Si le
-jeu écrit du JSON lisible, la dernière étape manuelle devient automatisable.
+**Budget de triangles.** 159 meshes tirés au hasard de `Environments/Items` et
+importés dans Blender : médiane **294** triangles, 90e centile 1 380, maximum
+**4 060**. Le budget par défaut de ParaForge est ce maximum. Un asset
+téléchargé à 560 000 triangles fait cent fois le plus gros objet du jeu.
+
+**Résolution des textures.** Sur les 1 446 textures d'objets : 512 px en tête,
+puis 256, puis 1 024. Rien au-dessus de 2 048. Une carte 4K est donc quatre
+fois la plus grande du jeu.
+
+**Proportion des cartes.** Detail 524, GrayMask 474, ColorZone 52,
+NormalOcclusion 41, Smoothness 22, Master 8. Une normal map est sur un objet
+sur vingt : ParaForge ne la réclame plus.
+
+**Fichiers `.meta`.** Chaque asset a un compagnon texte qui porte son GUID et
+ses réglages d'import. Le mapping suffixe vers réglages, relevé sur 800
+textures, est parfaitement régulier : `IsLinear` sur tout sauf `Detail`,
+`IsPointFilter` sur `ColorZone`, et `HasVariantMap` plus `HasHueshiftMap` sur
+`Master`. ParaForge écrit ce fichier, ce qui rend l'import déterministe au lieu
+de dépendre de la lecture du nom.
+
+**Tags du catalogue.** Les 298 tags du Build Mode sont extraits du jeu par
+`tools/extract_catalog.py` vers `paraforge/catalog.py`, avec leur GUID et leur
+hiérarchie. À relancer après une mise à jour du jeu.
+
+**Une porte** fait 2,112 m de haut, un vantail simple 1,04 m de large. Pratique
+pour juger l'échelle d'un modèle importé à l'oeil.
+
+L'onglet **Inspecteur du dossier mod** reste utile pour la dernière question
+ouverte : les définitions d'objets sont bien du texte lisible
+(`Settings/Items.setting` et les `.prefab`), donc générables. Ce n'est pas
+encore fait.
+
+## Rien n'est jamais écrit dans le jeu
+
+L'export refuse un dossier situé dans l'installation de Paralives. Les assets
+vont dans un `.mod` sous `AppData\LocalLow`, sinon une mise à jour du jeu les
+efface et ils ne peuvent pas être partagés.
 
 ## Tests
 

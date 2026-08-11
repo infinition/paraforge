@@ -106,6 +106,36 @@ def copy_asset(source, target_dir, target_name):
     return destination
 
 
+#: Files that only ever sit in a Paralives installation, never in a user mod.
+GAME_MARKERS = ("Paralives.exe", "UnityPlayer.dll", "Paralives_Data")
+
+
+def game_install_above(path):
+    """The game folder this path sits inside, or an empty string.
+
+    Assets belong in a mod under AppData, never in the installation. Writing
+    into the game's own Main.mod would put work in a folder that a game update
+    overwrites, and would produce something that cannot be shared. It is an
+    easy mistake to make now that the install is a plain readable folder, so
+    it is refused rather than warned about.
+    """
+    current = os.path.abspath(path or "")
+    seen = set()
+    while current and current not in seen:
+        seen.add(current)
+        try:
+            names = set(os.listdir(current))
+        except OSError:
+            names = set()
+        if sum(marker in names for marker in GAME_MARKERS) >= 2:
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    return ""
+
+
 def is_inside_mods_root(path, root):
     if not path or not root:
         return False

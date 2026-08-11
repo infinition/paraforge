@@ -11,7 +11,9 @@ import os
 import bpy
 from bpy.types import Panel
 
-from . import cache, i18n, prefs, props, spec, textures, util, validate
+from . import (
+    cache, catalog, i18n, prefs, props, spec, textures, util, validate,
+)
 
 _ = i18n.t
 
@@ -90,7 +92,7 @@ class PARAFORGE_PT_main(_Base, Panel):
         column = box.column(align=True)
         column.prop(settings, "item_type", text="")
         column.prop(settings, "catalog_tag", text="")
-        if settings.catalog_tag == "CUSTOM":
+        if settings.catalog_tag == spec.CUSTOM_TAG:
             column.prop(settings, "catalog_tag_custom", text="")
         column.prop(settings, "asset_name", text="", icon="OUTLINER_OB_MESH")
 
@@ -378,6 +380,7 @@ class PARAFORGE_PT_options(_Base, Panel):
         column.prop(settings, "triangulate", text=_("Triangulate on export"))
         column.prop(settings, "export_textures", text=_("Export textures"))
         column.prop(settings, "overwrite", text=_("Overwrite existing files"))
+        column.prop(settings, "write_sidecars", text=_("Write the .meta files"))
 
         layout.separator()
         layout.prop(settings, "swatch_group", text=_("Swatch group"))
@@ -391,6 +394,8 @@ class PARAFORGE_PT_options(_Base, Panel):
         box.label(text=_("Vertex colours exported (sRGB)"))
         box.label(text=_("Tangents exported for normal maps"))
         box.label(text=_("PNG only, the game rejects other formats"))
+        box.label(text=_("Catalogue read from game build {0}",
+                         catalog.SOURCE_BUILD))
 
 
 class PARAFORGE_PT_viewport(_Base, Panel):
@@ -437,8 +442,11 @@ class PARAFORGE_PT_calibration(_Base, Panel):
         settings = props.settings(context)
 
         paragraph(layout, context, _(
-            "Paralives publishes neither a triangle budget nor a tile size. "
-            "Import one official game mesh, measure it, and set these once."
+            "Measured on {0} meshes taken from the game itself: {1} triangles "
+            "in the median, {2} at the very most. The budget below is that "
+            "maximum, and it is only a warning.",
+            spec.MEASURED_SAMPLE, spec.MEASURED_TRIANGLES_MEDIAN,
+            spec.MEASURED_TRIANGLES_MAX,
         ), scale=0.75)
 
         layout.prop(settings, "tile_size", text=_("Tile size"))

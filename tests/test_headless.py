@@ -21,8 +21,8 @@ if ROOT not in sys.path:
 
 import paraforge  # noqa: E402
 from paraforge import (  # noqa: E402
-    cache, exporter, geo, i18n, imaging, inspector, props, recipe, spec,
-    textures, validate, zones,
+    cache, catalog, exporter, geo, i18n, imaging, inspector, props, recipe,
+    sidecar, spec, textures, validate, zones,
 )
 
 FAILURES = []
@@ -275,7 +275,7 @@ def test_export():
     settings = props.settings(bpy.context)
     settings.item_type = "FLOOR"
     settings.asset_name = "TestSofa"
-    settings.catalog_tag = "SEATING"
+    settings.catalog_tag = catalog.BY_NAME["Armchairs"]
     settings.swatch_group = "BasicWood"
     settings.facing_confirmed = True
 
@@ -311,7 +311,7 @@ def test_export():
         with open(recipe_file, "r", encoding="utf-8") as handle:
             text = handle.read()
         check("BasicWood" in text, "recipe carries the swatch group")
-        check("Seating" in text, "recipe carries the catalog tag")
+        check("Armchairs" in text, "recipe carries the catalog tag")
         check("ItemMeshReference" in text, "recipe lists the Control Panel steps")
 
     settings_used = exporter.fbx_settings("x.fbx")
@@ -357,8 +357,14 @@ def test_texture_planning():
           "renamed onto the asset name", plan.outputs[0].target_name)
     check(plan.outputs[0].kind == textures.COPY,
           "an already correct map is copied, not rebuilt")
-    check(plan.missing_recommended() == ["NormalOcclusion"],
-          "missing normal map reported", str(plan.missing_recommended()))
+    # A GrayMask is a complete albedo, so nothing important is missing. The
+    # game ships a normal map on about one item in twenty, so its absence is
+    # not worth a word.
+    check(plan.missing_recommended() == ["Detail"],
+          "the other albedo is listed, nothing else",
+          str(plan.missing_recommended()))
+    check("NormalOcclusion" not in plan.missing_recommended(),
+          "a missing normal map is not treated as a problem")
 
     # Two grey images, no name, no wiring: there is genuinely nothing to go
     # on, and a guess would put the wrong map in the mod folder.
@@ -656,6 +662,102 @@ def test_bake_to_atlas():
           str(float(occlusion[:, :, 0].mean())))
 
 
+def test_catalog():
+    """The tag list is read out of the game, not invented."""
+    section("Catalogue read from the game")
+    guids = [t[0] for t in catalog.TAGS]
+    names = [t[1] for t in catalog.TAGS]
+    check(len(catalog.TAGS) > 200, "the whole tree is there", str(len(catalog.TAGS)))
+    check(len(set(guids)) == len(guids), "every GUID is unique")
+    check(len(set(names)) == len(names), "every name is unique, enums need that")
+    check(all(guid.isdigit() for guid in guids), "GUIDs are the game's integers")
+    check(catalog.path(catalog.BY_NAME["Armchairs"]).endswith("Seating > Armchairs"),
+          "ancestry resolves", catalog.path(catalog.BY_NAME["Armchairs"]))
+    parents = {t[2] for t in catalog.TAGS if t[2]}
+    check(parents <= set(guids), "no tag points at a parent that is missing")
+
+
+def test_sidecars():
+    section("Sidecar .meta files")
+    fresh_scene()
+    obj = make_cube()
+    image = build_texture("TestSofaGrayMask", (0.5, 0.5, 0.5))
+    attach_material(obj, image)
+
+    settings = props.settings(bpy.context)
+    settings.asset_name = "TestSofa"
+    settings.facing_confirmed = True
+
+    temp = tempfile.mkdtemp(prefix="paraforge_meta_")
+    mod = os.path.join(temp, "MetaPack_42.mod")
+    os.makedirs(mod)
+    settings.mod_folder = mod
+
+    bpy.ops.paraforge.fix_all()
+    bpy.ops.paraforge.export(ignore_failures=True)
+
+    fbx_meta = sidecar.read(os.path.join(mod, "TestSofa.fbx"))
+    png_meta = sidecar.read(os.path.join(mod, "TestSofaGrayMask.png"))
+
+    check(fbx_meta.get("Type") == str(spec.META_TYPE_MESH),
+          "the mesh is declared as a mesh", str(fbx_meta))
+    check(png_meta.get("Type") == str(spec.META_TYPE_TEXTURE),
+          "the texture is declared as a texture", str(png_meta))
+    check(png_meta.get("IsLinear") == "True",
+          "a GrayMask is linear, as the game writes it", str(png_meta))
+    check(png_meta.get("GenerateMipMaps") == "True", "and gets mip maps")
+    check(fbx_meta.get("GUID", "").isdigit() and fbx_meta["GUID"] != "0",
+          "GUIDs are positive integers", fbx_meta.get("GUID"))
+    check(fbx_meta["GUID"] != png_meta["GUID"], "and differ per asset")
+
+    # A prefab points at its mesh by GUID, so a rebuild must not renumber it.
+    again = sidecar.asset_guid(mod, "TestSofa.fbx")
+    check(again == fbx_meta["GUID"], "the GUID is stable across exports")
+    check(sidecar.asset_guid(mod + "x", "TestSofa.fbx") != again,
+          "but differs between mods")
+
+    # ColorZone is the one that must not be filtered.
+    flags = sidecar.texture_flags("ColorZone")
+    check(flags.get("IsPointFilter") == "True",
+          "a zone map is point filtered", str(flags))
+    check("IsLinear" not in sidecar.texture_flags("Detail"),
+          "a Detail map stays sRGB")
+
+
+def test_refuses_the_game_folder():
+    """Assets go in a mod, never in the installation."""
+    section("Refusing to write into the game")
+    from paraforge import modfolder
+
+    temp = tempfile.mkdtemp(prefix="paraforge_game_")
+    install = os.path.join(temp, "Paralives")
+    inside = os.path.join(install, "Main.mod", "Environments")
+    os.makedirs(inside)
+    os.makedirs(os.path.join(install, "Paralives_Data"))
+    open(os.path.join(install, "Paralives.exe"), "wb").close()
+
+    check(modfolder.game_install_above(inside) == install,
+          "the install is recognised from anywhere inside it",
+          modfolder.game_install_above(inside))
+    check(not modfolder.game_install_above(temp),
+          "and a plain folder is not")
+
+    fresh_scene()
+    make_cube()
+    settings = props.settings(bpy.context)
+    settings.mod_folder = inside
+    settings.asset_name = "Nope"
+    # A cancelling operator raises when it is called from Python.
+    try:
+        result = str(bpy.ops.paraforge.export(ignore_failures=True))
+    except RuntimeError as error:
+        result = str(error)
+    check("CANCELLED" in result or "installation" in result,
+          "the export refuses", result[:80])
+    check(not os.path.isfile(os.path.join(inside, "Nope.fbx")),
+          "and wrote nothing")
+
+
 def test_language():
     section("Language")
     check(i18n.DEFAULT == "fr", "French is the default")
@@ -684,6 +786,9 @@ def main():
         test_zones()
         test_zones_from_materials()
         test_language()
+        test_catalog()
+        test_sidecars()
+        test_refuses_the_game_folder()
         test_texture_planning()
         test_downloaded_asset()
         test_recolourable_conversion()

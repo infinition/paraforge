@@ -17,7 +17,7 @@ from bpy.props import (
 )
 from bpy.types import PropertyGroup
 
-from . import i18n, modfolder, prefs, spec
+from . import catalog, i18n, modfolder, prefs, spec
 
 _ = i18n.t
 
@@ -51,6 +51,28 @@ def _item_type_items(self, context):
     for index, (key, data) in enumerate(spec.ITEM_TYPES.items()):
         items.append((key, _(data["label"]), _(data["description"]), index))
     return items
+
+
+_CATALOG_ITEMS = []
+
+
+def _catalog_items(self, context):
+    """The real Build Mode tags, read out of the game by extract_catalog.py.
+
+    Indented by depth so a flat dropdown still reads as the tree it is, and
+    Blender's own search box makes 298 entries perfectly usable.
+    """
+    if _CATALOG_ITEMS:
+        return _CATALOG_ITEMS
+    for guid, name, _parent, depth in catalog.TAGS:
+        _CATALOG_ITEMS.append((
+            guid,
+            ("    " * depth) + name,
+            catalog.path(guid),
+        ))
+    _CATALOG_ITEMS.append((spec.CUSTOM_TAG, _("Custom"),
+                           _("Type the tag by hand")))
+    return _CATALOG_ITEMS
 
 
 def _invalidate(self, context):
@@ -144,11 +166,7 @@ class ParaForgeSettings(PropertyGroup):
             "price from the Item Tag, so this has to match what you pick in "
             "the Control Panel"
         ),
-        items=[
-            (key, label, _(description), index)
-            for index, (key, label, description) in enumerate(spec.CATALOG_TAGS)
-        ],
-        default="SEATING",
+        items=_catalog_items,
     )
 
     catalog_tag_custom: StringProperty(
@@ -261,6 +279,17 @@ class ParaForgeSettings(PropertyGroup):
 
     overwrite: BoolProperty(
         name=_("Overwrite existing files"),
+        default=True,
+    )
+
+    write_sidecars: BoolProperty(
+        name=_("Write the .meta files"),
+        description=_(
+            "Write the sidecar the game keeps beside every asset, with the "
+            "import settings already filled in. Read back from the game's own "
+            "mod folder, so the import stops depending on the file name being "
+            "parsed correctly"
+        ),
         default=True,
     )
 

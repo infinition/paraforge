@@ -273,8 +273,6 @@ FR = {
     "Nothing to detect": "Rien à détecter",
     "{0} texture(s), all roles recognised":
         "{0} texture(s), tous les rôles reconnus",
-    "{0} texture(s) ready, missing {1}":
-        "{0} texture(s) prêtes, il manque {1}",
     "No recognised role on: ": "Aucun rôle reconnu sur : ",
     ". Run Auto-detect, or set the role by hand":
         ". Lance la détection auto, ou définis le rôle à la main",
@@ -363,11 +361,6 @@ FR = {
         "La checklist évite d'elle-même la barre d'outils et le panneau latéral",
 
     # -- Calibration ------------------------------------------------------
-    "Paralives publishes neither a triangle budget nor a tile size. Import "
-    "one official game mesh, measure it, and set these once.":
-        "Paralives ne publie ni budget de triangles ni taille de tuile. "
-        "Importe un mesh officiel du jeu, mesure-le, et règle ces valeurs une "
-        "fois pour toutes.",
     "Tile size": "Taille d'une tuile",
     "Triangle budget": "Budget de triangles",
 
@@ -524,6 +517,53 @@ FR = {
         "assets téléchargés ou générés arrivent couramment à un demi-million "
         "de triangles, ce dont aucun meuble n'a besoin",
     "Already under the budget": "Déjà sous le budget",
+    "Custom": "Personnalisé",
+    "Type the tag by hand": "Saisir le tag à la main",
+    "Catalogue read from game build {0}":
+        "Catalogue lu dans la build {0} du jeu",
+    "Measured on {0} meshes taken from the game itself: {1} triangles in the "
+    "median, {2} at the very most. The budget below is that maximum, and it "
+    "is only a warning.":
+        "Mesuré sur {0} meshes pris dans le jeu lui-même : {1} triangles en "
+        "médiane, {2} au grand maximum. Le budget ci-dessous est ce maximum, "
+        "et ce n'est qu'une alerte.",
+    "Texture size": "Taille des textures",
+    "largest is {0} px": "la plus grande fait {0} px",
+    "{0} is {1} px. Paralives ships 256 to 1024, and nothing above {2}. "
+    "Downscaling costs nothing visible on an item this size":
+        "{0} fait {1} px. Paralives livre du 256 au 1024, et rien au-dessus "
+        "de {2}. Réduire ne coûte rien de visible sur un objet de cette "
+        "taille",
+    "Downscale to {0} px": "Réduire à {0} px",
+    "Downscale the textures": "Réduire les textures",
+    "Halve oversized textures until they fit. Paralives ships 256 to 1024 px "
+    "maps and nothing above 2048, so a 4K download is four times the largest "
+    "texture in the game for no visible gain":
+        "Divise par deux les textures trop grandes jusqu'à ce qu'elles "
+        "rentrent. Paralives livre des cartes de 256 à 1024 px et rien "
+        "au-dessus de 2048, donc un téléchargement en 4K fait quatre fois la "
+        "plus grande texture du jeu sans rien apporter de visible",
+    "Longest side": "Plus grand côté",
+    "Every texture already fits": "Chaque texture rentre déjà",
+    "{0} texture(s) downscaled to {1} px":
+        "{0} texture(s) réduite(s) à {1} px",
+    "No Detail or GrayMask map, the item will have no colour of its own":
+        "Aucune carte Detail ni GrayMask, l'objet n'aura pas de couleur "
+        "propre",
+    "Write the .meta files": "Écrire les fichiers .meta",
+    "Write the sidecar the game keeps beside every asset, with the import "
+    "settings already filled in. Read back from the game's own mod folder, so "
+    "the import stops depending on the file name being parsed correctly":
+        "Écrit le fichier compagnon que le jeu garde à côté de chaque asset, "
+        "avec les réglages d'import déjà remplis. Relevé dans le dossier de "
+        "mod du jeu lui-même, donc l'import ne dépend plus de la lecture "
+        "correcte du nom de fichier",
+    "That folder is inside the Paralives installation ({0}). Assets belong in "
+    "a mod under AppData, or a game update will wipe them and they cannot be "
+    "shared":
+        "Ce dossier est dans l'installation de Paralives ({0}). Les assets "
+        "vont dans un mod sous AppData, sinon une mise à jour du jeu les "
+        "effacera et ils ne pourront pas être partagés",
     "Bake into one surface": "Fusionner en une seule surface",
     "Repack the UVs of the whole selection into one atlas, bake every "
     "material into a single set of maps, and replace them with it. This is "

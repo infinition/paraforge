@@ -22,9 +22,10 @@ MODULES = (prefs, props, fixes, zones, ops, ui)
 #: bl_label and every property tooltip is baked at class definition time, so
 #: the class bodies have to run again for a switch to reach them.
 RELOAD_ORDER = (
-    "i18n", "spec", "util", "imaging", "modfolder", "geo", "textures",
-    "bake", "recipe", "inspector", "validate", "cache", "prefs", "props",
-    "zones", "fixes", "exporter", "ops", "overlay", "ui",
+    "i18n", "catalog", "spec", "util", "imaging", "modfolder", "geo",
+    "sidecar", "textures", "bake", "recipe", "inspector", "validate",
+    "cache", "prefs", "props", "zones", "fixes", "exporter", "ops",
+    "overlay", "ui",
 )
 
 
