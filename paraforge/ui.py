@@ -465,6 +465,14 @@ class PARAFORGE_PT_options(_Base, Panel):
         row.prop(settings, "smoothness", text=_("Smoothness"), slider=True)
 
         layout.separator()
+        box = layout.box()
+        box.prop(settings, "scalable", text=_("Resizable in game"))
+        row = box.row(align=True)
+        row.enabled = settings.scalable
+        row.prop(settings, "min_scale", text=_("Smallest"))
+        row.prop(settings, "max_scale", text=_("Largest"))
+
+        layout.separator()
         layout.prop(settings, "swatch_group", text=_("Swatch group"))
         layout.prop(settings, "write_recipe", text=_("Write the recipe file"))
 

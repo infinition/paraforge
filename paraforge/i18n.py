@@ -342,6 +342,21 @@ FR = {
     "Origin placement": "Placement de l'origine",
     "Bounding size": "Encombrement",
     "Faces Y+": "Orienté vers Y+",
+    # -- The scaling handle on a placed item ---------------------------------
+    "Resizable in game": "Redimensionnable en jeu",
+    "Put the yellow scaling handle on the item once placed. Without it the "
+    "game creates no handle and the item is stuck at the size it was "
+    "exported. 1114 of the game's 2434 items declare it":
+        "Met la poignée jaune de redimensionnement sur l'objet une fois posé. "
+        "Sans elle, le jeu ne crée aucune poignée et l'objet reste à la "
+        "taille exportée. 1114 des 2434 objets du jeu la déclarent",
+    "Smallest": "Plus petit",
+    "Largest": "Plus grand",
+    "How far down the handle can take the item":
+        "Jusqu'où la poignée peut réduire l'objet",
+    "How far up the handle can take the item":
+        "Jusqu'où la poignée peut agrandir l'objet",
+
     "UV map": "Carte UV",
     "Texture coordinates": "Coordonnées de texture",
     "Triangle count": "Nombre de triangles",

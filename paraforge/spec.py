@@ -340,6 +340,12 @@ DEFAULT_BASE_TEXTURE_GUID = "4272001606441780869"
 #: Occlusion comes from the alpha of the NormalOcclusion map, at full strength.
 SURFACE_AMBIENT_OCCLUSION_STRENGTH = 1
 
+#: How far a placed item can be scaled by its yellow handle. The game's own
+#: prefabs spread widely, and these are the two most common values across the
+#: 1114 that are scalable: MinScale 0.5 on 47 of them, MaxScale 2 on 39.
+MIN_SCALE = 0.5
+MAX_SCALE = 2.0
+
 #: There is no slot for a smoothness texture anywhere: the game stores a single
 #: scalar per surface, SmoothnessValue, used by 329 of the shipped surfaces. A
 #: smoothness map is therefore averaged down to one number.

@@ -1599,6 +1599,26 @@ def test_undo(mod):
     check(root != "ItemObject:123", "the root has an identity of its own", root)
     check("   AssetMesh:123" in text, "and the mesh is still referenced")
 
+    # The yellow scaling handle. The game creates the widget only for a root
+    # that declares IsScalable, and the drag only reaches the axes named, so
+    # the flag on its own would give a handle that does nothing.
+    check(" IsScalable:True" not in text,
+          "a prefab asked for nothing stays unscalable")
+
+    scalable = item_module.prefab_text("X", "123", (1.0, 1.0, 1.0),
+                                       scalable=True)
+    check(" IsScalable:True" in scalable, "asked for it, the flag is written")
+    check("  ScalableAxes:bool3(True, True, True)" in scalable,
+          "on all three axes, as 983 of the game's 1114 scalable items are")
+    check("  HasMinScale:True" in scalable and "  HasMaxScale:True" in scalable,
+          "with the two booleans the clamp actually reads")
+    check("  MinScale:0.5" in scalable and "  MaxScale:2" in scalable,
+          "and the bounds themselves",
+          [l for l in scalable.splitlines() if "Scale" in l])
+    check(scalable.index(" IsScalable:True")
+          < scalable.index(" ItemMeshReferences:"),
+          "written before the mesh reference, in the game's own field order")
+
 
 def test_create_mod():
     section("Creating a mod")

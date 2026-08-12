@@ -88,7 +88,9 @@ def surface_fields(name, surface_guid, texture_guid, normal_guid="",
 
 
 def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
-                pivot=(0.5, 0.5, 0.5), root_guid="", surface_guid=""):
+                pivot=(0.5, 0.5, 0.5), root_guid="", surface_guid="",
+                scalable=False, min_scale=spec.MIN_SCALE,
+                max_scale=spec.MAX_SCALE):
     """One root object holding one mesh, which is what an item minimally is.
 
     Size is in metres, in the game's axis order: width, height, depth. Blender
@@ -99,12 +101,45 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
     The root object gets its own identity: ItemMeshReferences keys on the
     object that carries the reference, AssetMesh names the FBX, and the two
     are separate things even when there is only one object.
+
+    IsScalable is what puts the yellow scaling handle on a placed item. The
+    widget is created only for a root that declares it:
+
+        if (... && player.ItemSelected.Item.Root.IsScalable)
+
+    and the axes decide what the drag reaches, one axis at a time:
+
+        vector2.x = (item.ScalableAxes.x ? value : 1f);
+
+    so the flag without the axes gives a handle that does nothing. 1114 of the
+    game's 2434 prefabs declare it, 983 of them on all three axes, which is
+    the form written here.
+
+    HasMinScale and HasMaxScale are written although the game's own prefabs
+    omit them. The clamp reads them, not the bounds:
+
+        if (item.HasMinScale) min = ...
+        value = Mathf.Clamp(value, min, item.HasMaxScale ? item.MaxScale : ...)
+
+    so a MinScale on its own is a limit that does not hold, and an item can be
+    dragged down to nothing.
     """
     root = root_guid or sidecar.guid_for("paraforge", "root", mesh_guid)
     lines = [
         "ItemObject:" + root,
         " Name:Root",
         "ItemObjectRoot:",
+    ]
+    if scalable:
+        lines.extend([
+            " IsScalable:True",
+            "  ScalableAxes:bool3(True, True, True)",
+            "  HasMinScale:True",
+            "  MinScale:{0:g}".format(float(min_scale)),
+            "  HasMaxScale:True",
+            "  MaxScale:{0:g}".format(float(max_scale)),
+        ])
+    lines.extend([
         " ItemMeshReferences:",
         "  GUID:" + root,
         "   AssetMesh:" + mesh_guid,
@@ -112,7 +147,7 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
         " Pivot:({0:.4f}, {1:.4f}, {2:.4f})".format(*pivot),
         " Size:({0:.4f}, {1:.4f}, {2:.4f})".format(*size),
         "ItemMeshReference:",
-    ]
+    ])
     if surface_guid:
         lines.extend([
             " Surfaces:",
@@ -305,7 +340,12 @@ def generate(mod_path, name, settings, report, zone_count=1):
     # Regenerating an unchanged item must be a no-op, otherwise every press
     # of the button adds a step to the undo history that undoes nothing.
     wanted = prefab_text(name, mesh_guid, size, overlay_guid, colorzone_guid,
-                         surface_guid=surface_guid)
+                         surface_guid=surface_guid,
+                         scalable=getattr(settings, "scalable", True),
+                         min_scale=getattr(settings, "min_scale",
+                                           spec.MIN_SCALE),
+                         max_scale=getattr(settings, "max_scale",
+                                           spec.MAX_SCALE))
     if setting.read(prefab_path) != wanted:
         run.will_modify(prefab_path)
         setting.write(prefab_path, wanted)

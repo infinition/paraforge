@@ -207,6 +207,31 @@ class ParaForgeSettings(PropertyGroup):
         update=_invalidate,
     )
 
+    scalable: BoolProperty(
+        name=_("Resizable in game"),
+        description=_(
+            "Put the yellow scaling handle on the item once placed. Without "
+            "it the game creates no handle and the item is stuck at the size "
+            "it was exported. 1114 of the game's 2434 items declare it"
+        ),
+        default=True,
+        update=_invalidate,
+    )
+
+    min_scale: FloatProperty(
+        name=_("Smallest"),
+        description=_("How far down the handle can take the item"),
+        default=spec.MIN_SCALE, min=0.01, max=10.0, soft_max=1.0,
+        update=_invalidate,
+    )
+
+    max_scale: FloatProperty(
+        name=_("Largest"),
+        description=_("How far up the handle can take the item"),
+        default=spec.MAX_SCALE, min=0.01, max=20.0, soft_min=1.0,
+        update=_invalidate,
+    )
+
     smoothness: FloatProperty(
         name=_("Smoothness"),
         description=_(

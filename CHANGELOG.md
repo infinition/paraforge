@@ -9,6 +9,41 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.20.0]
+
+### Added
+
+- **The yellow scaling handle**, which a mod item never had. The game creates
+  the widget only for a root that declares it:
+
+  ```csharp
+  if (... && player.ItemSelected.Item.Root.IsScalable)
+  ```
+
+  and the drag reaches one axis only if that axis is named:
+
+  ```csharp
+  vector2.x = (item.ScalableAxes.x ? value : 1f);
+  ```
+
+  so the flag without the axes gives a handle that does nothing. Counted
+  across the game's 2434 prefabs, now readable as plain text in
+  `Main.mod/Environments/Items/Prefabs`: 1114 declare `IsScalable`, 983 of
+  them on all three axes, against 650 that declare the per axis `IsResizable`
+  instead. The three axis form is what is written.
+
+  `HasMinScale` and `HasMaxScale` are written too, although the game's own
+  prefabs omit them, because the clamp reads the booleans and not the bounds:
+
+  ```csharp
+  if (item.HasMinScale) min = ...
+  value = Mathf.Clamp(value, min, item.HasMaxScale ? item.MaxScale : ...);
+  ```
+
+  Without them a declared MinScale is a limit that does not hold and the item
+  can be dragged down to nothing. Bounds default to 0.5 and 2, the most
+  common values among the scalable prefabs.
+
 ## [0.19.0]
 
 Read straight out of `Paralives_Data/Managed/Paralives.dll`, decompiled with
