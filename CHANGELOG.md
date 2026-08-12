@@ -9,6 +9,55 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.19.0]
+
+Read straight out of `Paralives_Data/Managed/Paralives.dll`, decompiled with
+ILSpy. One missing line was causing both open bugs.
+
+### Fixed
+
+- **Every item a mod added collided with the others**, so a newly created
+  item took over the ones already placed: two cacti became a flower, and the
+  catalogue entry named Cactus2 became Fleufleur.
+
+  A `@<GUID>` entry says where the new member goes. The game creates it with
+  every field at its default, so its `GUID` field stays at zero unless the
+  file writes it, and the game keys its lookups on that field:
+
+  ```csharp
+  _dictionary.Add(AllItems[i].GUID, AllItems[i]);        // Setting.Items
+  _surfaceDictionary.Add(surface.GUID, surface);         // Setting.Surfaces
+  ```
+
+  Both skip a key they already hold. Left at zero, every entry collided on
+  zero, one won, and the rest disappeared behind it. The game's own editor
+  writes `AddArrayAtGUID` and then sets the field named by `[ClassGUID]` to
+  the same value; ParaForge was stripping it, on the mistaken reading that
+  `French.mod` omits it. `French.mod` uses `g<GUID>`, which merges onto a
+  member that already has a GUID. `@<GUID>` creates one that does not.
+
+- **The item rendered white with a surface of its own**, and this was the same
+  missing line, not a rule against mod surfaces. `WithSurfaces` skips a
+  surface `GetSurfaceByGUID` cannot find, leaving the builder on the
+  `ShaderType.Simple` that `Init()` put there, while `ZoneDefinition` is
+  `OneZoneNew` for any item with one surface:
+
+  ```csharp
+  if (item.ColorZoneMap != 0L)       zoneDefinition = ColorZoneMapNew;
+  else if (item.Surfaces.Count == 1) zoneDefinition = OneZoneNew;
+  ```
+
+  So `ShaderType:Simple ZoneDefinition:OneZoneNew` never meant "a mod may not
+  supply a surface". It meant the surface was not found. Nothing about the
+  surface's contents was ever the problem, and the swatch defaults removed in
+  0.16.0 were innocent.
+
+### Changed
+
+- **A surface of its own is back on by default**, which brings the relief
+  back with it. No prefab field anywhere carries a normal map, so the surface
+  is the only place it can live.
+
 ## [0.18.0]
 
 ### Fixed

@@ -797,10 +797,27 @@ def test_setting_merge():
     # base game fills is what made the game drop everything else.
     check("  s2\r\n" in merged, "the count line is left exactly as it was",
           [l for l in merged.split("\r\n") if l.strip().startswith("s")])
+    # The field, not just the marker. The marker says where the member goes;
+    # the game creates it with every field at its default, and keys both
+    # AllItems and AllSurfaces on the GUID field. Left at zero, every entry a
+    # mod adds collides on zero and only one of them survives.
+    check("   =GUID:333\r\n" in merged,
+          "and carries its GUID as a field, which the lookup is keyed on",
+          merged)
+
+    extended = setting.append_entry(
+        original, "AllItems",
+        [("GUID", "111"), ("DisplayName", "Patched")], "Items",
+        setting.MARKER_EXTEND, "111",
+    )
+    check("  g111\r\n" in extended and "=GUID:111\r\n   =DisplayName:Patched"
+          not in extended,
+          "while a g entry leaves it out, merging onto a member that has one")
+
     check("  @333\r\n" in merged, "the new entry is added by GUID",
           [l for l in merged.split("\r\n") if l.strip().startswith("@")])
-    check("=GUID:333" not in merged,
-          "and the GUID is not repeated as a field", merged)
+    check(merged.count("=GUID:333") == 1,
+          "with the GUID field written exactly once", merged)
     check(merged.count("=GUID:111") == 1 and merged.count("=DisplayName:Fresh") == 1,
           "both the old and the new entry are there")
 

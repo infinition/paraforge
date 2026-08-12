@@ -53,16 +53,24 @@ def surface_fields(name, surface_guid, texture_guid, normal_guid="",
 
         =GUID / =DisplayName / =Texture / =NormalAndAmbientOcclusionMap
 
-    DefaultSwatchGroup and DefaultSwatch are deliberately absent. Declaring
-    them announces a swatch, so the game asked for a colour zone the plain
-    shader cannot draw and said so:
+    DefaultSwatchGroup and DefaultSwatch are deliberately absent: declaring
+    them announces a swatch, and the plain shader has no colour zone to draw
+    it in. ShaderType is left out too, as it is on 74 of those 75, and
+    BuildModeTags with it, since a surface belonging to one item has no
+    business in the in-game surface picker.
+
+    GUID leads, and it is the field this whole file turns on. The game keys
+    its surface lookup on it:
+
+        _surfaceDictionary.Add(surface.GUID, surface)
+
+    and WithSurfaces skips a surface that lookup cannot find, leaving the
+    builder on the ShaderType.Simple that Init() put there. Against the
+    OneZoneNew that one surface always produces, no shader matches, and the
+    game says so before drawing the item white:
 
         Material builder got given parameters that don't match any shaders -
         ShaderType:Simple ZoneDefinition:OneZoneNew LightingMethod:Lit
-
-    ShaderType is left out too, as it is on 74 of those 75, and BuildModeTags
-    with it, since a surface belonging to one item has no business in the
-    in-game surface picker.
     """
     fields = [
         ("GUID", surface_guid),

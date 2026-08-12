@@ -101,12 +101,26 @@ def entry_lines(depth, index, fields, marker="i"):
                  own French.mod extends Translations this way, with no size
                  line above it.
 
-    A GUID carried in the marker is not repeated as a =GUID field, which is
-    how French.mod writes it.
+    An @ entry must carry =GUID as a field as well as in its marker, and this
+    is not a redundancy. The marker only says where the new member goes: the
+    game creates it with every field at its default, so its GUID stays zero
+    unless the field is written. Both dictionaries the game looks members up
+    in are keyed on that field:
+
+        _dictionary.Add(AllItems[i].GUID, AllItems[i])       Setting.Items
+        _surfaceDictionary.Add(surface.GUID, surface)        Setting.Surfaces
+
+    and both skip a key they already hold. Left at zero, every entry a mod
+    adds collides on zero, one of them wins, and the rest vanish behind it.
+    Read out of the game's own editor, which writes AddArrayAtGUID and then
+    sets the field named by [ClassGUID] to the same value.
+
+    A g entry does not carry it: the member it merges onto already exists and
+    already has its GUID, which is how French.mod writes it.
     """
     head = marker + str(index)
     out = [(INDENT * depth) + head]
-    if marker != "i":
+    if marker == MARKER_EXTEND:
         fields = [(key, value) for key, value in fields if key != "GUID"]
     for key, value in fields:
         if isinstance(value, list):
