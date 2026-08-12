@@ -17,7 +17,7 @@ from bpy.props import (
 )
 from bpy.types import PropertyGroup
 
-from . import catalog, i18n, modfolder, prefs, spec
+from . import catalog, i18n, modfolder, prefs, remesh, spec
 
 _ = i18n.t
 
@@ -191,6 +191,88 @@ class ParaForgeSettings(PropertyGroup):
             "Collapsing edges throws the UVs out of shape, which is why the "
             "texture seems to disappear. Unwrap the reduced mesh and bake the "
             "original's colour, relief and roughness onto it"
+        ),
+        default=True,
+    )
+
+    remesh_mode: EnumProperty(
+        name=_("Remesh mode"),
+        description=_("Which of Blender's four remesh solvers to run"),
+        items=[(key, label, description)
+               for key, label, description in remesh.MODES],
+        default="SHARP",
+    )
+
+    remesh_octree_depth: IntProperty(
+        name=_("Octree Depth"),
+        description=_(
+            "How finely the volume is divided. Each step doubles the "
+            "resolution, so it also roughly quadruples the triangles"
+        ),
+        default=4, min=1, max=12,
+    )
+
+    remesh_scale: FloatProperty(
+        name=_("Scale"),
+        description=_(
+            "How much of the octree the object fills. Nearer 1 gives a finer "
+            "result at the same depth, and risks clipping the shape"
+        ),
+        default=0.9, min=0.01, max=0.99,
+    )
+
+    remesh_sharpness: FloatProperty(
+        name=_("Sharpness"),
+        description=_("How hard an edge has to be before it is kept"),
+        default=1.0, min=0.0, soft_max=10.0,
+    )
+
+    remesh_threshold: FloatProperty(
+        name=_("Threshold"),
+        description=_("How much of a cell has to be inside the shape for it "
+                      "to be filled"),
+        default=1.0, min=0.01, max=1.0,
+    )
+
+    remesh_voxel_size: FloatProperty(
+        name=_("Voxel Size"),
+        description=_(
+            "The size of one voxel, in metres. Small means fine and slow: on "
+            "an object under two metres, a millimetre is already millions of "
+            "triangles"
+        ),
+        default=0.02, min=0.0001, soft_min=0.002, soft_max=0.5,
+        unit="LENGTH", precision=4,
+    )
+
+    remesh_adaptivity: FloatProperty(
+        name=_("Adaptivity"),
+        description=_(
+            "Lets flat areas use bigger triangles. Above zero it spends the "
+            "budget where the shape actually turns"
+        ),
+        default=0.0, min=0.0, max=1.0,
+    )
+
+    remesh_remove_disconnected: BoolProperty(
+        name=_("Remove Disconnected"),
+        description=_("Drop the loose shells the solver leaves behind"),
+        default=True,
+    )
+
+    remesh_smooth_shading: BoolProperty(
+        name=_("Smooth Shading"),
+        description=_("Shade the result smooth rather than faceted"),
+        default=False,
+    )
+
+    remesh_rebake: BoolProperty(
+        name=_("Bake the look back onto it"),
+        description=_(
+            "Remeshing keeps no UV map, no vertex colour and no material but "
+            "the first, so the object comes out bare. This unwraps the new "
+            "surface and bakes the original's colour, relief and roughness "
+            "onto it. Without it there is nothing left to look at"
         ),
         default=True,
     )

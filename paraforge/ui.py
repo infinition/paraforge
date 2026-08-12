@@ -559,6 +559,53 @@ class PARAFORGE_PT_calibration(_Base, Panel):
                         text=_("Reduce to the budget"), icon="MOD_DECIM")
 
 
+class PARAFORGE_PT_remesh(_Base, Panel):
+    bl_label = _("Remesh")
+    bl_parent_id = "PARAFORGE_PT_main"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw(self, context):
+        from . import remesh
+
+        layout = self.layout
+        settings = props.settings(context)
+        mode = settings.remesh_mode
+
+        paragraph(layout, context, _(
+            "Rebuilds the topology instead of collapsing it, which holds an "
+            "organic shape together where reducing tears it apart. Try the "
+            "modes on screen, then bake the original onto what you chose."
+        ), scale=0.75)
+
+        layout.prop(settings, "remesh_mode", expand=True)
+
+        column = layout.column(align=True)
+        for name, label in (
+            ("remesh_octree_depth", _("Octree Depth")),
+            ("remesh_scale", _("Scale")),
+            ("remesh_sharpness", _("Sharpness")),
+            ("remesh_threshold", _("Threshold")),
+            ("remesh_voxel_size", _("Voxel Size")),
+            ("remesh_adaptivity", _("Adaptivity")),
+        ):
+            if not remesh.used_by(mode, name[len("remesh_"):]):
+                continue
+            column.prop(settings, name, text=label)
+
+        column = layout.column(align=True)
+        column.prop(settings, "remesh_remove_disconnected",
+                    text=_("Remove Disconnected"))
+        column.prop(settings, "remesh_smooth_shading",
+                    text=_("Smooth Shading"))
+
+        layout.separator()
+        layout.prop(settings, "remesh_rebake",
+                    text=_("Bake the look back onto it"))
+        row = layout.row()
+        row.scale_y = 1.2
+        row.operator("paraforge.remesh", text=_("Remesh"), icon="MOD_REMESH")
+
+
 class PARAFORGE_PT_inspector(_Base, Panel):
     bl_label = _("Mod folder inspector")
     bl_parent_id = "PARAFORGE_PT_main"
@@ -589,5 +636,6 @@ classes = (
     PARAFORGE_PT_options,
     PARAFORGE_PT_viewport,
     PARAFORGE_PT_calibration,
+    PARAFORGE_PT_remesh,
     PARAFORGE_PT_inspector,
 )

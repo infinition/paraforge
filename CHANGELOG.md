@@ -9,6 +9,56 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.21.0]
+
+### Added
+
+- **A Remesh panel**, because collapsing edges is the wrong tool for an
+  organic asset. Blender's own modifier is exposed as it is, with its four
+  modes and the settings each one actually uses: Octree Depth, Scale and
+  Threshold for Blocks, Smooth and Sharp, plus Sharpness for Sharp, and Voxel
+  Size with Adaptivity for Voxel. Remove Disconnected and Smooth Shading sit
+  alongside. Settings that mean nothing in the current mode are not drawn.
+
+  The point is that the choice is yours and it is visible before anything is
+  baked: pick the look in the viewport, then let the original be baked onto
+  it.
+
+  Measured on a 302 108 triangle asset, in Blender 5.2:
+
+  | mode | setting | triangles | time |
+  |---|---|---|---|
+  | Sharp | depth 5 | 1 456 | 0.6 s |
+  | Sharp | depth 6 | 5 656 | 0.6 s |
+  | Sharp | depth 7 | 22 604 | 0.9 s |
+  | Blocks | depth 5 | 1 456 | 0.6 s |
+  | Voxel | 0.02 m, adaptivity 0.3 | 7 496 | 0.7 s |
+
+  Remeshing keeps no UV map, no vertex colour and no material but the first,
+  so the bake is not an option but the other half of the operation, and it is
+  on by default. Turned off, the panel says the object will come out bare
+  rather than letting it look like a broken remesh. The whole run on that
+  asset, remesh at depth 6 then unwrap and bake four maps at 2048, took 165
+  seconds and came out at 5 656 triangles carrying the original's grain,
+  bolts and relief.
+
+### Fixed
+
+- **Reduce to the budget did nothing from edit mode**, which is most of why
+  it seemed not to work. Applying a modifier is refused outright there:
+
+  ```
+  Operator bpy.ops.object.modifier_apply.poll() This modifier operation is
+  not allowed from Edit mode
+  ```
+
+  and the failure arrived as a per object warning, which reads as a button
+  that ran and changed nothing. Both reducing and remeshing now step into
+  object mode and put you back in the mode you were in.
+
+- **A failed rebake is now said out loud.** It left an object with no UVs and
+  no texture, which looks exactly like the mesh having disappeared.
+
 ## [0.20.0]
 
 ### Added

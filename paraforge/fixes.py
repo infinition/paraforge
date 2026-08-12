@@ -467,17 +467,21 @@ class PARAFORGE_OT_decimate_to_budget(Operator):
             keepers = _duplicate_for_bake(context, objects)
 
         ratio = max(min(float(self.budget) / float(before), 1.0), 0.01)
-        for obj in objects:
-            modifier = obj.modifiers.new("ParaForge Decimate", "DECIMATE")
-            modifier.decimate_type = "COLLAPSE"
-            modifier.ratio = ratio
-            modifier.use_collapse_triangulate = True
-            try:
-                with context.temp_override(object=obj, active_object=obj):
-                    bpy.ops.object.modifier_apply(modifier=modifier.name)
-            except RuntimeError as error:
-                obj.modifiers.remove(modifier)
-                self.report({"WARNING"}, "{0}: {1}".format(obj.name, error))
+        # Edit mode refuses modifier_apply outright, which turned this button
+        # into one that reported a warning and changed nothing.
+        with util.object_mode(context):
+            for obj in objects:
+                modifier = obj.modifiers.new("ParaForge Decimate", "DECIMATE")
+                modifier.decimate_type = "COLLAPSE"
+                modifier.ratio = ratio
+                modifier.use_collapse_triangulate = True
+                try:
+                    with context.temp_override(object=obj, active_object=obj):
+                        bpy.ops.object.modifier_apply(modifier=modifier.name)
+                except RuntimeError as error:
+                    obj.modifiers.remove(modifier)
+                    self.report({"WARNING"},
+                                "{0}: {1}".format(obj.name, error))
 
         cache.invalidate()
         depsgraph = context.evaluated_depsgraph_get()
@@ -495,6 +499,83 @@ class PARAFORGE_OT_decimate_to_budget(Operator):
 
         self.report({"INFO"},
                     _("{0} triangles, down from {1}", after, before) + baked)
+        return {"FINISHED"}
+
+
+class PARAFORGE_OT_remesh(Operator):
+    bl_idname = "paraforge.remesh"
+    bl_label = _("Remesh")
+    bl_description = _(
+        "Throw the topology away and lay an even surface over the volume, "
+        "then bake the original's look onto it. Where collapsing edges tears "
+        "an organic asset apart long before it reaches a furniture budget, "
+        "this rebuilds it instead"
+    )
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        from . import remesh
+
+        objects = _targets(context)
+        if not objects:
+            self.report({"ERROR"}, _("Nothing selected"))
+            return {"CANCELLED"}
+
+        settings = props.settings(context)
+        rebake = getattr(settings, "remesh_rebake", True)
+
+        depsgraph = context.evaluated_depsgraph_get()
+        before = geo.measure(objects, depsgraph).triangles
+
+        # The original has to outlive the remesh, or there is nothing left to
+        # bake the look from and the object stays bare.
+        keepers = _duplicate_for_bake(context, objects) if rebake else []
+
+        try:
+            failed = remesh.apply_to(
+                context, objects,
+                mode=settings.remesh_mode,
+                octree_depth=settings.remesh_octree_depth,
+                scale=settings.remesh_scale,
+                sharpness=settings.remesh_sharpness,
+                threshold=settings.remesh_threshold,
+                voxel_size=settings.remesh_voxel_size,
+                adaptivity=settings.remesh_adaptivity,
+                remove_disconnected=settings.remesh_remove_disconnected,
+                smooth_shading=settings.remesh_smooth_shading,
+            )
+        except Exception as error:
+            _discard(keepers)
+            self.report({"ERROR"}, str(error))
+            return {"CANCELLED"}
+
+        for message in failed:
+            self.report({"WARNING"}, message)
+
+        cache.invalidate()
+        depsgraph = context.evaluated_depsgraph_get()
+        after = geo.measure(objects, depsgraph).triangles
+
+        baked = ""
+        if keepers:
+            try:
+                baked = _rebake_from(context, objects, keepers)
+            except Exception as error:
+                # Say it plainly. A silent failure here leaves an object with
+                # no UVs and no texture, which reads as a broken remesh.
+                self.report({"WARNING"}, _(
+                    "Remeshed, but the look could not be baked back, so the "
+                    "object has no texture: {0}", error))
+            finally:
+                _discard(keepers)
+            cache.invalidate()
+        elif not failed:
+            self.report({"WARNING"}, _(
+                "Remeshing keeps no UV map, so the object is bare until "
+                "something is baked onto it"))
+
+        self.report({"INFO"},
+                    _("{0} triangles, was {1}", after, before) + baked)
         return {"FINISHED"}
 
 
@@ -742,6 +823,7 @@ classes = (
     PARAFORGE_OT_detect_roles,
     PARAFORGE_OT_set_texture_role,
     PARAFORGE_OT_decimate_to_budget,
+    PARAFORGE_OT_remesh,
     PARAFORGE_OT_downscale_textures,
     PARAFORGE_OT_bake_to_atlas,
     PARAFORGE_OT_fix_all,

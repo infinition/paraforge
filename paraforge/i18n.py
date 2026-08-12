@@ -342,6 +342,90 @@ FR = {
     "Origin placement": "Placement de l'origine",
     "Bounding size": "Encombrement",
     "Faces Y+": "Orienté vers Y+",
+    # -- Remesh --------------------------------------------------------------
+    "Remesh": "Remesh",
+    "Remesh mode": "Mode de remesh",
+    "Which of Blender's four remesh solvers to run":
+        "Lequel des quatre solveurs de remesh de Blender lancer",
+    "Blocks": "Blocs",
+    "Voxels left square. The blocky look, kept":
+        "Voxels laissés carrés. Le rendu cubique, assumé",
+    "Smooth": "Lisse",
+    "The same voxels, rounded off": "Les mêmes voxels, arrondis",
+    "Sharp": "Net",
+    "Rounded, but corners and edges held. The usual choice for an object":
+        "Arrondi, mais coins et arêtes tenus. Le choix habituel pour un objet",
+    "Voxel": "Voxel",
+    "A newer solver sized in metres rather than by subdivision, with an "
+    "adaptivity that spends triangles only where the shape needs them":
+        "Un solveur plus récent, dimensionné en mètres plutôt que par "
+        "subdivision, avec une adaptivité qui dépense les triangles là où la "
+        "forme en a besoin",
+    "Octree Depth": "Profondeur d'octree",
+    "How finely the volume is divided. Each step doubles the resolution, so "
+    "it also roughly quadruples the triangles":
+        "À quel point le volume est découpé. Chaque cran double la "
+        "résolution, donc quadruple à peu près les triangles",
+    "Scale": "Échelle",
+    "How much of the octree the object fills. Nearer 1 gives a finer result "
+    "at the same depth, and risks clipping the shape":
+        "Quelle part de l'octree l'objet remplit. Près de 1 donne un résultat "
+        "plus fin à profondeur égale, et risque de rogner la forme",
+    "Sharpness": "Netteté",
+    "How hard an edge has to be before it is kept":
+        "À quel point une arête doit être marquée pour être gardée",
+    "Threshold": "Seuil",
+    "How much of a cell has to be inside the shape for it to be filled":
+        "Quelle part d'une cellule doit être dans la forme pour être remplie",
+    "Voxel Size": "Taille de voxel",
+    "The size of one voxel, in metres. Small means fine and slow: on an "
+    "object under two metres, a millimetre is already millions of triangles":
+        "La taille d'un voxel, en mètres. Petit veut dire fin et lent : sur "
+        "un objet de moins de deux mètres, un millimètre fait déjà des "
+        "millions de triangles",
+    "Adaptivity": "Adaptivité",
+    "Lets flat areas use bigger triangles. Above zero it spends the budget "
+    "where the shape actually turns":
+        "Laisse les zones plates prendre de plus gros triangles. Au-dessus de "
+        "zéro, le budget part là où la forme tourne vraiment",
+    "Remove Disconnected": "Retirer les morceaux détachés",
+    "Drop the loose shells the solver leaves behind":
+        "Jette les coques isolées que le solveur laisse derrière lui",
+    "Smooth Shading": "Ombrage lisse",
+    "Shade the result smooth rather than faceted":
+        "Ombre le résultat en lisse plutôt qu'en facettes",
+    "Remeshing keeps no UV map, no vertex colour and no material but the "
+    "first, so the object comes out bare. This unwraps the new surface and "
+    "bakes the original's colour, relief and roughness onto it. Without it "
+    "there is nothing left to look at":
+        "Le remesh ne garde aucune carte UV, aucune couleur de sommet et "
+        "aucun matériau sauf le premier, donc l'objet ressort nu. Ceci "
+        "déplie la nouvelle surface et y cuit la couleur, le relief et la "
+        "rugosité de l'original. Sans ça, il ne reste rien à regarder",
+    "Throw the topology away and lay an even surface over the volume, then "
+    "bake the original's look onto it. Where collapsing edges tears an "
+    "organic asset apart long before it reaches a furniture budget, this "
+    "rebuilds it instead":
+        "Jette la topologie et pose une surface régulière sur le volume, puis "
+        "y cuit le rendu de l'original. Là où l'effondrement d'arêtes déchire "
+        "un asset organique bien avant d'atteindre un budget de mobilier, "
+        "ceci le reconstruit",
+    "Rebuilds the topology instead of collapsing it, which holds an organic "
+    "shape together where reducing tears it apart. Try the modes on screen, "
+    "then bake the original onto what you chose.":
+        "Reconstruit la topologie au lieu de l'effondrer, ce qui tient une "
+        "forme organique là où la réduction la déchire. Essaie les modes à "
+        "l'écran, puis cuis l'original sur ce que tu as choisi.",
+    "Remeshing keeps no UV map, so the object is bare until something is "
+    "baked onto it":
+        "Le remesh ne garde aucune carte UV, donc l'objet est nu tant que "
+        "rien n'y est cuit",
+    "Remeshed, but the look could not be baked back, so the object has no "
+    "texture: {0}":
+        "Remeshé, mais le rendu n'a pas pu être recuit, donc l'objet n'a pas "
+        "de texture : {0}",
+    "{0} triangles, was {1}": "{0} triangles, contre {1} avant",
+
     # -- The scaling handle on a placed item ---------------------------------
     "Resizable in game": "Redimensionnable en jeu",
     "Put the yellow scaling handle on the item once placed. Without it the "

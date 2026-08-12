@@ -1147,6 +1147,57 @@ def test_uv_transform():
           str(status_of(report, "uvtransform")))
 
 
+def test_remesh():
+    """Rebuild the topology, and say plainly that it takes the UVs with it."""
+    section("Remesh")
+    from paraforge import remesh, util
+
+    check(remesh.used_by("SHARP", "sharpness"),
+          "sharpness belongs to the sharp solver")
+    check(not remesh.used_by("BLOCKS", "sharpness"),
+          "and to no other, so the panel can hide it")
+    check(remesh.used_by("VOXEL", "voxel_size")
+          and not remesh.used_by("VOXEL", "octree_depth"),
+          "the voxel solver is sized in metres, not by subdivision")
+
+    fresh_scene()
+    obj = make_cube(size=1.0)
+    material = bpy.data.materials.new("RemeshSource")
+    material.use_nodes = True
+    obj.data.materials.append(material)
+    before = len(obj.data.polygons)
+    check(len(obj.data.uv_layers) >= 1, "the source starts with a UV map")
+
+    failed = remesh.apply_to(bpy.context, [obj], mode="SHARP", octree_depth=4)
+    check(not failed, "the modifier applies", str(failed))
+    check(len(obj.data.polygons) != before,
+          "and the topology is rebuilt, not collapsed",
+          "{0} -> {1}".format(before, len(obj.data.polygons)))
+
+    # The whole reason the bake is not optional.
+    check(len(obj.data.uv_layers) == 0,
+          "remeshing takes the UV map with it, so a bake has to follow")
+
+    # Edit mode refuses modifier_apply, which is what made the reduce button
+    # look like it did nothing.
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode="EDIT")
+    count = len(obj.data.polygons)
+    failed = remesh.apply_to(bpy.context, [obj], mode="BLOCKS", octree_depth=3)
+    check(not failed, "it still applies from edit mode", str(failed))
+    check(len(obj.data.polygons) != count, "and actually changes the mesh")
+    check(bpy.context.object.mode == "EDIT",
+          "leaving the user in the mode they were in",
+          bpy.context.object.mode)
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+    with util.object_mode(bpy.context):
+        check(bpy.context.object.mode == "OBJECT",
+              "the guard is a no-op when already in object mode")
+
+
 def test_preview():
     """The preview must show the exported files, and give the scene back."""
     section("Preview as in game")
@@ -1712,6 +1763,7 @@ def main():
         test_inspector(mod)
         test_export_units()
         test_uv_transform()
+        test_remesh()
         test_preview()
         test_decimate_rebake()
         test_two_items_share_nothing()
