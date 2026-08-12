@@ -37,8 +37,27 @@ Blender 4.2 or newer. Developed and tested against Blender 5.2 LTS.
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshot1.png" alt="ParaForge Blender Interface and Checklist" width="800">
+  <br>
+  <em>ParaForge panel in Blender 5.2 showing automated checklist validation, asset rules, and export tools.</em>
+</p>
+
+<br>
+
+<p align="center">
+  <img src="docs/screenshot2.png" alt="In-Game Paralives Preview" width="800">
+  <br>
+  <em>Exported custom 3D asset placed live in Paralives Build Mode alongside hot-reloading console commands.</em>
+</p>
+
+---
+
 ## Table of contents
 
+- [Screenshots](#screenshots)
 - [Why this exists](#why-this-exists)
 - [Install](#install)
 - [Use it](#use-it)

@@ -37,8 +37,27 @@ Blender 4.2 ou plus. Développée et testée sur Blender 5.2 LTS.
 
 ---
 
+## Captures d'écran
+
+<p align="center">
+  <img src="docs/screenshot1.png" alt="Interface ParaForge dans Blender et Checklist" width="800">
+  <br>
+  <em>Panneau ParaForge dans Blender 5.2 affichant la checklist automatisée, les règles de validation et les outils d'export.</em>
+</p>
+
+<br>
+
+<p align="center">
+  <img src="docs/screenshot2.png" alt="Aperçu en jeu dans Paralives" width="800">
+  <br>
+  <em>Objet 3D personnalisé exporté et posé en jeu dans le mode Construction de Paralives avec la console de rechargement.</em>
+</p>
+
+---
+
 ## Sommaire
 
+- [Captures d'écran](#captures-décran)
 - [Pourquoi cet outil](#pourquoi-cet-outil)
 - [Installation](#installation)
 - [Utilisation](#utilisation)
