@@ -38,6 +38,9 @@ Blender 4.2 ou plus. Développée et testée sur Blender 5.2 LTS.
 > [!TIP]
 > **Outil complémentaire** : Associez **ParaForge** avec [**ParaReload**](https://github.com/infinition/parareload), un plugin BepInEx en jeu pour Paralives qui recharge a chaud vos modeles 3D, textures et reglages en direct sans redemarrer le jeu. Sauvegardez dans Blender via ParaForge et voyez vos modifications apparaitre immediatement en jeu !
 
+> [!NOTE]
+> **Extraction depuis Les Sims** : [**sims-package2glb**](https://github.com/infinition/sims-package2glb) lit les mods `.package` des Sims 2, 3 et 4 et ecrit les modeles et textures au format glTF.
+
 ---
 
 ## Captures d'écran
