@@ -909,7 +909,12 @@ def test_generate_item():
     check(sidecar.asset_guid(mod, "OldWoodenChairDetail.png") not in surface,
           "the colour is not put in the base slot", surface)
     check("ShaderType" not in surface,
-          "and no ShaderType, as on 1445 of the game's 1649 entries")
+          "and no ShaderType, as on 74 of the game's 75 such surfaces")
+    # Declaring a swatch default announces a colour zone the plain shader
+    # cannot draw, and the item comes out white.
+    check("DefaultSwatchGroup" not in surface and "DefaultSwatch" not in surface,
+          "no swatch default, which would ask for a zone it cannot draw",
+          surface)
     check("Value:" + own_guid in text, "the prefab points at it", text)
     check("DetailMap:" + sidecar.asset_guid(mod, "OldWoodenChairDetail.png")
           in text, "and the colour still comes through DetailMap", text)
@@ -1058,6 +1063,22 @@ def test_preview():
     check(not any(s.startswith("Chair") and s.endswith("Detail")
                   and s != "ChairDetail" for s in sources),
           "not the texture the preview just wrote", str(sources))
+
+    # The preview has to read a map back through the colour space its source
+    # carried. Showing a Non-Color albedo as sRGB washes it out, which reads
+    # as the texture having been applied wrongly.
+    source_image = bpy.data.images["ChairDetail"]
+    check(preview.source_colorspaces(plan_before).get("Detail")
+          == source_image.colorspace_settings.name,
+          "the source colour space is carried over",
+          str(preview.source_colorspaces(plan_before)))
+    for node in material.node_tree.nodes:
+        if node.bl_idname == "ShaderNodeTexImage" and node.image:
+            if "Detail" in os.path.basename(node.image.filepath):
+                check(node.image.colorspace_settings.name
+                      == source_image.colorspace_settings.name,
+                      "and the previewed copy is read through it",
+                      node.image.colorspace_settings.name)
 
     # The roughness comes from the single value the surface carries, never
     # from the map, which the game has no slot for.

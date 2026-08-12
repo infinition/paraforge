@@ -9,6 +9,33 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.16.0]
+
+### Fixed
+
+- **The item still rendered white, and the game said why.** The log carried,
+  once per item:
+
+  ```
+  Material builder got given parameters that don't match any shaders -
+  ShaderType:Simple ZoneDefinition:OneZoneNew LightingMethod:Lit
+  ```
+
+  The surface declared `DefaultSwatchGroup:0` and `DefaultSwatch:0`, which
+  announces a swatch, so the game asked for a colour zone the plain shader
+  cannot draw. Only 21 of the 75 shipped surfaces with a normal map declare
+  them, and the minimal form, `WallStoneRubble`, is four fields: GUID,
+  DisplayName, Texture, NormalAndAmbientOcclusionMap. The surface is now kept
+  to that, plus smoothness and occlusion strength, which 13 and 12 of them
+  carry.
+
+### Changed
+
+- The preview reads each map back through the colour space its source carried
+  rather than assuming sRGB. The pipeline works in raw bytes, so an albedo
+  tagged Non-Color shown as sRGB comes out pale and washed, which reads as the
+  texture having been applied wrongly.
+
 ## [0.15.0]
 
 ### Fixed

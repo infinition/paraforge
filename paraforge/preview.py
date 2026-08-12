@@ -56,7 +56,29 @@ def is_on(objects):
 # --------------------------------------------------------------------------
 
 
-def build_material(name, written, smoothness=None):
+def source_colorspaces(plan):
+    """The colour space Blender was already showing each map through.
+
+    The pipeline works in raw bytes: imaging.read undoes colour management on
+    the way in and write_png tags its output Non-Color, so a written file holds
+    exactly the bytes its source held. Which means the preview must read it
+    back through the same colour space the source carried, or it shows tones
+    Blender never showed. An albedo tagged Non-Color displayed as sRGB comes
+    out pale and washed, which is what an importer that mis-tags its textures
+    produces here.
+    """
+    spaces = {}
+    for output in plan.outputs:
+        for source in output.sources:
+            image = getattr(source, "image", None)
+            settings = getattr(image, "colorspace_settings", None)
+            if settings is not None and settings.name:
+                spaces[output.suffix] = settings.name
+                break
+    return spaces
+
+
+def build_material(name, written, smoothness=None, colorspaces=None):
     """A Principled BSDF fed the way Paralives feeds its own shader.
 
     written maps a suffix to the PNG the export would put in the mod, so what
@@ -78,21 +100,29 @@ def build_material(name, written, smoothness=None):
     nodes, links = tree.nodes, tree.links
     principled = nodes.get("Principled BSDF")
 
-    def load(path, is_data):
+    spaces = colorspaces or {}
+
+    def load(path, is_data, suffix=""):
         image = bpy.data.images.load(path, check_existing=False)
-        image.colorspace_settings.name = "Non-Color" if is_data else "sRGB"
+        wanted = spaces.get(suffix) or ("Non-Color" if is_data else "sRGB")
+        try:
+            image.colorspace_settings.name = wanted
+        except TypeError:
+            image.colorspace_settings.name = "Non-Color" if is_data else "sRGB"
         node = nodes.new("ShaderNodeTexImage")
         node.image = image
         return node
 
-    base = written.get("Detail") or written.get("GrayMask")
+    base_suffix = "Detail" if written.get("Detail") else "GrayMask"
+    base = written.get(base_suffix)
     if base:
-        node = load(base, is_data=False)
+        node = load(base, is_data=False, suffix=base_suffix)
         node.location = (-700, 320)
         links.new(node.outputs["Color"], principled.inputs["Base Color"])
 
     if written.get("NormalOcclusion"):
-        node = load(written["NormalOcclusion"], is_data=True)
+        node = load(written["NormalOcclusion"], is_data=True,
+                    suffix="NormalOcclusion")
         node.location = (-700, -260)
         normal_map = nodes.new("ShaderNodeNormalMap")
         normal_map.location = (-380, -260)
@@ -166,7 +196,8 @@ def apply(context, settings, objects, report):
 
     name = textures.pascal_case(
         settings.asset_name or (objects[0].name if objects else "Asset"))
-    material = build_material(name, written, smoothness)
+    material = build_material(name, written, smoothness,
+                              source_colorspaces(plan))
     _frozen_plan = plan
 
     for obj in objects:

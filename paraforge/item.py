@@ -46,10 +46,23 @@ def surface_fields(name, surface_guid, texture_guid, normal_guid="",
                    smoothness=None):
     """One surface, in the shape the game writes them.
 
-    Copied from TextileQuiltedSquares, which is a shipped surface carrying a
-    real normal map. ShaderType is left out, as it is on 1445 of the 1649
-    entries, and BuildModeTags too, since a surface belonging to a single item
-    has no business in the in-game surface picker.
+    Kept to what a shipped surface with a normal map actually declares. Of the
+    75 of them, all 75 carry a Texture and a NormalAndAmbientOcclusionMap, 13
+    a SmoothnessValue, 12 an AmbientOcclusionStrength, and only 21 a
+    DefaultSwatchGroup. WallStoneRubble is the whole minimal form:
+
+        =GUID / =DisplayName / =Texture / =NormalAndAmbientOcclusionMap
+
+    DefaultSwatchGroup and DefaultSwatch are deliberately absent. Declaring
+    them announces a swatch, so the game asked for a colour zone the plain
+    shader cannot draw and said so:
+
+        Material builder got given parameters that don't match any shaders -
+        ShaderType:Simple ZoneDefinition:OneZoneNew LightingMethod:Lit
+
+    ShaderType is left out too, as it is on 74 of those 75, and BuildModeTags
+    with it, since a surface belonging to one item has no business in the
+    in-game surface picker.
     """
     fields = [
         ("GUID", surface_guid),
@@ -63,8 +76,6 @@ def surface_fields(name, surface_guid, texture_guid, normal_guid="",
                        spec.SURFACE_AMBIENT_OCCLUSION_STRENGTH))
     if smoothness is not None:
         fields.append(("SmoothnessValue", "{0:.4g}".format(float(smoothness))))
-    fields.append(("DefaultSwatchGroup", 0))
-    fields.append(("DefaultSwatch", 0))
     return fields
 
 
