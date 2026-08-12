@@ -199,11 +199,12 @@ class ParaForgeSettings(PropertyGroup):
         name=_("Give the item its own surface"),
         description=_(
             "Write a Surface for this item so it carries its own normal map "
-            "and smoothness. Without one the item borrows the game's shared "
-            "surface and has no relief. Turn it off if the game refuses to "
-            "start, and use Undo the last write"
+            "and smoothness. Off by default: a mod defined surface still "
+            "makes the game refuse the shader and draw the item white, while "
+            "borrowing the game's own surface renders correctly without the "
+            "relief"
         ),
-        default=True,
+        default=False,
         update=_invalidate,
     )
 

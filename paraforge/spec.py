@@ -277,6 +277,23 @@ DEFAULT_SURFACE_NAME = "GenericGrayMask"
 #: needs to write it, the field is listed only so a reader stops looking.
 SURFACE_SHADER_TYPE_IS_NUMERIC = True
 
+# UNRESOLVED. A surface written by a mod still makes the game refuse to build
+# a material, and the item draws white:
+#
+#   Material builder got given parameters that don't match any shaders -
+#   ShaderType:Simple ZoneDefinition:OneZoneNew LightingMethod:Lit
+#
+# ZoneDefinition is chosen by GetColorZoneDefinition inside the game, and its
+# members, read out of Paralives.dll, are None, OneZoneOld, OneZoneNew,
+# ColorZoneMapOld and ColorZoneMapNew. Something in a mod supplied surface
+# makes it answer OneZoneNew, which the plain shader has no variant for.
+# Removing the swatch defaults did not change it, and GenericGrayMask declares
+# them and works, so it is not those on their own.
+#
+# Until that is understood, an item borrows the game's own surface, which is
+# proven to render, and does without the relief. The switch is still there for
+# anyone who wants to carry the investigation further.
+#
 # A surface of one's own, for the relief and the material.
 #
 # Pointing at GenericGrayMask and putting the item's texture in DetailMap makes

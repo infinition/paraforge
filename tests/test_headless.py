@@ -859,6 +859,9 @@ def test_generate_item():
     settings.catalog_tag = catalog.BY_NAME["Armchairs"]
     settings.swatch_group = "BasicWood"
     settings.facing_confirmed = True
+    # Off by default, since a mod supplied surface still draws white. The
+    # option is exercised here so the shape it writes stays covered.
+    settings.own_surface = True
 
     temp = tempfile.mkdtemp(prefix="paraforge_item_")
     mod = os.path.join(temp, "MyPack_9.mod")

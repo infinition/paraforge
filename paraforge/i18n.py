@@ -119,13 +119,14 @@ FR = {
     "Give the item its own surface": "Donner sa propre surface à l'objet",
 
     "Write a Surface for this item so it carries its own normal map and "
-    "smoothness. Without one the item borrows the game's shared surface and "
-    "has no relief. Turn it off if the game refuses to start, and use Undo "
-    "the last write":
+    "smoothness. Off by default: a mod defined surface still makes the game "
+    "refuse the shader and draw the item white, while borrowing the game's "
+    "own surface renders correctly without the relief":
         "Écrit une Surface pour cet objet, afin qu'il porte sa propre normal "
-        "map et sa brillance. Sans elle, l'objet emprunte la surface partagée "
-        "du jeu et n'a aucun relief. À désactiver si le jeu refuse de "
-        "démarrer, avec Annuler la dernière écriture",
+        "map et sa brillance. Désactivé par défaut : une surface définie par "
+        "un mod fait encore refuser le shader au jeu, qui dessine l'objet en "
+        "blanc, alors qu'emprunter la surface du jeu s'affiche correctement, "
+        "sans le relief",
 
     "Carries the normal map and the smoothness. Without it the item borrows "
     "the game's shared surface and has no relief.":

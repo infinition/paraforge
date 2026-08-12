@@ -9,6 +9,29 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.17.0]
+
+### Changed
+
+- **A surface of its own is off by default**, because a mod supplied surface
+  still makes the game refuse to build a material and draw the item white:
+
+  ```
+  Material builder got given parameters that don't match any shaders -
+  ShaderType:Simple ZoneDefinition:OneZoneNew LightingMethod:Lit
+  ```
+
+  `ZoneDefinition` is chosen by `GetColorZoneDefinition` inside the game, and
+  its members, read out of `Paralives.dll`, are `None`, `OneZoneOld`,
+  `OneZoneNew`, `ColorZoneMapOld` and `ColorZoneMapNew`. Something in a mod
+  supplied surface makes it answer `OneZoneNew`, which the plain shader has no
+  variant for. Removing the swatch defaults did not change it, and
+  `GenericGrayMask` declares them and renders, so it is not those on their own.
+
+  Borrowing the game's own surface is proven to render, so that is the default
+  again. The relief has to wait, and the switch stays for anyone carrying the
+  investigation further.
+
 ## [0.16.0]
 
 ### Fixed
