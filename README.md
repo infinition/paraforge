@@ -35,6 +35,9 @@ panel header.
 
 Blender 4.2 or newer. Developed and tested against Blender 5.2 LTS.
 
+> [!TIP]
+> **Complementary Modding Tool**: Pair **ParaForge** with [**ParaReload**](https://github.com/infinition/parareload), an in-game BepInEx plugin for Paralives that hot-reloads modified 3D models, textures, and settings live without restarting the game. Save in Blender with ParaForge, and see your asset update instantly in-game!
+
 ---
 
 ## Screenshots

@@ -35,6 +35,9 @@ l'en-tête du panneau.
 
 Blender 4.2 ou plus. Développée et testée sur Blender 5.2 LTS.
 
+> [!TIP]
+> **Outil complémentaire** : Associez **ParaForge** avec [**ParaReload**](https://github.com/infinition/parareload), un plugin BepInEx en jeu pour Paralives qui recharge a chaud vos modeles 3D, textures et reglages en direct sans redemarrer le jeu. Sauvegardez dans Blender via ParaForge et voyez vos modifications apparaitre immediatement en jeu !
+
 ---
 
 ## Captures d'écran
