@@ -6,7 +6,7 @@ and where possible a button that fixes it. The point is that no failure should
 ever be discovered by relaunching the game.
 """
 
-from . import geo, i18n, spec, textures
+from . import geo, i18n, spec, textures, uvxform
 
 _ = i18n.t
 
@@ -100,6 +100,7 @@ def run(context, settings):
     _check_asset_name(objects, settings, report)
     _check_color_zones(objects, settings, report)
     _check_uvs(objects, report)
+    _check_uv_transform(objects, report)
     _check_topology(measurement, settings, report)
     _check_textures(objects, settings, report)
     _check_destination(settings, report)
@@ -373,6 +374,46 @@ def _check_uvs(objects, report):
                    _("UV1 present, UV2 present (deformations)"))
     else:
         report.add("uv", _("UV map"), OK, _("UV1 present"))
+
+
+def _check_uv_transform(objects, report):
+    """Only worth a line when the material moves its coordinates.
+
+    An FBX carries a mesh and its UV maps and nothing else, so a Mapping node
+    is dropped at the door and the game samples the coordinates raw. ParaForge
+    bakes the transform into the exported UVs instead, which is exact; the
+    check exists to say so, and to name what it could not take along.
+    """
+    resolved = uvxform.resolve(objects)
+
+    if resolved.blockers:
+        image, reason = resolved.blockers[0]
+        report.add(
+            "uvtransform", _("Texture coordinates"), WARN,
+            _("{0} cannot be carried over: {1}. Bake the selection into one "
+              "atlas to fix it for good", image, reason),
+            fix="paraforge.bake_to_atlas",
+            fix_label=_("Bake into one atlas"),
+        )
+        return
+
+    if resolved.variants:
+        report.add(
+            "uvtransform", _("Texture coordinates"), WARN,
+            _("The textures are not all placed the same way ({0}). Only one "
+              "placement can be exported, so bake the selection into one "
+              "atlas", ", ".join(sorted(set(resolved.variants))[:3])),
+            fix="paraforge.bake_to_atlas",
+            fix_label=_("Bake into one atlas"),
+        )
+        return
+
+    if resolved.moves:
+        report.add(
+            "uvtransform", _("Texture coordinates"), OK,
+            _("The material moves them ({0}); the export bakes that into the "
+              "UVs", uvxform.describe(resolved.matrix)),
+        )
 
 
 def _check_topology(measurement, settings, report):

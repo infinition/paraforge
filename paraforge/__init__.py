@@ -23,7 +23,7 @@ MODULES = (prefs, props, fixes, zones, ops, ui)
 #: the class bodies have to run again for a switch to reach them.
 RELOAD_ORDER = (
     "i18n", "catalog", "spec", "util", "imaging", "modfolder", "geo",
-    "sidecar", "setting", "journal", "textures", "bake", "item",
+    "uvxform", "sidecar", "setting", "journal", "textures", "bake", "item",
     "recipe", "inspector", "validate",
     "cache", "prefs", "props", "zones", "fixes", "exporter", "ops",
     "overlay", "ui",

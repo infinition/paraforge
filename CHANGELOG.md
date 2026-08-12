@@ -9,6 +9,47 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.18.0]
+
+### Fixed
+
+- **The texture landed on the wrong part of the mesh**, showing the unwrapped
+  islands through a smear of colour. The cause is not in the game and not in
+  the textures: it is the coordinate transform the material puts in front of
+  them.
+
+  Measured on the cactus that showed the fault. Its UVs run `0 .. 0.0625` on U
+  and `0.9375 .. 1` on V, one cell of a 16 by 16 grid, and every one of its
+  four texture nodes is fed by a Mapping node at scale `15.98 x 16.00` with a
+  `-15.002` offset on V. Run through it, those coordinates land on
+  `0 .. 0.9986` by `0 .. 1`: the whole image. That is the shape an atlas cut
+  arrives in, and `KHR_texture_transform` in a glTF arrives the same way.
+
+  An FBX carries a mesh and its UV maps and nothing else. The Mapping node was
+  dropped at the door and the game sampled a 256th of the texture, stretched
+  over everything.
+
+  The transform is affine, so it does not have to be baked into pixels.
+  ParaForge now applies it to the coordinates themselves, on the export copy,
+  which is exact and costs nothing in resolution. The scene keeps the UVs the
+  artist gave it.
+
+- **The in game preview showed the fault instead of warning about it.** It
+  swaps the material while leaving the mesh alone, so its textures were
+  sampled with the raw coordinates. It now rebuilds the same transform in
+  front of them, and shows what the exported UVs will show. Side by side with
+  the source material on the cactus, the two are indistinguishable.
+
+### Added
+
+- **A "Texture coordinates" line in the report**, which appears only when the
+  material moves them. It names the transform being carried over, and warns
+  instead when the chain holds something an FBX cannot express: generated or
+  object coordinates, a Mapping node driven by another node, a rotation out of
+  the UV plane, or textures placed several different ways at once. In those
+  cases the coordinates are left alone rather than moved wrongly, and the
+  atlas bake is offered as the way out.
+
 ## [0.17.0]
 
 ### Changed

@@ -119,6 +119,7 @@ where a fix exists.
 | Faces Y+ | Manual, compared with the arrow drawn in the viewport |
 | Colour zones | Legal zone colours only, four maximum |
 | UV map | Present, and UV2 reported when it is there |
+| Texture coordinates | A Mapping node is baked into the exported UVs, since an FBX cannot carry one |
 | Triangle count | Against your own budget, with a decimate button |
 | N-gons | They triangulate on export and can shade badly |
 | Texture naming | Every image classified into a role the game knows |

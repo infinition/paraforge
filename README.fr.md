@@ -119,6 +119,7 @@ corrige quand une correction existe.
 | Tourné vers Y+ | Manuel, comparé à la flèche dessinée dans la vue |
 | Zones de couleur | Uniquement les couleurs légales, quatre au maximum |
 | Carte UV | Présente, et UV2 signalée quand elle est là |
+| Coordonnées de texture | Un nœud Mapping est cuit dans les UV exportées, un FBX ne sachant pas le porter |
 | Nombre de triangles | Contre ton propre budget, avec un bouton de décimation |
 | N-gons | Ils sont triangulés à l'export et peuvent mal ombrer |
 | Nommage des textures | Chaque image classée dans un rôle que le jeu connaît |

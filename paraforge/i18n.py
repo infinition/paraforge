@@ -344,6 +344,7 @@ FR = {
     "Bounding size": "Encombrement",
     "Faces Y+": "Orienté vers Y+",
     "UV map": "Carte UV",
+    "Texture coordinates": "Coordonnées de texture",
     "Triangle count": "Nombre de triangles",
     "N-gons": "N-gones",
     "Texture naming": "Nommage des textures",
@@ -415,6 +416,41 @@ FR = {
     "UV1 present, UV2 present (deformations)":
         "UV1 présente, UV2 présente (déformations)",
     "UV1 present": "UV1 présente",
+
+    # -- The transform the material puts in front of its textures -----------
+    "The material moves them ({0}); the export bakes that into the UVs":
+        "Le matériau les déplace ({0}) ; l'export cuit ce déplacement dans "
+        "les UV",
+    "scale {0:.3g} x {1:.3g}, offset {2:.3g} / {3:.3g}":
+        "échelle {0:.3g} x {1:.3g}, décalage {2:.3g} / {3:.3g}",
+    "{0} cannot be carried over: {1}. Bake the selection into one atlas to "
+    "fix it for good":
+        "{0} ne peut pas être transmise : {1}. Cuis la sélection dans un "
+        "atlas unique pour régler ça définitivement",
+    "The textures are not all placed the same way ({0}). Only one placement "
+    "can be exported, so bake the selection into one atlas":
+        "Les textures ne sont pas toutes placées pareil ({0}). Un seul "
+        "placement peut être exporté, donc cuis la sélection dans un atlas "
+        "unique",
+    "Bake into one atlas": "Cuire dans un atlas unique",
+    "its Mapping node is driven by another node":
+        "son nœud Mapping est piloté par un autre nœud",
+    "its Mapping node rotates outside the UV plane":
+        "son nœud Mapping tourne hors du plan UV",
+    "its Mapping node scales the texture to nothing":
+        "son nœud Mapping réduit la texture à néant",
+    "its Mapping node is set to {0}": "son nœud Mapping est réglé sur {0}",
+    "its coordinates loop back on themselves":
+        "ses coordonnées bouclent sur elles-mêmes",
+    "it is projected with {0} coordinates, which live only in Blender":
+        "elle est projetée avec des coordonnées {0}, qui n'existent que dans "
+        "Blender",
+    "its coordinates come from an attribute the mesh does not carry":
+        "ses coordonnées viennent d'un attribut que le mesh ne porte pas",
+    "its coordinates pass through a {0} node, which only Blender can run":
+        "ses coordonnées passent par un nœud {0}, que seul Blender sait "
+        "exécuter",
+
     "{0} triangles after triangulation": "{0} triangles après triangulation",
     " over your {0} budget. Paralives publishes no official limit, this is "
     "your own setting":

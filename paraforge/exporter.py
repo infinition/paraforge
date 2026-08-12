@@ -5,7 +5,7 @@ import os
 
 import bpy
 
-from . import i18n, modfolder, prefs, recipe, sidecar, spec, textures
+from . import i18n, modfolder, prefs, recipe, sidecar, spec, textures, uvxform
 
 _ = i18n.t
 
@@ -195,6 +195,11 @@ def scaled_copies(context, objects, factor, name=""):
 
     Modifiers are evaluated here rather than by the exporter, because scaling
     the base mesh underneath a modifier would change what the modifier does.
+
+    The material's coordinate transform is baked into the copy's UVs at the
+    same time. An FBX cannot carry a Mapping node, and the game samples the
+    exported coordinates as they are, so a transform left on the node would be
+    lost and the texture would land on the wrong part of the mesh.
     """
     import math
 
@@ -214,6 +219,10 @@ def scaled_copies(context, objects, factor, name=""):
         mesh.transform(obj.matrix_world)
         mesh.transform(to_y_up)
         mesh.transform(scale)
+
+        resolved = uvxform.resolve_object(obj)
+        if resolved.moves:
+            uvxform.apply_to_mesh(mesh, resolved.matrix, resolved.uv_map)
 
         # The game's own files name the mesh after the item, not after
         # whatever the artist left in the outliner.
@@ -299,8 +308,14 @@ def _export_fbx(context, objects, filepath, triangulate, vertex_colors=False,
         for obj in previous_selection:
             obj.select_set(False)
 
-        if unit_scale and abs(unit_scale - 1.0) > 1e-9:
-            temporary = scaled_copies(context, objects, unit_scale, name)
+        # Copies are also what carries the material's coordinate transform
+        # into the UVs, so they are made for that alone when the scale would
+        # not have called for them.
+        rescale = bool(unit_scale) and abs(unit_scale - 1.0) > 1e-9
+        if rescale or uvxform.resolve(objects).moves:
+            temporary = scaled_copies(
+                context, objects, unit_scale if rescale else 1.0, name
+            )
             exported = temporary
         else:
             exported = objects

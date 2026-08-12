@@ -24,7 +24,7 @@ if ROOT not in sys.path:
 import paraforge  # noqa: E402
 from paraforge import (  # noqa: E402
     cache, catalog, exporter, geo, i18n, imaging, inspector, props, recipe,
-    sidecar, spec, textures, validate, zones,
+    sidecar, spec, textures, uvxform, validate, zones,
 )
 
 FAILURES = []
@@ -1012,6 +1012,124 @@ def test_export_units():
           "and it is still 2 m, so the prefab Size stays in metres")
 
 
+def test_uv_transform():
+    """A Mapping node has to reach the game, and the only way in is the UVs.
+
+    This is the shape an atlas cut arrives in: the mesh's UVs sit inside one
+    cell of a 16 by 16 grid and a Mapping node blows that cell back up to the
+    whole image. Exported as they stand, those coordinates send the game to a
+    sixteenth of a sixteenth of the texture and the item comes back wearing a
+    smear with its unwrapped islands showing through.
+    """
+    section("Texture coordinates")
+
+    # The arithmetic, first, with no scene in the way.
+    check(uvxform.is_identity(uvxform.IDENTITY), "identity is identity")
+    doubled = (2.0, 0.0, 0.5, 0.0, 2.0, -1.0)
+    back = uvxform.invert(doubled)
+    check(uvxform.is_identity(uvxform.compose(doubled, back)),
+          "a transform composed with its inverse cancels out",
+          str(uvxform.compose(doubled, back)))
+    check(uvxform.invert((0.0, 0.0, 0.0, 0.0, 0.0, 0.0)) is None,
+          "a collapsed transform has no inverse")
+
+    fresh_scene()
+    obj = make_cube(name="Cactus", size=2.0)
+    obj.location = (0.0, 0.0, 1.0)
+
+    # One cell of a 16 by 16 grid, top left, exactly where an atlas cut lands.
+    layer = obj.data.uv_layers[0]
+    flat = np.empty(len(layer.data) * 2, dtype=np.float32)
+    layer.data.foreach_get("uv", flat)
+    uv = flat.reshape(-1, 2)
+    uv[:, 0] = uv[:, 0] / 16.0
+    uv[:, 1] = uv[:, 1] / 16.0 + 15.0 / 16.0
+    layer.data.foreach_set("uv", uv.reshape(-1))
+
+    material = bpy.data.materials.new("Cell")
+    material.use_nodes = True
+    tree = material.node_tree
+    principled = tree.nodes.get("Principled BSDF")
+    image = bpy.data.images.new("CactusDetail", 64, 64)
+    texture = tree.nodes.new("ShaderNodeTexImage")
+    texture.image = image
+    mapping = tree.nodes.new("ShaderNodeMapping")
+    mapping.inputs["Scale"].default_value = (16.0, 16.0, 1.0)
+    mapping.inputs["Location"].default_value = (0.0, -15.0, 0.0)
+    uvnode = tree.nodes.new("ShaderNodeUVMap")
+    uvnode.uv_map = layer.name
+    tree.links.new(uvnode.outputs["UV"], mapping.inputs["Vector"])
+    tree.links.new(mapping.outputs["Vector"], texture.inputs["Vector"])
+    tree.links.new(texture.outputs["Color"], principled.inputs["Base Color"])
+    obj.data.materials.append(material)
+
+    resolved = uvxform.resolve_object(obj)
+    check(resolved.moves, "the Mapping node is seen")
+    check(resolved.clean, "and nothing in the chain blocks the way over",
+          str(resolved.blockers + resolved.variants))
+    check(abs(resolved.matrix[0] - 16.0) < 1e-5
+          and abs(resolved.matrix[4] - 16.0) < 1e-5
+          and abs(resolved.matrix[5] + 15.0) < 1e-5,
+          "read as scale 16 with a -15 offset on V", str(resolved.matrix))
+    check(resolved.uv_map == layer.name, "on the layer the material names",
+          str(resolved.uv_map))
+
+    copies = exporter.scaled_copies(
+        bpy.context, [obj], spec.FBX_UNITS_PER_METRE, "Cactus"
+    )
+    try:
+        exported = copies[0].data.uv_layers[0]
+        out = np.empty(len(exported.data) * 2, dtype=np.float32)
+        exported.data.foreach_get("uv", out)
+        out = out.reshape(-1, 2)
+        check(out[:, 0].min() > -1e-4 and out[:, 0].max() < 1.0 + 1e-4
+              and out[:, 1].min() > -1e-4 and out[:, 1].max() < 1.0 + 1e-4,
+              "the exported UVs cover the whole image, not one cell of it",
+              "u {0:.4f}..{1:.4f} v {2:.4f}..{3:.4f}".format(
+                  out[:, 0].min(), out[:, 0].max(),
+                  out[:, 1].min(), out[:, 1].max()))
+    finally:
+        exporter.discard(copies)
+
+    layer.data.foreach_get(
+        "uv", flat)  # the scene must be exactly as the artist left it
+    kept = flat.reshape(-1, 2)
+    check(kept[:, 1].min() > 0.9 - 1e-4,
+          "while the scene keeps its own coordinates untouched",
+          str(float(kept[:, 1].min())))
+
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    settings = props.settings(bpy.context)
+    settings.asset_name = "Cactus"
+    report = validate.run(bpy.context, settings)
+    check(status_of(report, "uvtransform") == validate.OK,
+          "the report says the transform is being carried over",
+          str(status_of(report, "uvtransform")))
+
+    # Generated coordinates have no equivalent in an FBX, so the report has to
+    # stop claiming the export can carry them.
+    coords = tree.nodes.new("ShaderNodeTexCoord")
+    tree.links.new(coords.outputs["Generated"], mapping.inputs["Vector"])
+    cache.clear()
+    report = validate.run(bpy.context, settings)
+    check(status_of(report, "uvtransform") == validate.WARN,
+          "and warns when the coordinates only exist in Blender",
+          str(status_of(report, "uvtransform")))
+    check(not uvxform.resolve_object(obj).moves,
+          "leaving the UVs alone rather than moving them wrongly")
+
+    # A plain material says nothing at all: a line that is always green is a
+    # line nobody reads.
+    tree.links.new(uvnode.outputs["UV"], texture.inputs["Vector"])
+    cache.clear()
+    report = validate.run(bpy.context, settings)
+    check(status_of(report, "uvtransform") is None,
+          "and stays quiet when the material moves nothing",
+          str(status_of(report, "uvtransform")))
+
+
 def test_preview():
     """The preview must show the exported files, and give the scene back."""
     section("Preview as in game")
@@ -1556,6 +1674,7 @@ def main():
         temp, mod = test_export()
         test_inspector(mod)
         test_export_units()
+        test_uv_transform()
         test_preview()
         test_decimate_rebake()
         test_two_items_share_nothing()

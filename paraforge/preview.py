@@ -20,7 +20,7 @@ import tempfile
 
 import bpy
 
-from . import i18n, textures
+from . import i18n, textures, uvxform
 
 _ = i18n.t
 
@@ -78,7 +78,8 @@ def source_colorspaces(plan):
     return spaces
 
 
-def build_material(name, written, smoothness=None, colorspaces=None):
+def build_material(name, written, smoothness=None, colorspaces=None,
+                   transform=None):
     """A Principled BSDF fed the way Paralives feeds its own shader.
 
     written maps a suffix to the PNG the export would put in the mod, so what
@@ -88,6 +89,10 @@ def build_material(name, written, smoothness=None, colorspaces=None):
     for a smoothness texture, so using the map here would show a per pixel
     gloss the game will never produce, and a mostly white map turns the object
     into a mirror of the viewport's own lighting.
+
+    transform is the coordinate transform the export bakes into the UVs. The
+    preview keeps the mesh untouched, so it has to put that transform back in
+    front of its textures or it would show the misplacement the export removes.
     """
     full = name + MATERIAL_SUFFIX
     existing = bpy.data.materials.get(full)
@@ -155,12 +160,23 @@ def build_material(name, written, smoothness=None, colorspaces=None):
     if "Metallic" in principled.inputs:
         principled.inputs["Metallic"].default_value = 0.0
 
+    if transform is not None and (transform.moves or transform.uv_map):
+        uvxform.wire_into(
+            tree,
+            [n for n in nodes if n.bl_idname == "ShaderNodeTexImage"],
+            transform.matrix, transform.uv_map,
+        )
+
     return material
 
 
 def apply(context, settings, objects, report):
     """Swap in a preview material. Returns (material, written_suffixes)."""
     global _frozen_plan
+
+    # Read before the materials are swapped out, or the transform would be
+    # read off the preview material that is about to replace them.
+    transform = uvxform.resolve(objects)
 
     plan = getattr(report, "texture_plan", None)
     if plan is None:
@@ -197,7 +213,7 @@ def apply(context, settings, objects, report):
     name = textures.pascal_case(
         settings.asset_name or (objects[0].name if objects else "Asset"))
     material = build_material(name, written, smoothness,
-                              source_colorspaces(plan))
+                              source_colorspaces(plan), transform)
     _frozen_plan = plan
 
     for obj in objects:
