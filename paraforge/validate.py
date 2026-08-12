@@ -406,11 +406,19 @@ def _check_topology(measurement, settings, report):
 
 
 def _check_textures(objects, settings, report):
-    plan = textures.build_plan(
-        objects,
-        settings.asset_name or _default_name(objects),
-        settings.recolourable,
-    )
+    from . import preview
+
+    # While the preview is on it is the preview's own material on the object,
+    # so rebuilding the plan here would read the converted textures back as if
+    # they were the source: "copied PapanierDetail" where it said "rebuilt from
+    # Image_2, Image_1". The plan that produced the preview is kept instead.
+    plan = preview.frozen()
+    if plan is None:
+        plan = textures.build_plan(
+            objects,
+            settings.asset_name or _default_name(objects),
+            settings.recolourable,
+        )
     report.texture_plan = plan
 
     if not plan.sources:

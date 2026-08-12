@@ -30,6 +30,17 @@ STASH = "paraforge_materials"
 #: Where the previewed PNGs are written. Scratch, never the mod folder.
 _folder = None
 
+# The preview replaces the materials, so anything that reads the materials
+# afterwards would read the preview instead of the source: the plan would say
+# "copied PapanierDetail" where it used to say "rebuilt from Image_2, Image_1",
+# and a later export would copy an already converted texture. The plan that
+# produced the preview is therefore frozen for as long as it is on.
+_frozen_plan = None
+
+
+def frozen():
+    return _frozen_plan
+
 
 def scratch():
     global _folder
@@ -45,11 +56,16 @@ def is_on(objects):
 # --------------------------------------------------------------------------
 
 
-def build_material(name, written):
+def build_material(name, written, smoothness=None):
     """A Principled BSDF fed the way Paralives feeds its own shader.
 
     written maps a suffix to the PNG the export would put in the mod, so what
     is wired up here is the file itself and not the source it came from.
+
+    smoothness is the single value the surface will carry. The game has no slot
+    for a smoothness texture, so using the map here would show a per pixel
+    gloss the game will never produce, and a mostly white map turns the object
+    into a mirror of the viewport's own lighting.
     """
     full = name + MATERIAL_SUFFIX
     existing = bpy.data.materials.get(full)
@@ -100,16 +116,10 @@ def build_material(name, written):
             links.new(node.outputs["Alpha"], mix.inputs[7])
             links.new(mix.outputs[2], principled.inputs["Base Color"])
 
-    if written.get("Smoothness"):
-        node = load(written["Smoothness"], is_data=True)
-        node.location = (-700, 40)
-        # The game reads white as glossy, Blender reads white as rough.
-        invert = nodes.new("ShaderNodeInvert")
-        invert.location = (-380, 40)
-        links.new(node.outputs["Color"], invert.inputs["Color"])
-        links.new(invert.outputs["Color"], principled.inputs["Roughness"])
-    else:
-        principled.inputs["Roughness"].default_value = 1.0
+    # One value, not a map, because that is all the surface can carry. White
+    # is glossy for the game and rough for Blender, hence the inversion.
+    value = 0.0 if smoothness is None else float(smoothness)
+    principled.inputs["Roughness"].default_value = max(0.0, min(1.0 - value, 1.0))
 
     # Paralives has no metallic channel at all, so neither does the preview.
     if "Metallic" in principled.inputs:
@@ -120,6 +130,8 @@ def build_material(name, written):
 
 def apply(context, settings, objects, report):
     """Swap in a preview material. Returns (material, written_suffixes)."""
+    global _frozen_plan
+
     plan = getattr(report, "texture_plan", None)
     if plan is None:
         plan = textures.build_plan(
@@ -141,9 +153,21 @@ def apply(context, settings, objects, report):
     if not written:
         raise ValueError(_("No texture to preview"))
 
+    # The value the surface will actually carry, read from the file that was
+    # just written rather than from whatever the slider happens to say.
+    smoothness = getattr(settings, "smoothness", None)
+    if written.get("Smoothness"):
+        from . import exporter
+
+        average = exporter.average_smoothness(written["Smoothness"])
+        if average is not None:
+            smoothness = average
+            settings.smoothness = average
+
     name = textures.pascal_case(
         settings.asset_name or (objects[0].name if objects else "Asset"))
-    material = build_material(name, written)
+    material = build_material(name, written, smoothness)
+    _frozen_plan = plan
 
     for obj in objects:
         if STASH not in obj:
@@ -159,6 +183,9 @@ def apply(context, settings, objects, report):
 
 def restore(objects):
     """Put the original materials back. Safe to call when nothing is on."""
+    global _frozen_plan
+
+    _frozen_plan = None
     restored = 0
     for obj in objects:
         stashed = obj.get(STASH)

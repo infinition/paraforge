@@ -1023,6 +1023,7 @@ def test_preview():
     check(not preview.is_on([obj]), "and the preview is off")
 
     report = cache.get(bpy.context, settings, force=True)
+    plan_before = report.texture_plan
     material, written = preview.apply(bpy.context, settings, [obj], report)
 
     check(preview.is_on([obj]), "the preview reports itself on")
@@ -1045,8 +1046,30 @@ def test_preview():
           "named as the export would name it",
           str([os.path.basename(i.filepath) for i in images]))
 
+    # The preview must not become its own source. Rebuilding the plan while
+    # it is on would read the converted textures back as if they were the
+    # material the file arrived with.
+    check(preview.frozen() is plan_before,
+          "the plan that produced the preview is frozen")
+    after = cache.get(bpy.context, settings, force=True)
+    sources = [s.stem for s in after.texture_plan.sources]
+    check("ChairDetail" in sources,
+          "and the checklist still reports the original source", str(sources))
+    check(not any(s.startswith("Chair") and s.endswith("Detail")
+                  and s != "ChairDetail" for s in sources),
+          "not the texture the preview just wrote", str(sources))
+
+    # The roughness comes from the single value the surface carries, never
+    # from the map, which the game has no slot for.
+    principled = material.node_tree.nodes.get("Principled BSDF")
+    check(principled is not None, "the preview has a shader")
+    if principled is not None:
+        check(not principled.inputs["Roughness"].links,
+              "roughness is a value, not a map")
+
     restored = preview.restore([obj])
     check(restored == 1, "restoring reports what it touched")
+    check(preview.frozen() is None, "and the frozen plan is released")
     check(not preview.is_on([obj]), "the preview is off again")
     check([s.material.name for s in obj.material_slots] == original,
           "and the original material is back",

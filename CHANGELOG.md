@@ -9,6 +9,22 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.15.0]
+
+### Fixed
+
+- **The preview became its own source.** It replaces the materials, so
+  everything that read them afterwards read the preview instead: the plan went
+  from "rebuilt from Image_2, Image_1" to "copied PapanierDetail", and a later
+  export would have copied an already converted texture. The plan that produced
+  the preview is now held for as long as it is on.
+- **The preview showed a gloss the game cannot produce.** It used the
+  Smoothness map as a per pixel roughness, while the game keeps one value per
+  surface and has no slot for the map at all. On a mostly white map that made
+  the object a mirror of the viewport's own lighting, which is where the
+  scattered white patches came from. It now uses the single value the surface
+  will carry, read back from the written file.
+
 ## [0.14.0]
 
 ### Added
