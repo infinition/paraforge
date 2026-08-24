@@ -283,56 +283,63 @@ def _check_usable(settings, report):
 def _check_seat(objects, settings, measurement, depsgraph, report):
     """How high the seat is, and which way a Para will face on it.
 
-    Nothing in the mesh tells the game where to sit. The slot template does,
-    and it holds the Seat, the ButtLocator and the feet at heights it was
-    authored for. If the mesh offers no surface at that height the Para still
-    sits, in mid air or knee deep in the cushion, and the item looks broken
-    for a reason no error will ever mention.
+    Nothing in the mesh tells the game where to sit, and nothing fixes the
+    height either: every slot template carries VaryBasedOnHeight on its seat
+    locator, with Min and Max children bounding the travel, so the game moves
+    the Para to suit the item. That is why a stool and a dining chair both work
+    through ChairSlotAndLocator.
 
-    So the seat is measured the way the game's own chairs were: every upward
-    facing triangle between 15% and 75% of the item's height, weighted by
-    area. Across the 22 shipped chair meshes that gives a median of 0.445 m,
-    from 0.316 on a low Adirondack to 0.520 on a camping chair, or 47% of the
-    item's own height.
+    What it cannot do is invent a surface. A mesh whose only flat top is at
+    1.2 m still seats a Para, who then floats, and nothing is logged because
+    nothing failed. So the height is measured and shown, next to what the
+    game's own furniture does:
+
+        chairs, office chairs, benches, ottomans   around 0.45 m
+        stools                                     around 0.65 m
+
+    and a fault is only raised outside 0.20 to 0.75, where no shipped item
+    sits. Inside it this is information, because 0.45 against 0.65 is a
+    decision about what the item is, not a mistake.
 
     Facing cannot be measured at all, only stated: the template seats a Para
     looking along Y+, the same direction the green viewport arrow points, so
     the backrest belongs at the far end and the knees at the arrow.
     """
     template, seats = item.seat_choice(settings)
-    if not seats:
+    if not seats or measurement.empty:
         return
 
     label = _("Seat height")
-    if measurement.empty:
-        return
-
-    height = geo.seat_height(objects, depsgraph)
+    height, area = geo.seat_height(objects, depsgraph)
     report.seat_height = height
-    span = float(measurement.size[2])
 
     if height is None:
         report.add(
             "seat", label, WARN,
-            _("No flat surface anywhere in the middle of the mesh, so there "
-              "is nothing to sit on. {0} will still seat a Para, hovering "
-              "over the item", template),
+            _("No flat surface clear of the floor, so there is nothing to sit "
+              "on. {0} will still seat a Para, in mid air", template),
         )
         return
 
+    span = float(measurement.size[2])
     ratio = (height / span * 100.0) if span > 1e-6 else 0.0
-    detail = _("{0:.3f} m, {1:.0f}% of the height. The game's chairs sit "
-               "between {2:.3f} and {3:.3f}",
-               height, ratio, spec.SEAT_HEIGHT_MIN, spec.SEAT_HEIGHT_MAX)
+    detail = _("{0:.3f} m, {1:.0f}% of the height, over {2:.2f} m2",
+               height, ratio, area)
 
-    if height < spec.SEAT_HEIGHT_MIN:
-        report.add("seat", label, WARN,
-                   detail + _(". Too low: a Para will sink into it"))
-    elif height > spec.SEAT_HEIGHT_MAX:
-        report.add("seat", label, WARN,
-                   detail + _(". Too high: a Para will float above it"))
+    if height < spec.SEAT_MIN:
+        report.add("seat", label, WARN, detail + _(
+            ". Lower than anything the game seats a Para on, so they will sink "
+            "into it. Its lowest is around {0:.2f}", spec.SEAT_MIN))
+    elif height > spec.SEAT_MAX:
+        report.add("seat", label, WARN, detail + _(
+            ". Higher than anything the game seats a Para on, so they will "
+            "float. Its tallest is a stool at {0:.2f}", spec.SEAT_STOOL))
+    elif abs(height - spec.SEAT_STOOL) < abs(height - spec.SEAT_CHAIR):
+        report.add("seat", label, OK, detail + _(
+            ". Stool height: the game's sit at {0:.2f}", spec.SEAT_STOOL))
     else:
-        report.add("seat", label, OK, detail)
+        report.add("seat", label, OK, detail + _(
+            ". Chair height: the game's sit at {0:.2f}", spec.SEAT_CHAIR))
 
 
 def _check_asset_name(objects, settings, report):

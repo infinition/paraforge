@@ -34,9 +34,10 @@ BOUNDS_OK = (0.35, 0.85, 0.45, 0.85)
 BOUNDS_BAD = (1.00, 0.35, 0.35, 0.95)
 ORIGIN_COLOR = (1.00, 0.85, 0.25, 1.0)
 
-# The seat guide. The band the game's own chairs live in is drawn faintly, the
-# height this mesh actually offers is drawn solidly, in green when it lands
-# inside the band and amber when it does not.
+# The seat guide. The two heights the game's own furniture sits at, 0.45 for a
+# chair and 0.65 for a stool, are drawn faintly. The height this mesh actually
+# offers is drawn solidly, in green while a Para could plausibly use it and in
+# amber once it is higher or lower than anything the game seats one on.
 SEAT_BAND_COLOR = (0.55, 0.70, 1.00, 0.30)
 SEAT_OK_COLOR = (0.35, 0.85, 0.45, 0.95)
 SEAT_BAD_COLOR = (1.00, 0.72, 0.20, 0.95)
@@ -155,16 +156,17 @@ def _sit_direction(low, high, z):
 def _draw_seat_guide(measurement, seat_height):
     """The band the game's chairs live in, and where this mesh actually sits."""
     low, high = measurement.min, measurement.max
-    for edge in (spec.SEAT_HEIGHT_MIN, spec.SEAT_HEIGHT_MAX):
-        _draw_lines(_seat_rect(low, high, edge), SEAT_BAND_COLOR, 1.0)
+    base = float(low[2])
+    for edge in (spec.SEAT_CHAIR, spec.SEAT_STOOL):
+        _draw_lines(_seat_rect(low, high, base + edge), SEAT_BAND_COLOR, 1.0)
 
     if seat_height is None:
         return
 
-    inside = spec.SEAT_HEIGHT_MIN <= seat_height <= spec.SEAT_HEIGHT_MAX
+    inside = spec.SEAT_MIN <= seat_height <= spec.SEAT_MAX
     line_color = SEAT_OK_COLOR if inside else SEAT_BAD_COLOR
     fill_color = SEAT_FILL_OK if inside else SEAT_FILL_BAD
-    z = float(low[2]) + seat_height
+    z = base + seat_height
     _draw_tris(_seat_fill(low, high, z), fill_color)
     _draw_lines(_seat_rect(low, high, z), line_color, 2.5)
     _draw_lines(_sit_direction(low, high, z), line_color, 2.5)

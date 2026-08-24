@@ -754,22 +754,27 @@ FR = {
     "Facing arrow": "Flèche d'orientation",
     "Seat guide": "Repère d'assise",
     "Seat height": "Hauteur d'assise",
+    "{0:.3f} m, {1:.0f}% of the height, over {2:.2f} m2":
+        "{0:.3f} m, {1:.0f}% de la hauteur, sur {2:.2f} m2",
+    ". Chair height: the game's sit at {0:.2f}":
+        ". Hauteur de chaise : celles du jeu sont à {0:.2f}",
+    ". Stool height: the game's sit at {0:.2f}":
+        ". Hauteur de tabouret : ceux du jeu sont à {0:.2f}",
+    ". Lower than anything the game seats a Para on, so they will sink into "
+    "it. Its lowest is around {0:.2f}":
+        ". Plus bas que tout ce sur quoi le jeu assoit un Para, il s'y "
+        "enfoncera donc. Le plus bas du jeu est vers {0:.2f}",
+    ". Higher than anything the game seats a Para on, so they will float. "
+    "Its tallest is a stool at {0:.2f}":
+        ". Plus haut que tout ce sur quoi le jeu assoit un Para, il flottera "
+        "donc. Le plus haut du jeu est un tabouret à {0:.2f}",
+    "No flat surface clear of the floor, so there is nothing to sit on. {0} "
+    "will still seat a Para, in mid air":
+        "Aucune surface plane dégagée du sol, donc rien où s'asseoir. {0} y "
+        "placera quand même un Para, en plein air",
     "Nothing to sit on": "Rien où s'asseoir",
     "Sits at {0:.3f} m, facing the arrow":
         "Assise à {0:.3f} m, face à la flèche",
-    "{0:.3f} m, {1:.0f}% of the height. The game's chairs sit between "
-    "{2:.3f} and {3:.3f}":
-        "{0:.3f} m, {1:.0f}% de la hauteur. Les chaises du jeu sont entre "
-        "{2:.3f} et {3:.3f}",
-    ". Too low: a Para will sink into it":
-        ". Trop bas : un Para s'enfoncera dedans",
-    ". Too high: a Para will float above it":
-        ". Trop haut : un Para flottera au-dessus",
-    "No flat surface anywhere in the middle of the mesh, so there is nothing "
-    "to sit on. {0} will still seat a Para, hovering over the item":
-        "Aucune surface plane au milieu du maillage, donc rien où "
-        "s'asseoir. {0} y placera quand même un Para, flottant au-dessus "
-        "de l'objet",
     "Grid tiles": "Tuiles de grille",
     "Checklist corner": "Coin de la checklist",
     "Top left": "En haut à gauche",

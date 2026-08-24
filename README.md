@@ -152,7 +152,7 @@ where a fix exists.
 | N-gons | They triangulate on export and can shade badly |
 | Texture naming | Every image classified into a role the game knows |
 | Texture size | Nothing in the game is above 2K |
-| Seat height | For items a Para sits on, against the range the game's own chairs use |
+| Seat height | For items a Para sits on, against the heights the game's own furniture uses |
 | Target mod folder | Exists, ends in `.mod`, and is not inside the game |
 
 Origin rules, from the wiki:
@@ -328,25 +328,41 @@ and refuses to write both even if a scene saved before this rule asks for it.
 
 ### Where the seat is
 
-Nothing in a mesh tells the game where to sit. The slot template does, and it
-holds the Seat and the ButtLocator at heights it was authored for. A mesh with
-no surface at that height still seats a Para, floating above the cushion or
-sunk into it, and no error is raised anywhere.
+Nothing in a mesh tells the game where to sit, and nothing fixes the height
+either. Every slot template carries `VaryBasedOnHeight:True` on its seat
+locator, with `Min` and `Max` children bounding the travel, so the game moves
+the Para to suit the item rather than demanding a height of it. That is why a
+stool and a dining chair both work through the same `ChairSlotAndLocator`.
 
-Measured across the 22 shipped chair meshes, by weighting every upward facing
-triangle between 15% and 75% of the item's height by its area:
+What the game cannot do is invent a surface. A mesh whose only flat top is at
+1.2 m still seats a Para, who then floats, and nothing is logged because
+nothing failed.
 
-| | Seat height | Share of the item's height |
-|---|---|---|
-| Median | 0.445 m | 47% |
-| Lowest, `SeatingChairOutdoorAdirondac` | 0.316 m | 34% |
-| Highest, `SeatingChairCamping` | 0.520 m | 47% |
+So the seat is measured: the largest single horizontal surface the item has,
+found by binning upward facing triangles by height and taking the heaviest bin
+by area. Not a fraction of the item, and not an average, which would mix a
+chair's seat with its armrests and its backrest top. Run over the game's own
+furniture:
 
-ParaForge measures your mesh the same way and draws that band in the viewport,
-with an arrow at seat height showing which way a Para will face: along Y+, the
-same direction the floor arrow points, so the backrest belongs at the far end.
-It is a warning, never a block. The range is what the game's own furniture
-does, not a rule the engine enforces.
+| Family | Meshes | Seat height | Share of the item's height |
+|---|---|---|---|
+| Chairs | 28 | 0.448 m | 49% |
+| Office chairs | 5 | 0.449 m | 43% |
+| Benches | 12 | 0.450 m | 86% |
+| Ottomans | 7 | 0.449 m | 100% |
+| Stools | 9 | 0.649 m | 99% |
+
+Two heights, then: 0.45 for anything you sit on with your feet down, 0.65 for
+a stool. The ratios are why a single band cannot exist, since a dining chair's
+seat is halfway up it and an ottoman's seat is its lid. Couches and beds are
+assembled from several meshes, cushions apart from frames, so one file measured
+alone means nothing and they are left out.
+
+ParaForge measures your mesh the same way, names which of the two it matches,
+and draws both heights in the viewport with an arrow at seat height showing
+which way a Para will face: along Y+, the same direction the floor arrow
+points, so the backrest belongs at the far end. It only warns outside 0.20 to
+0.75, where no shipped item sits, and never blocks.
 
 ## What the wiki does not say, and the game does
 

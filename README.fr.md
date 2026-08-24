@@ -149,7 +149,7 @@ corrige quand une correction existe.
 | N-gons | Ils sont triangulés à l'export et peuvent mal ombrer |
 | Nommage des textures | Chaque image classée dans un rôle que le jeu connaît |
 | Taille des textures | Rien dans le jeu ne dépasse 2K |
-| Hauteur d'assise | Pour les objets où un Para s'assoit, contre la plage des chaises du jeu |
+| Hauteur d'assise | Pour les objets où un Para s'assoit, contre les hauteurs du mobilier du jeu |
 | Dossier mod cible | Existe, finit par `.mod`, et n'est pas dans le jeu |
 
 Règles d'origine, tirées du wiki :
@@ -333,26 +333,43 @@ demande.
 
 ### Où se trouve l'assise
 
-Rien dans le mesh ne dit au jeu où s'asseoir. C'est le template de slot qui le
-dit, et il porte le Seat et le ButtLocator à des hauteurs pour lesquelles il a
-été fait. Un mesh sans surface à cette hauteur assoit quand même un Para,
-flottant au-dessus du coussin ou enfoncé dedans, et aucune erreur n'est levée
-nulle part.
+Rien dans le mesh ne dit au jeu où s'asseoir, et rien ne fixe la hauteur non
+plus. Chaque template de slot porte `VaryBasedOnHeight:True` sur son locator
+d'assise, avec des enfants `Min` et `Max` qui bornent le déplacement : le jeu
+déplace donc le Para pour s'adapter à l'objet, au lieu d'exiger une hauteur de
+lui. C'est pour ça qu'un tabouret et une chaise de salle à manger marchent
+tous les deux avec le même `ChairSlotAndLocator`.
 
-Mesuré sur les 22 meshes de chaises livrés, en pondérant par leur aire toutes
-les faces tournées vers le haut entre 15% et 75% de la hauteur de l'objet :
+Ce que le jeu ne peut pas faire, c'est inventer une surface. Un mesh dont le
+seul dessus plat est à 1,2 m assoit quand même un Para, qui flotte alors, et
+rien n'est journalisé puisque rien n'a échoué.
 
-| | Hauteur d'assise | Part de la hauteur de l'objet |
-|---|---|---|
-| Médiane | 0,445 m | 47% |
-| Minimum, `SeatingChairOutdoorAdirondac` | 0,316 m | 34% |
-| Maximum, `SeatingChairCamping` | 0,520 m | 47% |
+L'assise est donc mesurée : la plus grande surface horizontale de l'objet,
+trouvée en regroupant par hauteur les triangles tournés vers le haut et en
+gardant le groupe le plus lourd en aire. Pas une fraction de l'objet, et pas
+une moyenne, qui mélangerait l'assise d'une chaise avec ses accoudoirs et le
+haut de son dossier. Passé sur le mobilier du jeu :
 
-ParaForge mesure ton mesh de la même façon et dessine cette plage dans la vue,
-avec une flèche à hauteur d'assise indiquant vers où le Para regardera : le long
-de Y+, la même direction que la flèche au sol, donc le dossier va à l'autre
-bout. C'est un avertissement, jamais un blocage. Cette plage est ce que fait le
-mobilier du jeu, pas une règle imposée par le moteur.
+| Famille | Meshes | Hauteur d'assise | Part de la hauteur |
+|---|---|---|---|
+| Chaises | 28 | 0,448 m | 49% |
+| Chaises de bureau | 5 | 0,449 m | 43% |
+| Bancs | 12 | 0,450 m | 86% |
+| Poufs | 7 | 0,449 m | 100% |
+| Tabourets | 9 | 0,649 m | 99% |
+
+Deux hauteurs, donc : 0,45 pour tout ce sur quoi on s'assoit les pieds au sol,
+0,65 pour un tabouret. Les ratios expliquent pourquoi une plage unique ne peut
+pas exister, puisque l'assise d'une chaise est à mi-hauteur et celle d'un pouf
+est son couvercle. Les canapés et les lits sont assemblés à partir de
+plusieurs meshes, coussins séparés des structures, donc un fichier mesuré seul
+ne veut rien dire et ils sont laissés de côté.
+
+ParaForge mesure ton mesh de la même façon, nomme laquelle des deux hauteurs il
+approche, et dessine les deux dans la vue avec une flèche à hauteur d'assise
+indiquant vers où le Para regardera : le long de Y+, la même direction que la
+flèche au sol, donc le dossier va à l'autre bout. Il n'avertit qu'en dehors de
+0,20 à 0,75, où aucun objet livré ne s'assoit, et ne bloque jamais.
 
 ## Ce que le wiki ne dit pas, et que le jeu dit
 

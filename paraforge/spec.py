@@ -380,24 +380,53 @@ MAX_SCALE = 10.0
 # write MaxSizes and only 47 declare HasMaxSize, which means 92 of them carry a
 # ceiling the game never applies.
 
-# Where a Para's backside lands. Measured on 22 shipped chair meshes, by
-# weighting every upward facing triangle between 15% and 75% of the item's
-# height by its area: median 0.445 m, from 0.316 on a low Adirondack to 0.520
-# on a camping chair, and 47% of the item's own height.
+# Where a Para's backside lands.
 #
-# A seat is only usable if the mesh actually offers a surface near that height,
-# facing the way the template expects. Nothing enforces it, but seeing it in
-# the viewport costs nothing and saves a game restart.
-SEAT_HEIGHT = 0.445
-SEAT_HEIGHT_MIN = 0.316
-SEAT_HEIGHT_MAX = 0.520
+# Nothing fixes this. The seat locator in every slot template carries
+# VaryBasedOnHeight:True with Min and Max children bounding how far it may
+# travel, so the game moves the Para to suit the item rather than demanding a
+# height of it. That is why a stool and a dining chair both work through the
+# same ChairSlotAndLocator.
+#
+# What the shipped furniture does anyway, measured mesh by mesh by taking the
+# largest cluster of upward facing faces (game build 0.1.6b):
+#
+#   Chairs        28 meshes   0.448 m   49% of the item's height
+#   OfficeChairs   5 meshes   0.449 m   43%
+#   Benches       12 meshes   0.450 m   86%
+#   Ottomans       7 meshes   0.449 m  100%
+#   Armchairs     17 meshes   0.383 m   40%
+#   Stools         9 meshes   0.649 m   99%
+#
+# Two heights, then: 0.45 for anything you sit on with your feet down, 0.65
+# for a stool. Couches and beds are assembled from several meshes, cushions
+# apart from frames, so a single file measured alone means nothing and they
+# are left out of the figures above.
+#
+# The ratios say the same thing from the other side: a dining chair's seat is
+# halfway up it, an ottoman's seat is its lid. So the ratio is worth showing
+# and worth nothing as a rule.
+SEAT_CHAIR = 0.45
+SEAT_STOOL = 0.65
 
-#: Fraction of the item's height the seat surface usually sits at.
-SEAT_HEIGHT_RATIO = 0.47
+# Outside this, no shipped item sits, and a Para will visibly float or sink.
+# Deliberately wide: it exists to catch the mesh with no seat at all, not to
+# second guess furniture somebody designed on purpose.
+SEAT_MIN = 0.20
+SEAT_MAX = 0.75
 
-#: Tags whose items are meant to be sat on, by name, for the viewport guide.
-SEATING_TAGS = ("Chairs", "Armchairs", "OfficeChairs", "Couches", "Benches",
-                "Seating", "Bedding")
+# Faces flatter than this are walls, not seats. cos(31 degrees).
+SEAT_NORMAL_MIN = 0.85
+
+# Ignore anything within this of the floor: base plates and undersides.
+SEAT_FLOOR_CLEARANCE = 0.08
+
+# Upward faces within this of each other count as one surface.
+SEAT_CLUSTER = 0.04
+
+# Below this there is no surface, only a sliver: a chair rail or a screw head.
+SEAT_MIN_AREA = 0.02
+
 
 #: Stretch limits, as a factor of the item's own exported size. Measured over
 #: the 650 resizable prefabs, the median MinSizes is 0.45 of the item's Size

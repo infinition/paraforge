@@ -1577,20 +1577,27 @@ def test_seat_height():
     fresh_scene()
     chair = make_chair(seat_z=0.45)
     depsgraph = bpy.context.evaluated_depsgraph_get()
-    height = geo.seat_height([chair], depsgraph)
-    check(height is not None and abs(height - 0.45) < 0.05,
-          "the measurement finds the seat plane, not the backrest or the floor",
+    height, area = geo.seat_height([chair], depsgraph)
+    check(height is not None and abs(height - 0.45) < 0.03,
+          "the seat is the largest flat surface, not the backrest or the "
+          "average of the two",
           "" if height is None else "{0:.3f}".format(height))
+    check(area > 0.1,
+          "and its area comes back with it, so a sliver cannot pass for a seat",
+          "{0:.3f}".format(area))
 
     settings = props.settings(bpy.context)
-    settings.asset_name = "MesuredChair"
+    settings.asset_name = "MeasuredChair"
     settings.catalog_tag = cat.BY_NAME["Chairs"]
     report = cache.get(bpy.context, settings, force=True)
     check(status_of(report, "seat") == validate.OK,
-          "0.45 m lands inside the band the game's chairs live in",
+          "0.45 m is chair height, which is what the game's 28 chairs do",
+          detail_of(report, "seat"))
+    check("0.45" in detail_of(report, "seat"),
+          "and it says so rather than merely approving",
           detail_of(report, "seat"))
     check(report.seat_height is not None,
-          "and the figure is on the report, so the viewport guide draws the "
+          "the figure is on the report, so the viewport guide draws the "
           "same number the panel prints")
 
     settings.catalog_tag = cat.BY_NAME["Build"]
@@ -1598,18 +1605,53 @@ def test_seat_height():
     check(status_of(report, "seat") is None,
           "decoration is never asked where its seat is")
 
+    # A pouf is a box: its seat is its lid, at 100% of its height, and the
+    # first version of this measurement threw that away by only looking at the
+    # middle of the mesh.
     fresh_scene()
-    make_chair(seat_z=0.95, name="BarStool")
+    make_cube("Ottoman", size=0.9)
+    ottoman = bpy.context.active_object
+    ottoman.location = (0.0, 0.0, 0.45)
+    bpy.ops.object.transform_apply(location=True)
     settings = props.settings(bpy.context)
-    settings.asset_name = "TooTall"
+    settings.asset_name = "PoufBox"
+    settings.catalog_tag = cat.BY_NAME["Chairs"]
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    height, _area = geo.seat_height([ottoman], depsgraph)
+    check(height is not None and abs(height - 0.9) < 0.02,
+          "a pouf is a box and its lid is the seat, top face included",
+          "" if height is None else "{0:.3f}".format(height))
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "seat") == validate.WARN,
+          "0.9 m is above anything the game seats a Para on, so it is flagged",
+          detail_of(report, "seat"))
+    check(not any(c.blocking for c in report.checks if c.key == "seat"),
+          "as a warning, never a block: the game adapts the locator to the "
+          "item, it does not demand a height of it")
+
+    # A stool is not a tall chair that got it wrong.
+    fresh_scene()
+    make_chair(seat_z=0.65, name="Stool")
+    settings = props.settings(bpy.context)
+    settings.asset_name = "BarStool"
+    settings.catalog_tag = cat.BY_NAME["Chairs"]
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "seat") == validate.OK,
+          "0.65 m is stool height, which the game's 9 stools all sit at",
+          detail_of(report, "seat"))
+    check("0.65" in detail_of(report, "seat"),
+          "and it is named as a stool rather than warned about",
+          detail_of(report, "seat"))
+
+    fresh_scene()
+    make_chair(seat_z=0.10, name="Sunken")
+    settings = props.settings(bpy.context)
+    settings.asset_name = "TooLow"
     settings.catalog_tag = cat.BY_NAME["Chairs"]
     report = cache.get(bpy.context, settings, force=True)
     check(status_of(report, "seat") == validate.WARN,
-          "a seat above the band is flagged before the game is launched",
+          "and a seat on the floor is flagged from the other end",
           detail_of(report, "seat"))
-    check(not any(c.blocking for c in report.checks if c.key == "seat"),
-          "as a warning, never a block: the game's own range is a habit, "
-          "not a rule")
 
     fresh_scene()
     make_cube("SolidBlock")

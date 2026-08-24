@@ -9,6 +9,56 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.28.0]
+
+### Fixed
+
+- **A pouf has no seat, said 0.27.0.** The first measurement averaged the
+  upward facing faces between 15% and 75% of the item's height, which is a
+  description of a dining chair and of nothing else. A box shaped ottoman
+  seats a Para on its lid, at 100% of its height, and was told it had nowhere
+  to sit at all. A cube got the same answer.
+
+  The seat is not a fraction of the item and it is not an average. It is the
+  largest single horizontal surface the item has, so it is now found as one:
+  upward facing triangles are binned by height, the heaviest bin by area wins,
+  and the answer is that cluster alone. Averaging a chair mixes its seat with
+  its armrests and its backrest top, and the answer belongs to none of them.
+
+  Checked against the game's own furniture, which is what makes it a
+  measurement rather than a guess:
+
+  ```
+  Chairs        28 meshes   0.448 m    49% of the item's height
+  OfficeChairs   5 meshes   0.449 m    43%
+  Benches       12 meshes   0.450 m    86%
+  Ottomans       7 meshes   0.449 m   100%
+  Stools         9 meshes   0.649 m    99%
+  ```
+
+- **And there was never one band.** 0.27.0 warned outside 0.316 to 0.520,
+  which fails every stool the game ships. There are two heights, 0.45 for
+  anything you sit on with your feet down and 0.65 for a stool, and the ratios
+  above show why a single band could not exist: a dining chair's seat is
+  halfway up it, an ottoman's seat is its lid.
+
+  ParaForge now names which of the two your mesh matches instead of judging it,
+  and only warns outside 0.20 to 0.75, where no shipped item sits.
+
+### Changed
+
+- **The height was never fixed by the template either.** Every slot template
+  carries `VaryBasedOnHeight:True` on its seat locator, with `Min` and `Max`
+  children bounding the travel, so the game moves the Para to suit the item
+  rather than demanding a height of it. That is why a stool and a dining chair
+  both work through the same `ChairSlotAndLocator`, and why this check is
+  information and a wide safety net, not a rule.
+
+  Read out of `Environments/Items/Prefabs/*.prefab` in `Main.mod`. The same
+  files show `ShorterChairSlotAndLocator` holding its seat at exactly the
+  position `ChairSlotAndLocator` does, so picking the shorter variant to fix a
+  low chair will not do anything.
+
 ## [0.27.0]
 
 ### Fixed
@@ -33,25 +83,12 @@ was measured on is recorded with it.
   authored for. A mesh with no surface there still seats a Para, floating above
   the cushion or sunk into it, and no error is ever raised.
 
-  So the seat is now measured the way the game's own chairs were, by weighting
-  every upward facing triangle between 15% and 75% of the item's height by its
-  area. Across the 22 shipped chair meshes that gives:
+  The seat is measured, drawn in the viewport, and reported as a checklist
+  line and under the seat template dropdown, with an arrow at seat height
+  showing which way a Para will face: along Y+, the same direction the big
+  green floor arrow points, so the backrest belongs at the far end.
 
-  ```
-  median          0.445 m,  47% of the item's height
-  lowest          0.316 m   SeatingChairOutdoorAdirondac
-  highest         0.520 m   SeatingChairCamping
-  ```
-
-  The viewport draws that band as two faint rectangles over the item's
-  footprint, the height your mesh actually offers as a solid one, green inside
-  the band and amber outside, and an arrow at seat height showing which way a
-  Para will face: along Y+, the same direction the big green floor arrow
-  points, so the backrest belongs at the far end. The figure also appears as a
-  checklist line and under the seat template dropdown.
-
-  It is a warning, never a block. The range is what the game's own furniture
-  does, not a rule the engine enforces.
+  The measurement itself was wrong in this release and is corrected in 0.28.0.
 
 ## [0.26.0]
 
