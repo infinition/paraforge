@@ -9,6 +9,24 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.39.0]
+
+### Added
+
+- **Origin to the 3D cursor.** The rule is right for most items and wrong for
+  some: a door swings on its hinge and a sign hangs off its bracket, and both
+  need an origin the rule would move to the middle. Place the cursor where the
+  item should be anchored and press the button; the geometry moves so that
+  point becomes zero.
+
+  It also ticks Origin placed by hand, which turns the origin check green with
+  the reason rather than leaving a red line asking for the rule that was just
+  overridden on purpose. A check that cannot be satisfied is a check people
+  learn to ignore. Untick it and the rule applies again.
+
+  The origin is where the game anchors the item when it places it, which is
+  why this is worth getting right rather than approximately right.
+
 ## [0.38.0]
 
 ### Added

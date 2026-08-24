@@ -166,6 +166,18 @@ def _check_origin(measurement, settings, report):
                 axis.upper(), _anchor_words(anchor), -offsets[index],
             ))
 
+    if getattr(settings, "keep_origin", False):
+        # Somebody put it where they wanted it. A door that swings on its
+        # hinge and a sign that hangs off its bracket both need an origin the
+        # rule would move, and a check that cannot be satisfied is a check
+        # people learn to ignore.
+        report.add(
+            "origin", _("Origin placement"), OK,
+            _("Placed by hand, so the rule for this item type is not "
+              "applied. The item is anchored here when the game places it"),
+        )
+        return
+
     if not any(anchors.values()):
         report.add(
             "origin", _("Origin placement"), WARN,

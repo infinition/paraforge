@@ -662,6 +662,17 @@ class ParaForgeSettings(PropertyGroup):
     # again before anything is removed.
     selected_items: StringProperty(name=_("Selected"), default="")
 
+    keep_origin: BoolProperty(
+        name=_("Origin placed by hand"),
+        description=_(
+            "Stops the checklist asking for the rule for this item type. Turn "
+            "it on when the origin is somewhere you chose, which the 3D "
+            "cursor button does for you"
+        ),
+        default=False,
+        update=_invalidate,
+    )
+
     show_seat: BoolProperty(name=_("Seat guide"), default=True, update=_redraw)
     show_usage: BoolProperty(
         name=_("What it does"),

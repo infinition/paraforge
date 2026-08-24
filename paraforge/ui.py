@@ -287,6 +287,8 @@ class PARAFORGE_PT_facing(_Base, Panel):
         layout.separator()
         column = layout.column(align=True)
         column.operator("paraforge.fix_origin", icon="OBJECT_ORIGIN")
+        column.operator("paraforge.origin_to_cursor", icon="PIVOT_CURSOR")
+        column.prop(settings, "keep_origin", text=_("Origin placed by hand"))
         paragraph(column, context, _(
             "Not Blender's origin to geometry, which centres on the bounding "
             "box. This applies the rule for the chosen item type: a floor "

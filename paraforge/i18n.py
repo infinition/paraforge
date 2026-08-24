@@ -330,6 +330,26 @@ FR = {
     # -- Checklist --------------------------------------------------------
     "{0} ok   {1} warn   {2} blocking": "{0} ok   {1} alerte   {2} bloquant",
     "Items in this mod": "Objets de ce mod",
+    "Origin to the 3D cursor": "Origine sur le curseur 3D",
+    "Move the geometry so the 3D cursor becomes the item's origin. Place the "
+    "cursor where the item should hang from, then press this. The origin is "
+    "where the game anchors the item when it is placed":
+        "Déplacer la géométrie pour que le curseur 3D devienne l'origine de "
+        "l'objet. Place le curseur là où l'objet doit s'accrocher, puis appuie "
+        "ici. L'origine est là où le jeu ancre l'objet quand il le pose",
+    "The cursor is already at the origin":
+        "Le curseur est déjà sur l'origine",
+    "Origin placed by hand": "Origine placée à la main",
+    "Stops the checklist asking for the rule for this item type. Turn it on "
+    "when the origin is somewhere you chose, which the 3D cursor button does "
+    "for you":
+        "Empêche la checklist de réclamer la règle de ce type d'objet. À "
+        "activer quand l'origine est là où tu l'as choisie, ce que le bouton "
+        "du curseur 3D fait pour toi",
+    "Placed by hand, so the rule for this item type is not applied. The item "
+    "is anchored here when the game places it":
+        "Placée à la main, la règle de ce type d'objet n'est donc pas "
+        "appliquée. C'est ici que le jeu ancre l'objet quand il le pose",
     "Rotate": "Tourner",
     "Turn the geometry around Z and re-check. The rotation is baked into the "
     "mesh, not left on the object, because the game reads the vertices and "

@@ -818,10 +818,64 @@ class PARAFORGE_OT_fix_all(Operator):
         return {"FINISHED"}
 
 
+
+class PARAFORGE_OT_origin_to_cursor(Operator):
+    bl_idname = "paraforge.origin_to_cursor"
+    bl_label = _("Origin to the 3D cursor")
+    bl_description = _(
+        "Move the geometry so the 3D cursor becomes the item's origin. Place "
+        "the cursor where the item should hang from, then press this. The "
+        "origin is where the game anchors the item when it is placed"
+    )
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        objects = _targets(context)
+        if not objects:
+            self.report({"ERROR"}, _("Nothing selected"))
+            return {"CANCELLED"}
+
+        shared = _multi_user(objects)
+        if shared:
+            self.report(
+                {"ERROR"},
+                _("Mesh data is shared with another object: ")
+                + ", ".join(shared[:3]),
+            )
+            return {"CANCELLED"}
+
+        if not apply_transforms(context, objects):
+            self.report({"ERROR"}, _("Could not apply transforms first"))
+            return {"CANCELLED"}
+
+        cursor = context.scene.cursor.location
+        delta = -np.array([cursor[0], cursor[1], cursor[2]], dtype=np.float64)
+        if np.all(np.abs(delta) <= spec.POSITION_TOLERANCE):
+            self.report({"INFO"}, _("The cursor is already at the origin"))
+            return {"FINISHED"}
+
+        for obj in objects:
+            translate_mesh(obj.data, delta)
+            obj.data.update()
+
+        # Placed by hand on purpose, so the checklist stops asking for the
+        # rule it was just overridden with.
+        settings = props.settings(context)
+        if settings is not None:
+            settings.keep_origin = True
+
+        cache.invalidate()
+        self.report(
+            {"INFO"},
+            _("Geometry moved by ({0:+.4f}, {1:+.4f}, {2:+.4f}) m", *delta),
+        )
+        return {"FINISHED"}
+
 classes = (
     PARAFORGE_OT_fix_units,
     PARAFORGE_OT_fix_transforms,
     PARAFORGE_OT_fix_origin,
+    PARAFORGE_OT_origin_to_cursor,
     PARAFORGE_OT_confirm_facing,
     PARAFORGE_OT_rotate_to_face,
     PARAFORGE_OT_fix_add_color_attribute,

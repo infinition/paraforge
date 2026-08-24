@@ -2158,6 +2158,40 @@ def test_rotate_and_origin():
     check(status_of(report, "origin") == validate.OK,
           "so the checklist stops asking", detail_of(report, "origin"))
 
+    # And when the rule is not what you want. A door swinging on its hinge and
+    # a sign hanging off its bracket both need an origin the rule would move.
+    fresh_scene()
+    make_cube("Hinged", size=1.0)
+    obj = bpy.context.active_object
+    settings = props.settings(bpy.context)
+    settings.asset_name = "HingedThing"
+    settings.item_type = "FLOOR"
+
+    bpy.context.scene.cursor.location = (0.5, 0.0, -0.5)
+    bpy.ops.paraforge.origin_to_cursor()
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    measured = geo.measure([obj], depsgraph)
+    check(abs(float(measured.max[0])) < 1e-4,
+          "the cursor becomes the origin, so the corner it sat on is now zero",
+          "{0:.4f}".format(float(measured.max[0])))
+    check(abs(float(measured.min[2])) < 1e-4,
+          "on every axis at once", "{0:.4f}".format(float(measured.min[2])))
+
+    check(settings.keep_origin,
+          "and the item is marked as placed by hand")
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "origin") == validate.OK,
+          "so the checklist does not ask for the rule that was just "
+          "overridden", detail_of(report, "origin"))
+
+    settings.keep_origin = False
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "origin") == validate.FAIL,
+          "turn the mark off and the rule applies again",
+          detail_of(report, "origin"))
+
+    bpy.context.scene.cursor.location = (0.0, 0.0, 0.0)
+
 
 def test_multi_part():
     """An item built from several pieces, the way the game builds one.
