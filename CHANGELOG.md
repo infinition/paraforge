@@ -9,6 +9,32 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.25.0]
+
+### Fixed
+
+- **The right tag was not enough, and the Para still walked to another chair.**
+  Filing an item under `Chairs` is what 0.24.0 checked for, and it is only half
+  of it. The tag names a default template, but the item overrides it, and 22 of
+  the game's 29 shipped chairs write their own:
+
+  ```
+  =OverrideNestedPrefabToSpawn:True
+  =NestedPrefabToSpawn:3998377347708258495
+  ```
+
+  Counted across the 29 items tagged `Chairs`: 25 name a template in
+  `Items.setting`, 18 in their prefab, 3 in neither. ParaForge wrote none of
+  them, so the catalogue entry looked right and no Para could reach it.
+
+### Added
+
+- **A seat picker**, listing the 29 slot templates the game ships. Left on
+  automatic it follows the catalogue tag, which is what most items want. Three
+  chair variants exist, `ChairSlotAndLocator`, `ShorterChairSlotAndLocator` and
+  `LongChairSlotAndLocator`, for three seat heights, and the shipped chairs are
+  split evenly across them, so an explicit choice is worth having.
+
 ## [0.24.0]
 
 ### Added

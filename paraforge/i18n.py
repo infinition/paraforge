@@ -427,6 +427,20 @@ FR = {
     "{0} triangles, was {1}": "{0} triangles, contre {1} avant",
 
     # -- The scaling handle on a placed item ---------------------------------
+    "Seat": "Place assise",
+    "The template that places a Para on the item. The tag names a default, "
+    "but 22 of the game's 29 chairs name their own instead, which is why the "
+    "tag alone does not seat anyone":
+        "Le gabarit qui place un Para sur l'objet. Le tag en nomme un par "
+        "défaut, mais 22 des 29 chaises du jeu nomment le leur à la place, et "
+        "c'est pour ça que le tag seul n'assoit personne",
+    "From the tag": "Depuis le tag",
+    "Use whatever the chosen catalogue tag names":
+        "Utiliser ce que nomme le tag de catalogue choisi",
+    "None": "Aucune",
+    "Write nothing, so the item is decoration":
+        "N'écrire rien, l'objet reste une décoration",
+    "A Para can sit on it: {0}": "Un Para peut s'y asseoir : {0}",
     "Used by a Para": "Utilisé par un Para",
     "A tag typed by hand, so this cannot be checked":
         "Un tag saisi à la main, donc invérifiable ici",

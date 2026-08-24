@@ -226,7 +226,7 @@ def game_size(measurement):
 
 
 def item_fields(name, item_guid, prefab_guid, tag_guid, swatch_guid,
-                zone_count, link_seed, recolourable=False):
+                zone_count, link_seed, recolourable=False, seat_guid=""):
     """The Items.setting entry, in the order the game writes it.
 
     An item that is not recolourable says so and stops there. CityGravelPile,
@@ -262,6 +262,13 @@ def item_fields(name, item_guid, prefab_guid, tag_guid, swatch_guid,
             ]),
         ))
 
+    if seat_guid:
+        # The tag names a default, and the item overrides it. 22 of the game's
+        # 29 chairs write both lines, which is why filing an item under Chairs
+        # is not on its own enough to seat a Para.
+        fields.append(("OverrideNestedPrefabToSpawn", "True"))
+        fields.append(("NestedPrefabToSpawn", seat_guid))
+
     if recolourable and swatch_guid:
         fields.append(("SwatchGroup", swatch_guid))
         fields.append(("SwatchColorZoneCount", max(0, int(zone_count))))
@@ -296,6 +303,21 @@ def resolve_tag(settings):
     if settings.catalog_tag == spec.CUSTOM_TAG:
         return (settings.catalog_tag_custom or "").strip()
     return settings.catalog_tag
+
+
+def resolve_seat(settings, tag_guid):
+    """The slot template GUID to write on the item, or "".
+
+    Automatic follows the catalogue tag, which is what the game's own items do
+    when they leave it alone. Anything else is an explicit choice, and the
+    three chair variants exist precisely because seat height differs.
+    """
+    choice = getattr(settings, "seat_template", "AUTO")
+    if choice == "NONE":
+        return ""
+    if choice == "AUTO":
+        return catalog.tag_slot_guid(tag_guid)
+    return catalog.slot_prefab_guid(choice)
 
 
 def resolve_swatch(settings):
@@ -430,10 +452,16 @@ def generate(mod_path, name, settings, report, zone_count=1):
 
     marker = getattr(settings, "merge_marker", setting.MARKER_NEW)
 
+    seat_guid = resolve_seat(settings, tag_guid)
+    if seat_guid:
+        result.notes.append(_(
+            "A Para can sit on it: {0}", catalog.SLOT_BY_GUID.get(
+                seat_guid, seat_guid)))
+
     _merge(run, result, settings_path(mod_path, ITEMS_FILE), "Items",
            "AllItems", "GUID", item_guid,
            item_fields(name, item_guid, prefab_guid, tag_guid, swatch_guid,
-                       zone_count, seed, recolourable),
+                       zone_count, seed, recolourable, seat_guid),
            marker, item_guid)
 
     key = TRANSLATION_PREFIX + name

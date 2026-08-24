@@ -1440,6 +1440,41 @@ def test_usable_by_a_para():
     check(not cat.has_interactions(cat.BY_NAME["Food"]),
           "nor does Food, which is not a placeable item at all")
 
+    # The tag naming a template is not enough: 22 of the 29 shipped chairs
+    # write their own onto the item and override the tag's. An item that only
+    # carries the tag is the chair a Para walks past.
+    from paraforge import item as item_mod
+
+    class _Seat:
+        catalog_tag = cat.BY_NAME["Chairs"]
+        seat_template = "AUTO"
+
+    chairs = cat.BY_NAME["Chairs"]
+    guid = item_mod.resolve_seat(_Seat(), chairs)
+    check(cat.SLOT_BY_GUID.get(guid) == "ChairSlotAndLocator",
+          "automatic follows the tag", cat.SLOT_BY_GUID.get(guid, guid))
+
+    fields = item_mod.item_fields("Chaise6", "1", "2", chairs, "", 1, "m",
+                                  False, guid)
+    written = dict((k, v) for k, v in fields if not isinstance(v, list))
+    check(written.get("NestedPrefabToSpawn") == guid,
+          "and the template is written onto the item itself", str(written))
+    check(written.get("OverrideNestedPrefabToSpawn") == "True",
+          "with the override the game's own chairs write")
+
+    _Seat.seat_template = "ShorterChairSlotAndLocator"
+    short = item_mod.resolve_seat(_Seat(), chairs)
+    check(short == cat.SLOT_PREFABS["ShorterChairSlotAndLocator"],
+          "an explicit choice wins over the tag, for the three seat heights")
+
+    _Seat.seat_template = "NONE"
+    check(item_mod.resolve_seat(_Seat(), chairs) == "",
+          "and None writes nothing, leaving decoration")
+
+    bare = item_mod.item_fields("X", "1", "2", chairs, "", 1, "m", False, "")
+    check(not any(k == "NestedPrefabToSpawn" for k, _v in bare),
+          "so nothing is claimed for an item with no seat")
+
     fresh_scene()
     make_cube()
     settings = props.settings(bpy.context)

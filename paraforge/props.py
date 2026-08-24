@@ -76,6 +76,24 @@ def _catalog_items(self, context):
     return _CATALOG_ITEMS
 
 
+_SEAT_ITEMS = []
+
+
+def _seat_items(self, context):
+    """Automatic, none, then every slot template the game ships."""
+    if _SEAT_ITEMS:
+        return _SEAT_ITEMS
+    _SEAT_ITEMS.append((
+        "AUTO", _("From the tag"),
+        _("Use whatever the chosen catalogue tag names")))
+    _SEAT_ITEMS.append((
+        "NONE", _("None"),
+        _("Write nothing, so the item is decoration")))
+    for name in sorted(catalog.SLOT_PREFABS):
+        _SEAT_ITEMS.append((name, name, catalog.SLOT_PREFABS[name]))
+    return _SEAT_ITEMS
+
+
 def _invalidate(self, context):
     from . import cache
 
@@ -313,6 +331,17 @@ class ParaForgeSettings(PropertyGroup):
         name=_("Largest"),
         description=_("How far up the handle can take the item"),
         default=spec.MAX_SCALE, min=0.01, max=20.0, soft_min=1.0,
+        update=_invalidate,
+    )
+
+    seat_template: EnumProperty(
+        name=_("Seat"),
+        description=_(
+            "The template that places a Para on the item. The tag names a "
+            "default, but 22 of the game's 29 chairs name their own instead, "
+            "which is why the tag alone does not seat anyone"
+        ),
+        items=_seat_items,
         update=_invalidate,
     )
 

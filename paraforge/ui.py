@@ -125,6 +125,10 @@ class PARAFORGE_PT_main(_Base, Panel):
             else:
                 hint.label(text=_("Decoration, no Para uses it"),
                            icon="OUTLINER_OB_POINTCLOUD")
+
+        # The tag names a default seat, the item overrides it. Left on
+        # automatic this follows the tag, which is what most items want.
+        column.prop(settings, "seat_template", text="", icon="OUTLINER_OB_ARMATURE")
         column.prop(settings, "asset_name", text="", icon="OUTLINER_OB_MESH")
 
     def _draw_checklist(self, context, layout, settings, report):

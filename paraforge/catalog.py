@@ -1903,3 +1903,52 @@ def interaction_source(guid):
 
 def has_interactions(guid):
     return bool(interaction_source(guid))
+
+# The slot templates themselves, by name. A tag names one as its default, and
+# an item may name another: 22 of the 29 shipped chairs write
+# OverrideNestedPrefabToSpawn:True and their own choice, which is why the tag
+# alone does not seat a Para. Three chair variants exist, for three seat
+# heights.
+
+SLOT_PREFABS = {
+    "ArmchairSlotAndLocator": "4161960356598757385",
+    "BarbecueItemSlotAndLocators": "4817324542734423938",
+    "BedSlotsAndLocators": "5550883888231950765",
+    "BenchSlotsAndLocators": "7814639882572811534",
+    "ChairSlotAndLocator": "3998377347708258495",
+    "ClassicChesterfieldCoucheSlotAndLocators": "4430958221002396994",
+    "CouchEclecticCactusSlotAndLocators": "6827519194222646684",
+    "CouchesSlotAndLocators": "5228134314818583237",
+    "CounterIslandSlotAndLocator": "763169351681373983",
+    "CounterShortSlotsAndLocators": "7023277536732854512",
+    "CounterSlotsAndLocators": "1539368008171546264",
+    "CribSlotsAndLocators": "3150558589531122373",
+    "DeskSidesSlots": "1197515872408856798",
+    "DeskSlots": "4476895533443086650",
+    "EclecticModularCouchSlotAndLocators": "1414084029454762562",
+    "LongChairSlotAndLocator": "8546308212913763120",
+    "LowerArmchairSlotAndLocators": "3619630419065112185",
+    "MicrowaveSlotAndLocators": "2146955384015440317",
+    "MidCenturyTuffedCouchSlotAndLocators": "8222696203951979715",
+    "ModernModularCouchSlotAndLocators": "7216948033116572335",
+    "OvenSlotAndLocator": "4087571998897271124",
+    "SeatingBenchLipsSlotsAndLocators": "651351737652219872",
+    "ShorterArmchairSlotAndLocators": "53159503901709791",
+    "ShorterChairSlotAndLocator": "8029325159003261016",
+    "ShorterCouchesSlotAndLocators": "8170324345487325166",
+    "TableSlots": "2766682579313931772",
+    "ToiletSlotAndLocatorFlushOnTop": "5985778389161041066",
+    "ToiletSlotAndLocators": "3799848876961549297",
+    "ToiletSlotAndLocatorsHighTech": "4381966886292104749",
+}
+
+
+def slot_prefab_guid(name):
+    return SLOT_PREFABS.get(name, "")
+
+
+def tag_slot_guid(guid):
+    """The GUID of the template a tag names, or "" when it names none."""
+    return slot_prefab_guid(slot_template(guid))
+
+SLOT_BY_GUID = {guid: name for name, guid in SLOT_PREFABS.items()}
