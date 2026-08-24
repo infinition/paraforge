@@ -9,6 +9,39 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.23.0]
+
+### Added
+
+- **Whether a Para will actually use the item.** An imported chair that nobody
+  sits on is not missing a seat, it is filed under the wrong tag.
+
+  A chair carries no seat of its own. Of the game's 2434 prefabs only 58 name a
+  `NestedPrefabToSpawn`, and no couch, stool or bench names one at all. What
+  makes an item usable is its **catalogue tag**: the tag entry in
+  `BuildModeCatalogTags.setting` carries the template, and the game attaches it
+  to everything filed under that tag.
+
+  | Tag | Template it attaches |
+  |---|---|
+  | Chairs, OfficeChairs | `ChairSlotAndLocator` |
+  | Armchairs | `ArmchairSlotAndLocator` |
+  | Couches | `CouchesSlotAndLocators` |
+  | Benches, _SittableBench | `BenchSlotsAndLocators` |
+  | Tables | `TableSlots` |
+  | CountersAndCabinets | `CounterSlotsAndLocators` |
+  | Toilets | `ToiletSlotAndLocators` |
+  | _BedCrib | `CribSlotsAndLocators` |
+
+  Thirteen tags out of 298 attach something, three of them a sound rather than
+  a place to sit. The template positions the Para itself: `ArmchairSlotAndLocator`
+  holds a Seat, a ButtLocator, a FeetFront and a FeetEnter, so nothing about
+  the animation has to be authored.
+
+  The picker now says which template the chosen tag brings, right under the
+  choice, and the checklist repeats it. It is information rather than a fault,
+  since most items are decoration and are meant to be.
+
 ## [0.22.0]
 
 ### Added

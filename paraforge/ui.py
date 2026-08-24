@@ -107,6 +107,21 @@ class PARAFORGE_PT_main(_Base, Panel):
         column.prop(settings, "catalog_tag", text="")
         if settings.catalog_tag == spec.CUSTOM_TAG:
             column.prop(settings, "catalog_tag_custom", text="")
+        else:
+            # The tag is what makes an item usable: it carries the slot
+            # template the game attaches, so a chair filed under the wrong one
+            # is furniture nobody sits on.
+            template = catalog.slot_template(settings.catalog_tag)
+            hint = column.row()
+            hint.scale_y = 0.7
+            if catalog.seats_a_para(settings.catalog_tag):
+                hint.label(text=_("A Para can use it: ") + template,
+                           icon="OUTLINER_OB_ARMATURE")
+            elif template:
+                hint.label(text=_("Attaches ") + template, icon="SOUND")
+            else:
+                hint.label(text=_("Decoration, no Para uses it"),
+                           icon="OUTLINER_OB_POINTCLOUD")
         column.prop(settings, "asset_name", text="", icon="OUTLINER_OB_MESH")
 
     def _draw_checklist(self, context, layout, settings, report):

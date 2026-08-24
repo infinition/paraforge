@@ -427,6 +427,22 @@ FR = {
     "{0} triangles, was {1}": "{0} triangles, contre {1} avant",
 
     # -- The scaling handle on a placed item ---------------------------------
+    "Used by a Para": "Utilisé par un Para",
+    "A tag typed by hand, so this cannot be checked":
+        "Un tag saisi à la main, donc invérifiable ici",
+    "The tag attaches {0}, so a Para can use it":
+        "Le tag attache {0}, un Para peut donc s'en servir",
+    "The tag attaches {0}, which is a sound rather than a place to sit":
+        "Le tag attache {0}, qui est un son et non une place assise",
+    "Decoration: this tag attaches nothing, so a Para will walk past it. "
+    "Seating lives under Chairs, Armchairs, OfficeChairs, Couches or Benches":
+        "Décoration : ce tag n'attache rien, un Para passera donc à côté. "
+        "Les assises sont sous Chairs, Armchairs, OfficeChairs, Couches ou "
+        "Benches",
+    "A Para can use it: ": "Un Para peut s'en servir : ",
+    "Attaches ": "Attache ",
+    "Decoration, no Para uses it": "Décoration, aucun Para ne s'en sert",
+
     "Scalable in game": "Mise à l'échelle en jeu",
 
     "Put the scaling handle on the item once placed, which multiplies the "

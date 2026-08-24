@@ -6,7 +6,7 @@ and where possible a button that fixes it. The point is that no failure should
 ever be discovered by relaunching the game.
 """
 
-from . import geo, i18n, spec, textures, uvxform
+from . import catalog, geo, i18n, spec, textures, uvxform
 
 _ = i18n.t
 
@@ -98,6 +98,7 @@ def run(context, settings):
     _check_size(measurement, settings, report)
     _check_facing(settings, report)
     _check_asset_name(objects, settings, report)
+    _check_usable(settings, report)
     _check_color_zones(objects, settings, report)
     _check_uvs(objects, report)
     _check_uv_transform(objects, report)
@@ -225,6 +226,43 @@ def _check_facing(settings, report):
               "arrow in the viewport, then confirm"),
             fix="paraforge.confirm_facing", fix_label=_("It faces the arrow"),
         )
+
+
+def _check_usable(settings, report):
+    """Whether a Para will ever do anything with the item.
+
+    A chair carries no seat of its own. Nothing in its prefab says where to
+    sit, and the 29 shipped chairs that do carry a NestedPrefabToSpawn are the
+    exception. What makes an item usable is its catalogue tag: the tag entry in
+    BuildModeCatalogTags.setting carries the template, and the game attaches it
+    to everything filed under that tag.
+
+    So an imported chair filed under the wrong tag is furniture nobody sits on,
+    and the Para walks to another chair instead. That is not something the
+    export can fix, only the tag can, which is why this reads as information
+    next to the choice rather than as a fault.
+    """
+    tag = settings.catalog_tag
+    if tag == spec.CUSTOM_TAG:
+        report.add("usable", _("Used by a Para"), OK,
+                   _("A tag typed by hand, so this cannot be checked"))
+        return
+
+    template = catalog.slot_template(tag)
+    if catalog.seats_a_para(tag):
+        report.add("usable", _("Used by a Para"), OK,
+                   _("The tag attaches {0}, so a Para can use it", template))
+        return
+    if template:
+        report.add("usable", _("Used by a Para"), OK,
+                   _("The tag attaches {0}, which is a sound rather than a "
+                     "place to sit", template))
+        return
+
+    report.add("usable", _("Used by a Para"), OK,
+               _("Decoration: this tag attaches nothing, so a Para will walk "
+                 "past it. Seating lives under Chairs, Armchairs, "
+                 "OfficeChairs, Couches or Benches"))
 
 
 def _check_asset_name(objects, settings, report):

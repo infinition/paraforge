@@ -1770,3 +1770,54 @@ def path(guid):
         parts.append(name)
         current = parent
     return " > ".join(reversed(parts))
+
+#: Catalogue tags that make an item usable, and the slot template the game
+#: attaches to anything filed under them. This is the whole mechanism behind
+#: sitting: a chair carries no seat of its own, its tag brings one.
+#: Read out of Main.mod/Settings/BuildModeCatalogTags.setting, where the tag
+#: entry carries NestedPrefabToSpawn. A target of "" is a tag that declares the
+#: field with no template behind it.
+SLOT_TAGS = {
+    "1507705560698946354": "ArmchairSlotAndLocator",
+    "9105849566942677340": "ChairSlotAndLocator",
+    "415082883649633617": "ChairSlotAndLocator",
+    "7447449227539394204": "CouchesSlotAndLocators",
+    "2855795514541043236": "BenchSlotsAndLocators",
+    "4741678931641170149": "BenchSlotsAndLocators",
+    "3907483255864417346": "TableSlots",
+    "8461709061774362586": "CounterSlotsAndLocators",
+    "3379229577763952217": "ToiletSlotAndLocators",
+    "4575609469802988211": "CribSlotsAndLocators",
+    "3400317259593598351": "CeilingFansSounds",
+    "3108863021855919330": "FridgeSounds",
+    "2067641458504236188": "ShowerAndBathTubsSounds",
+    "4628778472043362227": "",
+    "8634782218500074114": "",
+}
+
+#: The ones that actually place a Para, rather than attaching a sound.
+SEATING_TEMPLATES = (
+    "ArmchairSlotAndLocator", "ChairSlotAndLocator",
+    "CouchesSlotAndLocators", "BenchSlotsAndLocators",
+    "ToiletSlotAndLocators", "CribSlotsAndLocators",
+)
+
+
+def slot_template(guid):
+    """The template a tag attaches, or "" when it attaches nothing."""
+    return SLOT_TAGS.get(guid, "")
+
+
+def seats_a_para(guid):
+    return slot_template(guid) in SEATING_TEMPLATES
+
+
+def tags_with_slots():
+    """[(guid, name, template)] for every tag that attaches something."""
+    out = []
+    for guid, template in SLOT_TAGS.items():
+        if not template:
+            continue
+        entry = BY_GUID.get(guid)
+        out.append((guid, entry[0] if entry else guid, template))
+    return sorted(out, key=lambda row: row[1])

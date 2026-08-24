@@ -1402,6 +1402,49 @@ def test_two_items_share_nothing():
     shutil.rmtree(temp, ignore_errors=True)
 
 
+def test_usable_by_a_para():
+    """A chair carries no seat. Its catalogue tag brings one, or nothing does."""
+    section("Used by a Para")
+    from paraforge import catalog as cat
+
+    check(cat.slot_template(cat.BY_NAME["Chairs"]) == "ChairSlotAndLocator",
+          "the Chairs tag attaches the chair template",
+          cat.slot_template(cat.BY_NAME["Chairs"]))
+    check(cat.slot_template(cat.BY_NAME["Armchairs"]) == "ArmchairSlotAndLocator",
+          "and armchairs get their own")
+    check(cat.slot_template(cat.BY_NAME["OfficeChairs"]) == "ChairSlotAndLocator",
+          "office chairs share the plain chair one")
+    check(cat.seats_a_para(cat.BY_NAME["Couches"]),
+          "a couch seats a Para")
+    check(not cat.seats_a_para(cat.BY_NAME["Build"]),
+          "the root Build tag does not, which is why an item filed there is "
+          "walked past")
+    check(not cat.seats_a_para(cat.BY_NAME["Fridges"]),
+          "and a fridge attaches a sound, not a seat",
+          cat.slot_template(cat.BY_NAME["Fridges"]))
+    check(len(cat.tags_with_slots()) == 13,
+          "13 tags attach something, out of the game's 298",
+          str(len(cat.tags_with_slots())))
+
+    fresh_scene()
+    make_cube()
+    settings = props.settings(bpy.context)
+    settings.asset_name = "OldWoodenChair"
+
+    settings.catalog_tag = cat.BY_NAME["Build"]
+    report = cache.get(bpy.context, settings, force=True)
+    detail = detail_of(report, "usable")
+    check("Chairs" in detail, "the checklist names where seating lives", detail)
+
+    settings.catalog_tag = cat.BY_NAME["Chairs"]
+    report = cache.get(bpy.context, settings, force=True)
+    check("ChairSlotAndLocator" in detail_of(report, "usable"),
+          "and says which template the right tag brings",
+          detail_of(report, "usable"))
+    check(status_of(report, "usable") == validate.OK,
+          "it is information, never a fault: most items are decoration")
+
+
 def test_asset_name_guard():
     """A borrowed name is how one item silently replaces another."""
     section("Asset name")
@@ -1807,6 +1850,7 @@ def main():
         test_preview()
         test_decimate_rebake()
         test_two_items_share_nothing()
+        test_usable_by_a_para()
         test_asset_name_guard()
         test_shared_surface_fallback()
         test_repair_stale_entry()
