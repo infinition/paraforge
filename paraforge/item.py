@@ -87,10 +87,28 @@ def surface_fields(name, surface_guid, texture_guid, normal_guid="",
     return fields
 
 
+def _bool3(axes):
+    """The game's own three axis flag, written the way it writes it."""
+    values = tuple(bool(a) for a in tuple(axes) + (True, True, True))[:3]
+    return "bool3({0}, {1}, {2})".format(
+        *["True" if v else "False" for v in values]
+    )
+
+
+def _sizes(size, factor):
+    """A size triple scaled by a factor, in the game's width/height/depth."""
+    return "({0:.4f}, {1:.4f}, {2:.4f})".format(
+        *[float(v) * float(factor) for v in size]
+    )
+
+
 def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
                 pivot=(0.5, 0.5, 0.5), root_guid="", surface_guid="",
                 scalable=False, min_scale=spec.MIN_SCALE,
-                max_scale=spec.MAX_SCALE):
+                max_scale=spec.MAX_SCALE, resizable=False,
+                resizable_axes=spec.DEFAULT_RESIZABLE_AXES,
+                min_size_factor=spec.MIN_SIZE_FACTOR,
+                max_size_factor=spec.MAX_SIZE_FACTOR):
     """One root object holding one mesh, which is what an item minimally is.
 
     Size is in metres, in the game's axis order: width, height, depth. Blender
@@ -123,6 +141,26 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
 
     so a MinScale on its own is a limit that does not hold, and an item can be
     dragged down to nothing.
+
+    IsResizable is the other widget, and a different thing: it stretches the
+    item along chosen axes to real dimensions rather than multiplying it whole.
+    The game keeps them apart itself, in CancelResizeOrScaleItem, and 133 of
+    its prefabs carry both. It takes two statements, one on the root and one on
+    the mesh reference, because the mesh has to be told which of its own axes
+    follow:
+
+        ItemObjectRoot:
+         IsResizable:True
+          ResizableAxes:bool3(False, True, False)
+          MinSizes:(0.750, 0.670, 0.509)
+          MaxSizes:(0.750, 1.500, 0.509)
+        ItemMeshReference:
+         IsResizable:bool3(False, True, False)
+
+    The sizes are metres in the same order as Size, so they are derived from
+    the item's own measurements. HasMaxSize gates MaxSizes exactly as
+    HasMaxScale gates MaxScale, and there is no HasMinSize anywhere in the
+    assembly, so the floor always applies and the ceiling only when declared.
     """
     root = root_guid or sidecar.guid_for("paraforge", "root", mesh_guid)
     lines = [
@@ -139,6 +177,14 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
             "  HasMaxScale:True",
             "  MaxScale:{0:g}".format(float(max_scale)),
         ])
+    if resizable:
+        lines.extend([
+            " IsResizable:True",
+            "  ResizableAxes:" + _bool3(resizable_axes),
+            "  MinSizes:" + _sizes(size, min_size_factor),
+            "  HasMaxSize:True",
+            "  MaxSizes:" + _sizes(size, max_size_factor),
+        ])
     lines.extend([
         " ItemMeshReferences:",
         "  GUID:" + root,
@@ -148,6 +194,10 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
         " Size:({0:.4f}, {1:.4f}, {2:.4f})".format(*size),
         "ItemMeshReference:",
     ])
+    if resizable:
+        # Without this the item's cube stretches and the mesh inside it does
+        # not follow.
+        lines.append(" IsResizable:" + _bool3(resizable_axes))
     if surface_guid:
         lines.extend([
             " Surfaces:",
@@ -345,7 +395,15 @@ def generate(mod_path, name, settings, report, zone_count=1):
                          min_scale=getattr(settings, "min_scale",
                                            spec.MIN_SCALE),
                          max_scale=getattr(settings, "max_scale",
-                                           spec.MAX_SCALE))
+                                           spec.MAX_SCALE),
+                         resizable=getattr(settings, "resizable", False),
+                         resizable_axes=tuple(
+                             getattr(settings, "resizable_axes",
+                                     spec.DEFAULT_RESIZABLE_AXES)),
+                         min_size_factor=getattr(settings, "min_size_factor",
+                                                 spec.MIN_SIZE_FACTOR),
+                         max_size_factor=getattr(settings, "max_size_factor",
+                                                 spec.MAX_SIZE_FACTOR))
     if setting.read(prefab_path) != wanted:
         run.will_modify(prefab_path)
         setting.write(prefab_path, wanted)

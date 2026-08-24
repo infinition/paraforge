@@ -466,11 +466,27 @@ class PARAFORGE_PT_options(_Base, Panel):
 
         layout.separator()
         box = layout.box()
-        box.prop(settings, "scalable", text=_("Resizable in game"))
+        box.prop(settings, "scalable", text=_("Scalable in game"))
         row = box.row(align=True)
         row.enabled = settings.scalable
         row.prop(settings, "min_scale", text=_("Smallest"))
         row.prop(settings, "max_scale", text=_("Largest"))
+
+        # The game's second handle, and a separate declaration. Scaling
+        # multiplies the whole item, stretching moves one axis at a time.
+        box.separator()
+        box.prop(settings, "resizable", text=_("Stretchable per axis"))
+        column = box.column(align=True)
+        column.enabled = settings.resizable
+        row = column.row(align=True)
+        row.prop(settings, "resizable_axes", text="")
+        row = column.row(align=True)
+        row.prop(settings, "min_size_factor", text=_("Smallest"))
+        row.prop(settings, "max_size_factor", text=_("Largest"))
+        if settings.resizable and not any(settings.resizable_axes):
+            hint = column.row()
+            hint.alert = True
+            hint.label(text=_("No axis allowed, the handle would do nothing"))
 
         layout.separator()
         layout.prop(settings, "swatch_group", text=_("Swatch group"))

@@ -340,11 +340,55 @@ DEFAULT_BASE_TEXTURE_GUID = "4272001606441780869"
 #: Occlusion comes from the alpha of the NormalOcclusion map, at full strength.
 SURFACE_AMBIENT_OCCLUSION_STRENGTH = 1
 
-#: How far a placed item can be scaled by its yellow handle. The game's own
-#: prefabs spread widely, and these are the two most common values across the
-#: 1114 that are scalable: MinScale 0.5 on 47 of them, MaxScale 2 on 39.
-MIN_SCALE = 0.5
-MAX_SCALE = 2.0
+# How far a placed item can be taken by its handles, at both ends.
+#
+# The game's own prefabs are conservative, because each one is authored for a
+# purpose: across the 185 that set them, MinScale runs 0.25 to 1.75 and
+# MaxScale 0.5 to 10. A mod item is not authored for a purpose, it is handed to
+# someone who wants a tiny cactus on a shelf and a giant one in the garden, so
+# the range written here is deliberately wider than the shipped middle.
+#
+# The ceiling is the game's own maximum, so it is proven at that value. The
+# floor goes below anything the game ships: the clamp is a plain float compare,
+# with nothing special at the bottom.
+MIN_SCALE = 0.1
+MAX_SCALE = 10.0
+
+# Scaling and resizing are two different widgets, and the game says so itself:
+# CancelResizeOrScaleItem, CreateItemResizeWidget. An item can carry either,
+# both, or neither, and 133 of the shipped prefabs carry both.
+#
+#   IsScalable   a handle that multiplies the whole item, MinScale/MaxScale
+#                being factors. 1114 prefabs.
+#   IsResizable  handles that stretch the item along chosen axes to real
+#                dimensions, MinSizes/MaxSizes being metres. 650 prefabs.
+#
+# The root declares the item resizable, and the mesh reference declares which
+# of its own axes stretch with it. ArchitectureFanCommercial carries the mesh
+# side alone, so the two are separate statements:
+#
+#   ItemObjectRoot:
+#    IsResizable:True
+#     ResizableAxes:bool3(False, True, False)
+#     MinSizes:(0.750, 0.670, 0.509)
+#     MaxSizes:(0.750, 1.500, 0.509)
+#   ItemMeshReference:
+#    IsResizable:bool3(False, True, False)
+#
+# There is a HasMaxSize and no HasMinSize anywhere in the assembly, so MinSizes
+# is always read and MaxSizes only counts when HasMaxSize says so. 139 prefabs
+# write MaxSizes and only 47 declare HasMaxSize, which means 92 of them carry a
+# ceiling the game never applies.
+
+#: Stretch limits, as a factor of the item's own exported size. Measured over
+#: the 650 resizable prefabs, the median MinSizes is 0.45 of the item's Size
+#: and the median MaxSizes 2.14. Widened for the same reason as the scale.
+MIN_SIZE_FACTOR = 0.1
+MAX_SIZE_FACTOR = 10.0
+
+#: Which axes stretch by default. All three is the second most common shape in
+#: the game, 165 of 639, behind width only at 184.
+DEFAULT_RESIZABLE_AXES = (True, True, True)
 
 #: There is no slot for a smoothness texture anywhere: the game stores a single
 #: scalar per surface, SmoothnessValue, used by 329 of the shipped surfaces. A

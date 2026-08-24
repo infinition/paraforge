@@ -260,6 +260,57 @@ La fusion se fait sur le texte, pas en régénérant le fichier depuis un modèl
 analysé : un `Items.setting` écrit par le jeu peut contenir des champs que
 l'extension ne connaît pas, et les réécrire les perdrait en silence.
 
+### Deux poignées, et ce ne sont pas la même chose
+
+Un objet posé peut porter l'un des deux widgets de redimensionnement du jeu,
+les deux, ou aucun. Le jeu les distingue lui-même, dans
+`CancelResizeOrScaleItem`, et 133 de ses prefabs déclarent les deux.
+
+**La mise à l'échelle** multiplie l'objet entier d'un coup. Elle demande
+`IsScalable` sur la racine, et les bornes sont des facteurs :
+
+```
+ItemObjectRoot:
+ IsScalable:True
+  ScalableAxes:bool3(True, True, True)
+  HasMinScale:True
+  MinScale:0.1
+  HasMaxScale:True
+  MaxScale:10
+```
+
+**L'étirement** tire l'objet sur les axes choisis vers des dimensions réelles,
+de sorte qu'une étagère s'élargit sans grandir. Il demande deux déclarations,
+parce que le mesh doit savoir lesquels de ses propres axes suivent le cube de
+l'objet :
+
+```
+ItemObjectRoot:
+ IsResizable:True
+  ResizableAxes:bool3(True, False, True)
+  MinSizes:(0.2000, 0.1000, 0.0500)
+  HasMaxSize:True
+  MaxSizes:(20.0000, 10.0000, 5.0000)
+ItemMeshReference:
+ IsResizable:bool3(True, False, True)
+```
+
+Les tailles sont des mètres, dans le même ordre que `Size`, donc ParaForge les
+dérive des mesures de l'objet plutôt que d'un nombre sorti de nulle part.
+
+`HasMaxScale` et `HasMaxSize` sont ce que le clamp lit réellement, et il
+n'existe aucun `HasMinSize` dans l'assembly : le plancher s'applique toujours,
+le plafond seulement s'il est déclaré. 139 prefabs livrés écrivent `MaxSizes`
+alors que 47 seulement déclarent `HasMaxSize` : 92 portent donc un plafond que
+le jeu n'applique jamais.
+
+Les plages écrites par ParaForge sont plus larges que celles du jeu. Sur les
+185 prefabs qui les fixent, `MinScale` va de 0,25 à 1,75 et `MaxScale` de 0,5 à
+10, parce que chacun est conçu pour un usage précis. Un objet de mod est remis
+à quelqu'un qui le veut minuscule sur une étagère et immense dans le jardin :
+le plafond est donc le maximum du jeu, et le plancher descend sous tout ce
+qu'il livre.
+
 ## Ce que le wiki ne dit pas, et que le jeu dit
 
 Paralives livre son propre contenu sous forme de mod : `Main.mod`, dans le

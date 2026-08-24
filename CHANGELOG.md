@@ -9,6 +9,47 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.22.0]
+
+### Added
+
+- **Stretching per axis**, the game's second resize widget and a different
+  thing from scaling. Scaling multiplies the whole item, stretching pulls it
+  along the axes you allow to real dimensions, so a shelf can be made wider
+  without becoming taller. The game keeps them apart itself, in
+  `CancelResizeOrScaleItem`, and 133 of its 2434 prefabs declare both.
+
+  It takes two statements, because the mesh has to be told which of its own
+  axes follow the item's cube. `ArchitectureFanCommercial` carries the mesh
+  side alone, which is what proves they are separate:
+
+  ```
+  ItemObjectRoot:
+   IsResizable:True
+    ResizableAxes:bool3(True, False, True)
+    MinSizes:(0.2000, 0.1000, 0.0500)
+    HasMaxSize:True
+    MaxSizes:(20.0000, 10.0000, 5.0000)
+  ItemMeshReference:
+   IsResizable:bool3(True, False, True)
+  ```
+
+  The sizes are metres in the same order as `Size`, so they follow the item's
+  own measurements. `HasMaxSize` gates `MaxSizes` exactly as `HasMaxScale`
+  gates `MaxScale`, and there is no `HasMinSize` anywhere in the assembly: 139
+  shipped prefabs write a ceiling while only 47 declare the flag that applies
+  it.
+
+### Changed
+
+- **Wider limits at both ends**, from 0.5 to 2 up to 0.1 to 10. Across the 185
+  shipped prefabs that set them, `MinScale` runs 0.25 to 1.75 and `MaxScale`
+  0.5 to 10, because each is authored for a purpose. A mod item is handed to
+  someone who wants it tiny on a shelf and huge in the garden, so the ceiling
+  is now the game's own maximum and the floor goes below anything it ships.
+- The scaling toggle is called **Scalable in game** rather than Resizable,
+  which was the name of the other widget.
+
 ## [0.21.0]
 
 ### Added

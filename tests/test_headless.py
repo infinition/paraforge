@@ -1663,12 +1663,52 @@ def test_undo(mod):
           "on all three axes, as 983 of the game's 1114 scalable items are")
     check("  HasMinScale:True" in scalable and "  HasMaxScale:True" in scalable,
           "with the two booleans the clamp actually reads")
-    check("  MinScale:0.5" in scalable and "  MaxScale:2" in scalable,
-          "and the bounds themselves",
+    check("  MinScale:0.1" in scalable and "  MaxScale:10" in scalable,
+          "and the bounds themselves, wide enough to be worth a handle",
           [l for l in scalable.splitlines() if "Scale" in l])
     check(scalable.index(" IsScalable:True")
           < scalable.index(" ItemMeshReferences:"),
           "written before the mesh reference, in the game's own field order")
+
+    # Stretching is the game's other handle and a separate declaration: the
+    # root says the item may be stretched and between what dimensions, the
+    # mesh reference says which of its own axes follow. Without the second
+    # the cube stretches and the mesh inside it does not.
+    check(" IsResizable" not in scalable,
+          "a scalable item is not stretchable by accident")
+
+    stretch = item_module.prefab_text(
+        "X", "123", (2.0, 1.0, 0.5), resizable=True,
+        resizable_axes=(True, False, True),
+    )
+    check(" IsResizable:True" in stretch, "asked for it, the root declares it")
+    check("  ResizableAxes:bool3(True, False, True)" in stretch,
+          "on the axes asked for, and only those",
+          [l for l in stretch.splitlines() if "Resizable" in l])
+    check(" IsResizable:bool3(True, False, True)" in stretch,
+          "and the mesh reference names the same axes")
+    check(stretch.index(" IsResizable:True")
+          < stretch.index("ItemMeshReference:")
+          < stretch.rindex(" IsResizable:bool3"),
+          "the root first, the mesh reference after, as the game writes them")
+
+    # The bounds are metres in the same order as Size, so they follow the
+    # item's own measurements rather than a number out of the air.
+    check("  MinSizes:(0.2000, 0.1000, 0.0500)" in stretch,
+          "the floor is the item's size times the smallest factor",
+          [l for l in stretch.splitlines() if "Sizes" in l])
+    check("  MaxSizes:(20.0000, 10.0000, 5.0000)" in stretch,
+          "and the ceiling times the largest")
+    check("  HasMaxSize:True" in stretch,
+          "with the boolean that gates the ceiling, since only MinSizes is "
+          "read unconditionally")
+    check("HasMinSize" not in stretch,
+          "and no HasMinSize, which does not exist anywhere in the game")
+
+    both = item_module.prefab_text("X", "123", (1.0, 1.0, 1.0),
+                                   scalable=True, resizable=True)
+    check(" IsScalable:True" in both and " IsResizable:True" in both,
+          "an item can carry both, as 133 of the game's own do")
 
 
 def test_create_mod():

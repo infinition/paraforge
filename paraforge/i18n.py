@@ -427,13 +427,39 @@ FR = {
     "{0} triangles, was {1}": "{0} triangles, contre {1} avant",
 
     # -- The scaling handle on a placed item ---------------------------------
-    "Resizable in game": "Redimensionnable en jeu",
-    "Put the yellow scaling handle on the item once placed. Without it the "
-    "game creates no handle and the item is stuck at the size it was "
-    "exported. 1114 of the game's 2434 items declare it":
-        "Met la poignée jaune de redimensionnement sur l'objet une fois posé. "
-        "Sans elle, le jeu ne crée aucune poignée et l'objet reste à la "
-        "taille exportée. 1114 des 2434 objets du jeu la déclarent",
+    "Scalable in game": "Mise à l'échelle en jeu",
+
+    "Put the scaling handle on the item once placed, which multiplies the "
+    "whole item at once. Without it the game creates no handle and the item "
+    "is stuck at the size it was exported. 1114 of the game's 2434 items "
+    "declare it":
+        "Pose la poignée de mise à l'échelle sur l'objet une fois posé, qui "
+        "multiplie l'objet entier d'un coup. Sans elle, le jeu ne crée aucune "
+        "poignée et l'objet reste à la taille exportée. 1114 des 2434 objets "
+        "du jeu la déclarent",
+
+    "Stretchable per axis": "Étirable par axe",
+
+    "The game's other handle, and a different thing: it stretches the item "
+    "along the axes you allow instead of multiplying it whole, so a shelf can "
+    "be made wider without becoming taller. 650 of the game's items declare "
+    "it, and 133 carry both":
+        "L'autre poignée du jeu, et une chose différente : elle étire l'objet "
+        "sur les axes que tu autorises au lieu de le multiplier entièrement, "
+        "de sorte qu'une étagère s'élargit sans grandir. 650 des objets du jeu "
+        "la déclarent, et 133 portent les deux",
+
+    "Axes": "Axes",
+    "Which axes the player may stretch, width, height, depth":
+        "Quels axes le joueur peut étirer : largeur, hauteur, profondeur",
+
+    "How far down the stretch can go, as a share of the exported size":
+        "Jusqu'où l'étirement peut descendre, en part de la taille exportée",
+    "How far up the stretch can go, as a multiple of the exported size":
+        "Jusqu'où l'étirement peut monter, en multiple de la taille exportée",
+
+    "No axis allowed, the handle would do nothing":
+        "Aucun axe autorisé, la poignée ne ferait rien",
     "Smallest": "Plus petit",
     "Largest": "Plus grand",
     "How far down the handle can take the item":

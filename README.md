@@ -261,6 +261,54 @@ Merging is done on the text rather than by rebuilding the file from a parsed
 model. An `Items.setting` written by the game may hold fields this add-on has
 never heard of, and re-serialising it would drop them in silence.
 
+### Two handles, and they are not the same thing
+
+A placed item can carry either of the game's two resize widgets, both, or
+neither. The game keeps them apart itself, in `CancelResizeOrScaleItem`, and
+133 of its prefabs declare both.
+
+**Scaling** multiplies the whole item at once. It needs `IsScalable` on the
+root, and the bounds are factors:
+
+```
+ItemObjectRoot:
+ IsScalable:True
+  ScalableAxes:bool3(True, True, True)
+  HasMinScale:True
+  MinScale:0.1
+  HasMaxScale:True
+  MaxScale:10
+```
+
+**Stretching** pulls the item along chosen axes to real dimensions, so a shelf
+can be made wider without becoming taller. It takes two statements, because the
+mesh has to be told which of its own axes follow the item's cube:
+
+```
+ItemObjectRoot:
+ IsResizable:True
+  ResizableAxes:bool3(True, False, True)
+  MinSizes:(0.2000, 0.1000, 0.0500)
+  HasMaxSize:True
+  MaxSizes:(20.0000, 10.0000, 5.0000)
+ItemMeshReference:
+ IsResizable:bool3(True, False, True)
+```
+
+The sizes are metres in the same order as `Size`, so ParaForge derives them
+from the item's own measurements rather than a number out of the air.
+
+`HasMaxScale` and `HasMaxSize` are what the clamp actually reads, and there is
+no `HasMinSize` anywhere in the assembly: the floor always applies, the ceiling
+only when declared. 139 shipped prefabs write `MaxSizes` while only 47 declare
+`HasMaxSize`, so 92 of them carry a ceiling the game never applies.
+
+The ranges ParaForge writes are wider than the game's own. Across the 185
+prefabs that set them, `MinScale` runs 0.25 to 1.75 and `MaxScale` 0.5 to 10,
+because each is authored for a purpose. A mod item is handed to someone who
+wants it tiny on a shelf and huge in the garden, so the ceiling is the game's
+own maximum and the floor goes below anything it ships.
+
 ## What the wiki does not say, and the game does
 
 Paralives ships its own content as a mod: `Main.mod`, in the installation

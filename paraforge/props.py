@@ -9,6 +9,7 @@ drawn later goes through i18n.t and follows a live switch.
 import bpy
 from bpy.props import (
     BoolProperty,
+    BoolVectorProperty,
     EnumProperty,
     FloatProperty,
     FloatVectorProperty,
@@ -290,11 +291,12 @@ class ParaForgeSettings(PropertyGroup):
     )
 
     scalable: BoolProperty(
-        name=_("Resizable in game"),
+        name=_("Scalable in game"),
         description=_(
-            "Put the yellow scaling handle on the item once placed. Without "
-            "it the game creates no handle and the item is stuck at the size "
-            "it was exported. 1114 of the game's 2434 items declare it"
+            "Put the scaling handle on the item once placed, which multiplies "
+            "the whole item at once. Without it the game creates no handle and "
+            "the item is stuck at the size it was exported. 1114 of the game's "
+            "2434 items declare it"
         ),
         default=True,
         update=_invalidate,
@@ -311,6 +313,45 @@ class ParaForgeSettings(PropertyGroup):
         name=_("Largest"),
         description=_("How far up the handle can take the item"),
         default=spec.MAX_SCALE, min=0.01, max=20.0, soft_min=1.0,
+        update=_invalidate,
+    )
+
+    resizable: BoolProperty(
+        name=_("Stretchable per axis"),
+        description=_(
+            "The game's other handle, and a different thing: it stretches the "
+            "item along the axes you allow instead of multiplying it whole, so "
+            "a shelf can be made wider without becoming taller. 650 of the "
+            "game's items declare it, and 133 carry both"
+        ),
+        default=False,
+        update=_invalidate,
+    )
+
+    resizable_axes: BoolVectorProperty(
+        name=_("Axes"),
+        description=_("Which axes the player may stretch, width, height, depth"),
+        size=3,
+        default=spec.DEFAULT_RESIZABLE_AXES,
+        subtype="XYZ",
+        update=_invalidate,
+    )
+
+    min_size_factor: FloatProperty(
+        name=_("Smallest"),
+        description=_(
+            "How far down the stretch can go, as a share of the exported size"
+        ),
+        default=spec.MIN_SIZE_FACTOR, min=0.01, max=10.0, soft_max=1.0,
+        update=_invalidate,
+    )
+
+    max_size_factor: FloatProperty(
+        name=_("Largest"),
+        description=_(
+            "How far up the stretch can go, as a multiple of the exported size"
+        ),
+        default=spec.MAX_SIZE_FACTOR, min=0.01, max=50.0, soft_min=1.0,
         update=_invalidate,
     )
 
