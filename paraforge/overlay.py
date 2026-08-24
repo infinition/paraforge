@@ -46,6 +46,20 @@ SEAT_BAD_COLOR = (1.00, 0.72, 0.20, 0.95)
 SEAT_FILL_OK = (0.35, 0.85, 0.45, 0.16)
 SEAT_FILL_BAD = (1.00, 0.72, 0.20, 0.16)
 
+#: Where things can be set down, which is the top of the item.
+STACK_COLOR = (0.45, 0.85, 0.95, 0.85)
+STACK_FILL = (0.45, 0.85, 0.95, 0.13)
+
+#: The axes the player may stretch, drawn as arrows both ways.
+STRETCH_COLOR = (0.95, 0.65, 0.95, 0.90)
+
+#: The side the back is on, green when it agrees with the game, amber when not.
+BACK_OK = (0.35, 0.85, 0.45, 0.95)
+BACK_BAD = (1.00, 0.72, 0.20, 0.95)
+
+#: The wall a wall item hangs against.
+WALL_COLOR = (0.70, 0.70, 0.78, 0.55)
+
 #: The person standing next to the item, for scale. Quiet on purpose.
 HUMAN_COLOR = (0.65, 0.72, 0.85, 0.75)
 
@@ -229,6 +243,113 @@ def _human_lines(origin, height):
     return lines
 
 
+def _stretch_arrows(low, high, axes):
+    """A double headed arrow along each axis the player may stretch.
+
+    Drawn outside the box on the axis it belongs to, so three of them do not
+    pile up in the same place. The axes are in the game's order, width, height
+    and depth, which is Blender's x, z, y.
+    """
+    order = ((0, 0), (2, 1), (1, 2))
+    lines = []
+    span = [float(high[i] - low[i]) for i in range(3)]
+    centre = [float(low[i] + high[i]) * 0.5 for i in range(3)]
+    reach = max(max(span), 1e-3) * 0.12
+
+    for game_axis, blender_axis in order:
+        if game_axis >= len(axes) or not axes[game_axis]:
+            continue
+        head = max(span[blender_axis], 1e-3) * 0.12
+        for direction in (-1.0, 1.0):
+            tip = [centre[0], centre[1], centre[2]]
+            tip[blender_axis] = (float(high[blender_axis]) if direction > 0
+                                 else float(low[blender_axis]))
+            tip[blender_axis] += direction * reach * 0.6
+            base = list(tip)
+            base[blender_axis] -= direction * head * 1.6
+            lines.extend([tuple(base), tuple(tip)])
+            for side in (0, 1, 2):
+                if side == blender_axis:
+                    continue
+                barb = list(tip)
+                barb[blender_axis] -= direction * head
+                barb[side] += head * 0.45
+                lines.extend([tuple(tip), tuple(barb)])
+                barb = list(tip)
+                barb[blender_axis] -= direction * head
+                barb[side] -= head * 0.45
+                lines.extend([tuple(tip), tuple(barb)])
+    return lines
+
+
+def _back_marker(low, high, offset):
+    """A bar across the side the item's back stands on."""
+    x0, y0 = float(low[0]), float(low[1])
+    x1, y1 = float(high[0]), float(high[1])
+    z0, z1 = float(low[2]), float(high[2])
+    edge = y1 if offset > 0 else y0
+    top = z0 + (z1 - z0) * 0.92
+    return [
+        (x0, edge, z0), (x0, edge, top),
+        (x1, edge, z0), (x1, edge, top),
+        (x0, edge, top), (x1, edge, top),
+    ]
+
+
+def _wall_plane(low, high, tile):
+    """The wall a wall item hangs against, which is the plane Y=0."""
+    x0, x1 = float(low[0]), float(high[0])
+    z0, z1 = float(low[2]), float(high[2])
+    pad = max(x1 - x0, z1 - z0, tile * 0.5) * 0.35
+    x0, x1 = x0 - pad, x1 + pad
+    z0, z1 = min(z0 - pad, 0.0), z1 + pad
+    corners = [(x0, 0.0, z0), (x1, 0.0, z0), (x1, 0.0, z1), (x0, 0.0, z1)]
+    lines = []
+    for index in range(4):
+        lines.append(corners[index])
+        lines.append(corners[(index + 1) % 4])
+    step = max((x1 - x0) / 8.0, 1e-3)
+    x = x0
+    while x <= x1:
+        lines.extend([(x, 0.0, z0), (x, 0.0, z1)])
+        x += step
+    return lines
+
+
+def _draw_usage(settings, report, tile):
+    """Everything the item offers, drawn where it happens.
+
+    One guide per thing the game will actually do with the item, so the answer
+    to what it is for is in the viewport rather than three panels down.
+    """
+    from . import item as item_module
+
+    measurement = report.measurement
+    low, high = measurement.min, measurement.max
+    seats = item_module.sits_on_it(settings)
+
+    if settings.item_type in {"WALL", "WINDOW"}:
+        _draw_lines(_wall_plane(low, high, tile), WALL_COLOR, 1.0)
+
+    # Where a Para can set a plate down: the top, and only when the item says
+    # so. A chair has a flat top too and refuses everything put on it.
+    if getattr(settings, "stackable", False) and not seats:
+        top = float(high[2])
+        _draw_tris(_seat_fill(low, high, top), STACK_FILL)
+        _draw_lines(_seat_rect(low, high, top), STACK_COLOR, 2.0)
+
+    if getattr(settings, "resizable", False) and not seats:
+        _draw_lines(
+            _stretch_arrows(low, high, tuple(settings.resizable_axes)),
+            STRETCH_COLOR, 2.0,
+        )
+
+    if seats and report.backrest is not None:
+        if abs(report.backrest) >= spec.BACKREST_MIN_OFFSET:
+            colour = BACK_OK if report.backrest < 0 else BACK_BAD
+            _draw_lines(_back_marker(low, high, report.backrest), colour, 3.0)
+
+
 def _origin_marker(tile):
     size = tile * 0.09
     return [
@@ -316,6 +437,11 @@ def draw_3d():
                          max(settings.human_height, 0.1)),
             HUMAN_COLOR, 1.5,
         )
+
+    if (settings.show_usage and report is not None
+            and report.measurement is not None
+            and not report.measurement.empty):
+        _draw_usage(settings, report, tile)
 
     if (settings.show_seat and report is not None
             and report.measurement is not None

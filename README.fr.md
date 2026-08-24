@@ -316,6 +316,33 @@ Les plages écrites par ParaForge sont plus larges que celles du jeu. Sur les
 le plafond est donc le maximum du jeu, et le plancher descend sous tout ce
 qu'il livre.
 
+### On peut poser des choses dessus, sauf sur une chaise
+
+`ItemCanBeStackedOn` est ce qui permet à un Para de poser quelque chose sur un
+objet. Compté sur les objets du jeu par famille :
+
+| Famille | Objets | Le déclarent |
+|---|---|---|
+| Canapés | 13 | 100% |
+| Bancs | 11 | 100% |
+| Toilettes | 6 | 100% |
+| Tables | 26 | 100% |
+| Comptoirs | 79 | 100% |
+| Chaises | 48 | 0% |
+
+Ce n'est donc pas une question de dessus plat, une chaise en a un. C'est une
+question de savoir si ce dessus est fait pour être utilisé. Sans ça l'objet a
+l'air correct et refuse tout ce qu'un Para essaie d'y poser.
+
+### Et la hauteur ne s'étire pas
+
+Dans l'ordre où le jeu écrit `bool3`, largeur, hauteur et profondeur, le
+drapeau du milieu est la hauteur et il est faux presque partout : les 13
+canapés et les 11 bancs sont tous en `True,False,False`, et 12 tables sur 26 en
+`True,False,True`. Étirer un objet en hauteur déplace tout ce qui y est ancré,
+ce qui sur un objet qu'un Para utilise veut dire déplacer l'endroit où il se
+tient ou s'assoit.
+
 ### Une chaise ne porte aucune poignée, mais un canapé si
 
 En joignant tout le catalogue du jeu à ses prefabs par GUID et en groupant

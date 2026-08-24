@@ -445,6 +445,17 @@ SEAT_CLUSTER = 0.04
 # Below this there is no surface, only a sliver: a chair rail or a screw head.
 SEAT_MIN_AREA = 0.02
 
+# Whether things can be set down on the item. Counted over the game's items by
+# family:
+#
+#   couches, benches, toilets, tables, counters   100% declare it
+#   chairs                                          0% do
+#
+# So it is not about having a flat top, since a chair has one. It is about
+# whether the top is meant to be used, and a chair's is for sitting on. An
+# item without it looks right and refuses everything a Para tries to put down.
+STACKABLE_BY_DEFAULT = True
+
 # Which side of the item the backrest goes on. Measured by importing the
 # game's 48 chairs and armchairs and asking where the geometry in the top
 # third of each one sits, against the middle of the item, in units of its own
@@ -497,7 +508,19 @@ MAX_SIZE_FACTOR = 10.0
 
 #: Which axes stretch by default. All three is the second most common shape in
 #: the game, 165 of 639, behind width only at 184.
-DEFAULT_RESIZABLE_AXES = (True, True, True)
+# Width and depth, not height. Read off the game's own items, grouped by the
+# template their tag gives them, in the order the game writes bool3: width,
+# height, depth.
+#
+#   couches      13 items, all True,False,False    width only
+#   benches      11 items, all True,False,False    width only
+#   tables       12 of 26 True,False,True          width and depth
+#   counters     48 of 79 True,False,False, 16 True,True,False
+#
+# The middle flag is height, and it is false almost everywhere. Stretching an
+# item vertically moves everything anchored to it, which on anything a Para
+# uses means moving the place they stand or sit.
+DEFAULT_RESIZABLE_AXES = (True, False, True)
 
 #: There is no slot for a smoothness texture anywhere: the game stores a single
 #: scalar per surface, SmoothnessValue, used by 329 of the shipped surfaces. A

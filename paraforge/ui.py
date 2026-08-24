@@ -520,6 +520,11 @@ class PARAFORGE_PT_options(_Base, Panel):
             ), 6):
                 warning.label(text=line)
 
+        stack = box.row()
+        stack.enabled = not sits
+        stack.prop(settings, "stackable",
+                   text=_("Things can be put on it"))
+
         handles = box.column()
         handles.enabled = not sits
         handles.prop(settings, "scalable", text=_("Scalable in game"))
@@ -590,6 +595,7 @@ class PARAFORGE_PT_viewport(_Base, Panel):
         sub.prop(settings, "show_bounds", text=_("Bounding box"))
         sub.prop(settings, "show_arrow", text=_("Facing arrow"))
         sub.prop(settings, "show_seat", text=_("Seat guide"))
+        sub.prop(settings, "show_usage", text=_("What it does"))
         sub.prop(settings, "show_human", text=_("Person for scale"))
         row = sub.row()
         row.enabled = settings.show_human

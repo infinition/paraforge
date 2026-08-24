@@ -816,6 +816,21 @@ FR = {
     "Bounding box": "Boîte englobante",
     "Facing arrow": "Flèche d'orientation",
     "Seat guide": "Repère d'assise",
+    "What it does": "Ce qu'il permet",
+    "Draw what the item offers a Para: the surface things can be set down on, "
+    "the axes the player may stretch, the side the back is on, and the wall a "
+    "wall item hangs against":
+        "Dessiner ce que l'objet offre à un Para : la surface où poser des "
+        "choses, les axes que le joueur peut étirer, le côté où se trouve le "
+        "dossier, et le mur contre lequel un objet mural s'accroche",
+    "Things can be put on it": "On peut poser des choses dessus",
+    "Lets a Para set something down on the item. Every couch, bench, toilet, "
+    "table and counter the game ships declares it, and no chair does, a "
+    "chair's top being for sitting on":
+        "Permet à un Para de poser quelque chose sur l'objet. Tous les "
+        "canapés, bancs, toilettes, tables et comptoirs livrés avec le jeu le "
+        "déclarent, et aucune chaise, le dessus d'une chaise étant fait pour "
+        "s'y asseoir",
     "Person for scale": "Silhouette d'échelle",
     "Their height": "Sa taille",
     "A Para sized outline standing next to the item. The game's own body "

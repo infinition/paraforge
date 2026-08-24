@@ -1997,6 +1997,94 @@ def test_surface_cleanup():
     shutil.rmtree(temp, ignore_errors=True)
 
 
+def test_usage_guides():
+    """The viewport guides for what the item offers, drawn where it happens.
+
+    None of this runs outside a GPU draw, so a mistake in it surfaces as a
+    traceback printed on every frame and a panel that will not redraw. The
+    geometry is plain arithmetic and is checked here instead.
+    """
+    section("Viewport guides")
+    from paraforge import overlay
+
+    low = (-0.5, -0.4, 0.0)
+    high = (0.5, 0.4, 0.9)
+
+    top = overlay._seat_rect(low, high, float(high[2]))
+    check(len(top) == 8, "the surface things go on is a closed rectangle",
+          str(len(top)))
+    check(all(abs(p[2] - 0.9) < 1e-9 for p in top),
+          "drawn at the top of the item, which is where a plate lands")
+
+    # Width and depth stretch, height does not, so two arrows and not three.
+    arrows = overlay._stretch_arrows(low, high, (True, False, True))
+    check(arrows, "the stretch arrows are drawn")
+    spread = [max(p[i] for p in arrows) - min(p[i] for p in arrows)
+              for i in range(3)]
+    check(spread[0] > (high[0] - low[0]) and spread[1] > (high[1] - low[1]),
+          "reaching past the box on width and depth", str(spread))
+    check(spread[2] < (high[2] - low[2]),
+          "and not on height, which is not stretchable by default",
+          "{0:.3f}".format(spread[2]))
+
+    none = overlay._stretch_arrows(low, high, (False, False, False))
+    check(not none, "nothing stretchable draws nothing")
+
+    back = overlay._back_marker(low, high, -0.3)
+    check(all(abs(p[1] - low[1]) < 1e-9 for p in back),
+          "the back marker sits on the Y- side when that is where the back is")
+    front = overlay._back_marker(low, high, 0.3)
+    check(all(abs(p[1] - high[1]) < 1e-9 for p in front),
+          "and on the other side when the item is turned around")
+
+    wall = overlay._wall_plane(low, high, 1.0)
+    check(wall and all(abs(p[1]) < 1e-9 for p in wall),
+          "the wall is the plane Y=0, which is what a wall item backs onto")
+
+
+def test_stackable():
+    """Whether a Para can set something down on the item.
+
+    Counted over the game's own items, grouped by the template their tag gives
+    them: every couch, bench, toilet, table and counter declares
+    ItemCanBeStackedOn, and no chair does. It is not about having a flat top,
+    since a chair has one; it is about whether the top is meant to be used.
+
+    Without it the item looks right and refuses everything a Para tries to put
+    down, which is a table nobody can eat at.
+    """
+    section("Things put on it")
+    from paraforge import item as item_module
+
+    table = item_module.prefab_text("T", "1", (1.0, 0.8, 1.0), stackable=True)
+    check(" ItemCanBeStackedOn:True" in table,
+          "a table declares it", [l for l in table.splitlines() if "Stack" in l])
+    check(table.splitlines()[3].strip() == "ItemCanBeStackedOn:True",
+          "first inside the root, the way the game writes it",
+          table.splitlines()[3])
+
+    chair = item_module.prefab_text("C", "1", (1.0, 0.9, 1.0),
+                                    stackable=True, seats=True)
+    check(" ItemCanBeStackedOn:True" not in chair,
+          "a chair never does, whatever was asked for, its top being a seat")
+
+    plain = item_module.prefab_text("P", "1", (1.0, 1.0, 1.0))
+    check(" ItemCanBeStackedOn" not in plain,
+          "and it is not written unasked")
+
+    # The middle flag is height. Stretching an item vertically moves
+    # everything anchored to it, which on anything a Para uses means moving
+    # the place they stand or sit.
+    check(spec.DEFAULT_RESIZABLE_AXES == (True, False, True),
+          "stretching defaults to width and depth, never height",
+          str(spec.DEFAULT_RESIZABLE_AXES))
+    stretched = item_module.prefab_text("S", "1", (2.0, 0.5, 1.0),
+                                        resizable=True)
+    line = next(l for l in stretched.splitlines() if "ResizableAxes" in l)
+    check("bool3(True, False, True)" in line,
+          "which is what the couches, benches and tables of the game do", line)
+
+
 def test_manage_items(temp):
     """Reading a mod back, and taking one item out of it whole.
 
@@ -2366,6 +2454,8 @@ def main():
         test_repair_stale_entry()
         test_surface_cleanup()
         _t, item_mod, _b = test_generate_item()
+        test_stackable()
+        test_usage_guides()
         test_manage_items(temp)
         test_undo(item_mod)
     except Exception:

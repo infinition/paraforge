@@ -41,6 +41,7 @@ class Report:
         self.measurement = None
         self.texture_plan = None
         self.seat_height = None
+        self.backrest = None
 
     def add(self, *args, **kwargs):
         self.checks.append(Check(*args, **kwargs))
@@ -303,6 +304,7 @@ def _check_backrest(objects, settings, depsgraph, report):
         return
 
     offset = geo.backrest_side(objects, depsgraph)
+    report.backrest = offset
     label = _("Which way round")
     if offset is None or abs(offset) < spec.BACKREST_MIN_OFFSET:
         report.add("backrest", label, OK,

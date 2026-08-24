@@ -360,6 +360,17 @@ class ParaForgeSettings(PropertyGroup):
         update=_invalidate,
     )
 
+    stackable: BoolProperty(
+        name=_("Things can be put on it"),
+        description=_(
+            "Lets a Para set something down on the item. Every couch, bench, "
+            "toilet, table and counter the game ships declares it, and no "
+            "chair does, a chair's top being for sitting on"
+        ),
+        default=spec.STACKABLE_BY_DEFAULT,
+        update=_invalidate,
+    )
+
     resizable_axes: BoolVectorProperty(
         name=_("Axes"),
         description=_("Which axes the player may stretch, width, height, depth"),
@@ -579,6 +590,15 @@ class ParaForgeSettings(PropertyGroup):
     selected_items: StringProperty(name=_("Selected"), default="")
 
     show_seat: BoolProperty(name=_("Seat guide"), default=True, update=_redraw)
+    show_usage: BoolProperty(
+        name=_("What it does"),
+        description=_(
+            "Draw what the item offers a Para: the surface things can be set "
+            "down on, the axes the player may stretch, the side the back is "
+            "on, and the wall a wall item hangs against"
+        ),
+        default=True, update=_redraw,
+    )
     show_human: BoolProperty(
         name=_("Person for scale"),
         description=_(

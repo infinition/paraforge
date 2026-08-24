@@ -108,7 +108,8 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
                 max_scale=spec.MAX_SCALE, resizable=False,
                 resizable_axes=spec.DEFAULT_RESIZABLE_AXES,
                 min_size_factor=spec.MIN_SIZE_FACTOR,
-                max_size_factor=spec.MAX_SIZE_FACTOR, seats=False):
+                max_size_factor=spec.MAX_SIZE_FACTOR, seats=False,
+                stackable=False):
     """One root object holding one mesh, which is what an item minimally is.
 
     Size is in metres, in the game's axis order: width, height, depth. Blender
@@ -186,6 +187,12 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
         " Name:Root",
         "ItemObjectRoot:",
     ]
+    # Written first, the way the game writes it. Every couch, bench, toilet,
+    # table and counter it ships declares this; not one chair does, because a
+    # chair's flat top is for sitting on. Without it a Para carrying a plate
+    # walks up to the table and has nowhere to put it.
+    if stackable and not seats:
+        lines.append(" ItemCanBeStackedOn:True")
     if scalable:
         lines.extend([
             " IsScalable:True",
@@ -469,7 +476,8 @@ def generate(mod_path, name, settings, report, zone_count=1):
                                                  spec.MIN_SIZE_FACTOR),
                          max_size_factor=getattr(settings, "max_size_factor",
                                                  spec.MAX_SIZE_FACTOR),
-                         seats=sits_on_it(settings))
+                         seats=sits_on_it(settings),
+                         stackable=getattr(settings, "stackable", True))
     if setting.read(prefab_path) != wanted:
         run.will_modify(prefab_path)
         setting.write(prefab_path, wanted)

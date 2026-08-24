@@ -313,6 +313,32 @@ because each is authored for a purpose. A mod item is handed to someone who
 wants it tiny on a shelf and huge in the garden, so the ceiling is the game's
 own maximum and the floor goes below anything it ships.
 
+### Things can be put on it, except on a chair
+
+`ItemCanBeStackedOn` is what lets a Para set something down on an item.
+Counted over the game's items by family:
+
+| Family | Items | Declaring it |
+|---|---|---|
+| Couches | 13 | 100% |
+| Benches | 11 | 100% |
+| Toilets | 6 | 100% |
+| Tables | 26 | 100% |
+| Counters | 79 | 100% |
+| Chairs | 48 | 0% |
+
+So it is not about having a flat top, since a chair has one. It is about
+whether that top is meant to be used. Without it the item looks right and
+refuses everything a Para tries to put down.
+
+### And height is not stretchable
+
+In the order the game writes `bool3`, width, height and depth, the middle flag
+is height and it is false almost everywhere: all 13 couches and all 11 benches
+are `True,False,False`, and 12 of 26 tables are `True,False,True`. Stretching
+an item vertically moves everything anchored to it, which on anything a Para
+uses means moving the place they stand or sit.
+
 ### A chair carries no resize handle, but a couch does
 
 Joining the game's whole catalogue to its prefabs by GUID and grouping every

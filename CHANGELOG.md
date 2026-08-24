@@ -9,6 +9,51 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.35.0]
+
+### Fixed
+
+- **A custom table refused everything put on it.** `ItemCanBeStackedOn` was
+  never written. Counted over the game's items, grouped by the template their
+  tag gives them:
+
+  ```
+  couches   13 items, 100% declare it
+  benches   11 items, 100%
+  toilets    6 items, 100%
+  tables    26 items, 100%
+  counters  79 items, 100%
+  chairs    48 items,   0%
+  ```
+
+  So it is not about having a flat top, since a chair has one. It is about
+  whether that top is meant to be used, and a chair's is for sitting on. Now
+  written by default and forced off for anything a Para sits on, with a
+  checkbox next to the resize handles.
+
+- **Stretching defaulted to all three axes, height included.** In the order
+  the game writes `bool3`, width, height and depth, the middle flag is height
+  and it is false almost everywhere: all 13 couches and all 11 benches are
+  `True,False,False`, and 12 of 26 tables are `True,False,True`. Stretching an
+  item vertically moves everything anchored to it, which on anything a Para
+  uses means moving the place they stand or sit. The default is now width and
+  depth.
+
+### Added
+
+- **A viewport guide for everything the item offers**, under Viewport guides
+  as What it does. One guide per thing the game will actually do with it, so
+  the answer to what the item is for is in the viewport rather than three
+  panels down:
+
+  - the surface things can be set down on, drawn across the top, only when the
+    item declares it
+  - the axes the player may stretch, as double headed arrows outside the box,
+    one per enabled axis
+  - the side the back is on, green when it agrees with the game's 43 chairs
+    and amber when the Para would face it
+  - the wall a wall item hangs against, drawn as the plane Y=0
+
 ## [0.34.0]
 
 ### Fixed
