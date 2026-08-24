@@ -9,8 +9,8 @@ from bpy.props import BoolProperty, EnumProperty, StringProperty
 from bpy.types import Operator
 
 from . import (
-    cache, exporter, i18n, inspector, journal, modfolder, prefs, props,
-    setting, sidecar, spec, validate,
+    cache, exporter, i18n, inspector, journal, manage, modfolder, prefs,
+    props, setting, sidecar, spec, thumbs, validate,
 )
 
 _ = i18n.t
@@ -529,7 +529,87 @@ def _show_text(context, block):
     return False
 
 
+
+class PARAFORGE_OT_delete_item(Operator):
+    bl_idname = "paraforge.delete_item"
+    bl_label = _("Remove from the mod")
+    bl_description = _(
+        "Remove this item from the mod: its prefab, its mesh, its textures, "
+        "every sidecar, its catalogue entry, its translation and its "
+        "thumbnail. Undo the last write puts it back"
+    )
+    bl_options = {"REGISTER", "INTERNAL"}
+
+    guid: StringProperty(name="GUID", default="")
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=380)
+
+    def _record(self, context):
+        settings = props.settings(context)
+        root = prefs.mods_root(context)
+        for record in manage.items(settings.mod_folder, root):
+            if record.guid == self.guid:
+                return settings, record
+        return settings, None
+
+    def draw(self, context):
+        layout = self.layout
+        _settings, record = self._record(context)
+        if record is None:
+            layout.label(text=_("That item is no longer in the mod"))
+            return
+
+        layout.label(text=record.name or record.guid, icon="TRASH")
+        files = manage.files_of(record)
+        column = layout.column(align=True)
+        column.scale_y = 0.7
+        for path in files[:10]:
+            column.label(text=os.path.basename(path))
+        if len(files) > 10:
+            column.label(text=_("and {0} more", len(files) - 10))
+        column.label(text=_("plus its catalogue and translation entries"))
+
+        # A mesh two items share is not this item's to take away.
+        if record.shared:
+            note = layout.column(align=True)
+            note.scale_y = 0.7
+            note.label(text=_("Kept, another item uses them:"), icon="INFO")
+            for path in record.shared[:4]:
+                note.label(text=os.path.basename(path))
+
+    def execute(self, context):
+        settings, record = self._record(context)
+        if record is None:
+            self.report({"ERROR"}, _("That item is no longer in the mod"))
+            return {"CANCELLED"}
+
+        root = prefs.mods_root(context)
+        removed, notes = manage.delete(settings.mod_folder, record, root)
+        thumbs.clear()
+        for note in notes[:3]:
+            self.report({"WARNING"}, note)
+        self.report(
+            {"INFO"},
+            _("Removed {0}, {1} file(s)", record.name or record.guid,
+              len(removed)),
+        )
+        return {"FINISHED"}
+
+
+class PARAFORGE_OT_refresh_items(Operator):
+    bl_idname = "paraforge.refresh_items"
+    bl_label = _("Refresh")
+    bl_description = _("Read the mod folder again, thumbnails included")
+    bl_options = {"REGISTER", "INTERNAL"}
+
+    def execute(self, context):
+        thumbs.clear()
+        return {"FINISHED"}
+
 classes = (
+    PARAFORGE_OT_delete_item,
+    PARAFORGE_OT_refresh_items,
     PARAFORGE_OT_export,
     PARAFORGE_OT_toggle_diagnostics,
     PARAFORGE_OT_preview,

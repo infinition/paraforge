@@ -329,6 +329,35 @@ FR = {
 
     # -- Checklist --------------------------------------------------------
     "{0} ok   {1} warn   {2} blocking": "{0} ok   {1} alerte   {2} bloquant",
+    "Items in this mod": "Objets de ce mod",
+    "No mod folder chosen": "Aucun dossier de mod choisi",
+    "That folder is not there any more": "Ce dossier n'existe plus",
+    "Nothing in the catalogue yet. Export a mesh, then press Create the item "
+    "in the catalogue.":
+        "Rien au catalogue pour l'instant. Exporte un mesh, puis appuie sur "
+        "Créer l'objet dans le catalogue.",
+    "{0} item(s)": "{0} objet(s)",
+    "{0} file(s)": "{0} fichier(s)",
+    "shares {0} with another item": "partage {0} avec un autre objet",
+    "{0} without a picture yet, load the mod in the game once":
+        "{0} sans image pour l'instant, charge le mod une fois dans le jeu",
+    "Refresh": "Actualiser",
+    "Read the mod folder again, thumbnails included":
+        "Relire le dossier du mod, miniatures comprises",
+    "Remove from the mod": "Retirer du mod",
+    "Remove this item from the mod: its prefab, its mesh, its textures, "
+    "every sidecar, its catalogue entry, its translation and its thumbnail. "
+    "Undo the last write puts it back":
+        "Retirer cet objet du mod : son prefab, son mesh, ses textures, tous "
+        "les fichiers annexes, son entrée de catalogue, sa traduction et sa "
+        "miniature. Annuler la dernière écriture le remet",
+    "That item is no longer in the mod": "Cet objet n'est plus dans le mod",
+    "and {0} more": "et {0} de plus",
+    "plus its catalogue and translation entries":
+        "plus ses entrées de catalogue et de traduction",
+    "Kept, another item uses them:": "Gardés, un autre objet s'en sert :",
+    "Removed {0}": "{0} retiré",
+    "Removed {0}, {1} file(s)": "{0} retiré, {1} fichier(s)",
     "Refresh": "Rafraîchir",
     "Fix": "Corriger",
     "Fix everything safe": "Tout corriger sans risque",

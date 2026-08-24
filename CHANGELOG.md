@@ -9,6 +9,49 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.33.0]
+
+### Added
+
+- **Items in this mod.** Every item the mod puts in the catalogue, listed with
+  the picture the game itself rendered for it, and a button to take one out
+  again.
+
+  Removing an item is not removing a file. An item is a prefab, a mesh, its
+  textures, a sidecar for each of those, an entry in `Items.setting`, an entry
+  in `Translations.setting` and a thumbnail the game cached somewhere else
+  entirely. Leave any of them and the mod carries a name with nothing behind
+  it, or a catalogue entry pointing at a prefab that is gone.
+
+  So the tree is walked from the item's own GUID outwards, by GUID and never
+  by name, because names collide and prefixes lie: `Chaise1` is a prefix of
+  `Chaise10`, and a delete matching on names would take both. A mesh or a
+  texture another item in the same mod still points at is listed as shared and
+  kept.
+
+  Everything goes through the journal first, so Undo the last write puts a
+  removal back exactly as it was, files and catalogue entries together.
+
+- **The game's own thumbnails, in Blender.** The game renders a picture for
+  every item it loads and caches it as a PNG named after the item's GUID,
+  under `_GeneratedThumbnails/Items` in one of the mod folders. Reading those
+  back is the difference between a list of names, where `Chaise1` through
+  `Chaise9` are indistinguishable, and a list you can pick from.
+
+  An item the game has never loaded has no picture, and the panel says how
+  many are in that state rather than showing blanks with no explanation.
+
+  Checked against a real mod folder: 22 items, 204 files, 21 pictures found.
+
+### Note
+
+- An in-game version of this was asked for and is not possible. Paralives
+  modding is declarative, all of the interface is compiled into
+  `Paralives.dll`, and no code loader is involved, so a mod cannot add a
+  screen or a button. The game's own Control Panel does carry asset deletion
+  already: `DeleteAsset`, `DeleteAssetAtPath`, `DeleteSettingOfTypeInMod` and
+  `UpdateInputDeleteSelectedAssets` are all in the assembly.
+
 ## [0.32.0]
 
 ### Added

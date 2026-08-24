@@ -12,7 +12,7 @@ import sys
 
 import bpy
 
-from . import cache, fixes, ops, overlay, prefs, props, ui, zones
+from . import cache, fixes, ops, overlay, prefs, props, thumbs, ui, zones
 
 #: Registration order matters: preferences first, because the mod folder enum
 #: reads them while it builds its item list.
@@ -26,8 +26,8 @@ RELOAD_ORDER = (
     "uvxform", "sidecar", "setting", "journal", "textures", "bake", "remesh",
     "item",
     "recipe", "inspector", "validate",
-    "cache", "prefs", "props", "zones", "fixes", "exporter", "ops",
-    "overlay", "ui",
+    "cache", "prefs", "props", "zones", "fixes", "exporter", "manage",
+    "thumbs", "ops", "overlay", "ui",
 )
 
 
@@ -38,6 +38,7 @@ def register():
 
     props.register_pointer()
     cache.register()
+    thumbs.register()
 
     if not bpy.app.background:
         overlay.register()
@@ -47,6 +48,7 @@ def unregister():
     if not bpy.app.background:
         overlay.unregister()
 
+    thumbs.unregister()
     cache.unregister()
     props.unregister_pointer()
 

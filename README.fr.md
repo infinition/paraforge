@@ -73,6 +73,7 @@ Blender 4.2 ou plus. Développée et testée sur Blender 5.2 LTS.
 - [Un GLB téléchargé, converti tout seul](#un-glb-téléchargé-converti-tout-seul)
 - [Écrire l'objet sans passer par le Control Panel](#écrire-lobjet-sans-passer-par-le-control-panel)
 - [Ce que le wiki ne dit pas, et que le jeu dit](#ce-que-le-wiki-ne-dit-pas-et-que-le-jeu-dit)
+- [Faire le ménage dans un dossier de mod](#faire-le-ménage-dans-un-dossier-de-mod)
 - [Annulation et sécurité](#annulation-et-sécurité)
 - [Calibrage](#calibrage)
 - [Limites](#limites)
@@ -593,6 +594,31 @@ pour juger l'échelle d'un modèle importé à l'oeil.
 Tout ce que le jeu impose est rassemblé dans
 [`paraforge/spec.py`](paraforge/spec.py) : une mise à jour du jeu ne devrait
 jamais demander de toucher un autre fichier.
+
+## Faire le ménage dans un dossier de mod
+
+**Objets de ce mod** liste tous les objets que le mod met au catalogue, avec
+l'image que le jeu a lui-même rendue pour chacun, et un bouton pour en retirer
+un.
+
+Retirer un objet n'est pas supprimer un fichier. Un objet, c'est un prefab, un
+mesh, ses textures, un fichier annexe pour chacun, une entrée dans
+`Items.setting`, une entrée dans `Translations.setting` et une miniature que le
+jeu a mise en cache ailleurs. En laisser un seul, et le mod porte un nom
+derrière lequel il n'y a rien, ou une entrée de catalogue qui pointe vers un
+prefab disparu.
+
+L'arbre est donc parcouru depuis le GUID de l'objet, par GUID et jamais par
+nom, parce que les noms se ressemblent et que les préfixes mentent : `Chaise1`
+est un préfixe de `Chaise10`. Un mesh ou une texture qu'un autre objet du même
+mod utilise encore est signalé comme partagé et conservé. Tout passe par le
+journal, donc Annuler la dernière écriture remet un retrait.
+
+Les images sont celles du jeu : il en rend une pour chaque objet qu'il charge
+et la met en cache en PNG nommé d'après le GUID de l'objet, sous
+`_GeneratedThumbnails/Items` dans un des dossiers de mod. Un objet que le jeu
+n'a jamais chargé n'en a pas, et le panneau le dit au lieu d'afficher des
+cases vides.
 
 ## Annulation et sécurité
 

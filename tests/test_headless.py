@@ -1997,6 +1997,113 @@ def test_surface_cleanup():
     shutil.rmtree(temp, ignore_errors=True)
 
 
+def test_manage_items(temp):
+    """Reading a mod back, and taking one item out of it whole.
+
+    An item is not a file. It is a prefab, a mesh, its textures, a sidecar for
+    each of those, an entry in the catalogue, an entry in the translations and
+    a thumbnail the game cached somewhere else. Leaving any of them behind is
+    what turns a mod folder into a catalogue full of names with nothing behind
+    them.
+    """
+    section("Items in the mod")
+    import io
+
+    from paraforge import journal, manage, setting
+
+    mod = os.path.join(temp, "Managed.mod")
+    settings_dir = os.path.join(mod, "Settings")
+    os.makedirs(settings_dir, exist_ok=True)
+
+    def write(name, text):
+        path = os.path.join(mod, name)
+        with io.open(path, "w", encoding="utf-8", newline="") as handle:
+            handle.write(text)
+        return path
+
+    # Two items. The second borrows the first one's mesh, which is the case
+    # that must not delete somebody else's file.
+    write("Alpha.fbx", "mesh")
+    write("Alpha.fbx.meta", "GUID:111\nType:1\n")
+    write("Alpha.fbx.import", "imported")
+    write("AlphaDetail.png", "png")
+    write("AlphaDetail.png.meta", "GUID:222\nType:2\n")
+    write("Alpha.prefab", "ItemObject:9\n AssetMesh:111\n DetailMap:222\n")
+    write("Alpha.prefab.meta", "GUID:333\nType:201\n")
+    write("Beta.prefab", "ItemObject:8\n AssetMesh:111\n")
+    write("Beta.prefab.meta", "GUID:444\nType:201\n")
+
+    write("Settings/Items.setting",
+          "#Setting.Items\n =AllItems\n"
+          "  @1000\n   =GUID:1000\n   =DisplayName:Alpha\n   =Prefab:333\n"
+          "  @2000\n   =GUID:2000\n   =DisplayName:Beta\n   =Prefab:444\n")
+    write("Settings/Translations.setting",
+          "#Setting.Translations\n =Items\n"
+          "  @55\n   =GUID:55\n   =Key:Item_Alpha\n   =Value:Alpha\n"
+          "  @66\n   =GUID:66\n   =Key:Item_Beta\n   =Value:Beta\n")
+
+    # The picture the game caches, in another mod folder entirely.
+    cache_dir = os.path.join(temp, "0.mod", manage.THUMBNAIL_FOLDER)
+    os.makedirs(cache_dir, exist_ok=True)
+    with io.open(os.path.join(cache_dir, "1000.png"), "w") as handle:
+        handle.write("not really a png")
+
+    records = manage.items(mod, temp)
+    check(len(records) == 2, "both items are found", str(len(records)))
+    names = sorted(r.name for r in records)
+    check(names == ["Alpha", "Beta"], "with the names the catalogue gives",
+          str(names))
+
+    alpha = next(r for r in records if r.name == "Alpha")
+    check(alpha.thumbnail.endswith("1000.png"),
+          "and the game's own picture, cached under another mod",
+          alpha.thumbnail)
+
+    owned = [os.path.basename(f) for f in alpha.files]
+    check("Alpha.prefab" in owned and "AlphaDetail.png" in owned,
+          "its prefab and its texture belong to it", str(owned))
+    check("Alpha.fbx" not in owned,
+          "but not the mesh, which the other item points at too", str(owned))
+    check(any(f.endswith("Alpha.fbx") for f in alpha.shared),
+          "and that is said rather than silently skipped",
+          str([os.path.basename(f) for f in alpha.shared]))
+
+    files = [os.path.basename(f) for f in manage.files_of(alpha)]
+    check("Alpha.prefab.meta" in files and "AlphaDetail.png.meta" in files,
+          "every sidecar goes with its asset", str(files))
+    check("1000.png" in files, "and the thumbnail with the item")
+
+    removed, notes = manage.delete(mod, alpha, temp)
+    check(not notes, "the removal reports no trouble", str(notes))
+    check(not os.path.exists(os.path.join(mod, "Alpha.prefab")),
+          "the prefab is gone")
+    check(not os.path.exists(os.path.join(mod, "AlphaDetail.png.meta")),
+          "its sidecars with it")
+    check(os.path.exists(os.path.join(mod, "Alpha.fbx")),
+          "the shared mesh stays, because Beta still needs it")
+    check(not os.path.exists(os.path.join(cache_dir, "1000.png")),
+          "and the cached picture goes too, or the game shows a dead one")
+
+    items_text = setting.read(os.path.join(mod, "Settings", "Items.setting"))
+    check("@1000" not in items_text, "the catalogue entry is out",
+          items_text.replace("\r\n", " | "))
+    check("@2000" in items_text, "and the other item is untouched")
+
+    translations = setting.read(
+        os.path.join(mod, "Settings", "Translations.setting"))
+    check("Item_Alpha" not in translations, "the translation is out too")
+    check("Item_Beta" in translations, "and again only that one")
+
+    # All of it recoverable, because a delete you cannot undo is a delete
+    # nobody presses.
+    undone = journal.undo_last(mod)
+    check(undone is not None, "the removal is journalled")
+    check(os.path.exists(os.path.join(mod, "Alpha.prefab")),
+          "so undo puts the prefab back")
+    items_text = setting.read(os.path.join(mod, "Settings", "Items.setting"))
+    check("@1000" in items_text, "and the catalogue entry with it")
+
+
 def test_undo(mod):
     """The whole point of touching someone else's file: being able to stop."""
     section("Undoing")
@@ -2229,6 +2336,7 @@ def main():
         test_repair_stale_entry()
         test_surface_cleanup()
         _t, item_mod, _b = test_generate_item()
+        test_manage_items(temp)
         test_undo(item_mod)
     except Exception:
         traceback.print_exc()

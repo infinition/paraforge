@@ -12,8 +12,8 @@ import bpy
 from bpy.types import Panel
 
 from . import (
-    cache, catalog, i18n, item, modfolder, prefs, props, spec, textures,
-    util, validate,
+    cache, catalog, i18n, item, manage, modfolder, prefs, props, spec,
+    textures, thumbs, util, validate,
 )
 
 _ = i18n.t
@@ -718,6 +718,74 @@ class PARAFORGE_PT_inspector(_Base, Panel):
                         text=_("Diff since snapshot"), icon="ZOOM_ALL")
 
 
+
+class PARAFORGE_PT_contents(_Base, Panel):
+    bl_label = _("Items in this mod")
+    bl_parent_id = "PARAFORGE_PT_main"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw(self, context):
+        layout = self.layout
+        settings = props.settings(context)
+        if settings is None or not settings.mod_folder:
+            layout.label(text=_("No mod folder chosen"))
+            return
+        if not os.path.isdir(settings.mod_folder):
+            layout.label(text=_("That folder is not there any more"))
+            return
+
+        root = prefs.mods_root(context)
+        records = manage.items(settings.mod_folder, root)
+
+        header = layout.row(align=True)
+        header.label(text=_("{0} item(s)", len(records)))
+        header.operator("paraforge.refresh_items", text="", icon="FILE_REFRESH")
+
+        if not records:
+            paragraph(layout, context, _(
+                "Nothing in the catalogue yet. Export a mesh, then press "
+                "Create the item in the catalogue."
+            ), scale=0.75)
+            return
+
+        # The pictures are the game's own, rendered when it loaded the item.
+        # A mod that has never been opened in the game has none, and names
+        # alone are what this panel is trying to get away from.
+        missing = sum(1 for record in records if not record.thumbnail)
+        if missing:
+            note = layout.column(align=True)
+            note.scale_y = 0.7
+            note.label(text=_("{0} without a picture yet, load the mod in "
+                              "the game once", missing), icon="INFO")
+
+        for record in records:
+            box = layout.box()
+            row = box.row(align=True)
+
+            icon = thumbs.icon_id(record.thumbnail)
+            if icon:
+                row.template_icon(icon_value=icon, scale=3.0)
+            else:
+                sub = row.column()
+                sub.scale_y = 3.0
+                sub.label(text="", icon="MESH_CUBE")
+
+            column = row.column(align=True)
+            column.label(text=record.name or record.guid)
+            detail = column.row()
+            detail.scale_y = 0.7
+            detail.label(text=_("{0} file(s)", len(manage.files_of(record))))
+            if record.shared:
+                shared = column.row()
+                shared.scale_y = 0.7
+                shared.label(text=_("shares {0} with another item",
+                                    len(record.shared)), icon="LINKED")
+
+            side = row.column(align=True)
+            remove = side.operator("paraforge.delete_item", text="",
+                                   icon="TRASH")
+            remove.guid = record.guid
+
 classes = (
     PARAFORGE_PT_main,
     PARAFORGE_PT_facing,
@@ -727,5 +795,6 @@ classes = (
     PARAFORGE_PT_viewport,
     PARAFORGE_PT_calibration,
     PARAFORGE_PT_remesh,
+    PARAFORGE_PT_contents,
     PARAFORGE_PT_inspector,
 )

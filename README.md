@@ -76,6 +76,7 @@ Blender 4.2 or newer. Developed and tested against Blender 5.2 LTS.
 - [A downloaded GLB, converted on its own](#a-downloaded-glb-converted-on-its-own)
 - [Writing the item without the Control Panel](#writing-the-item-without-the-control-panel)
 - [What the wiki does not say, and the game does](#what-the-wiki-does-not-say-and-the-game-does)
+- [Clearing out a mod folder](#clearing-out-a-mod-folder)
 - [Undo, and safety](#undo-and-safety)
 - [Calibration](#calibration)
 - [Limits](#limits)
@@ -590,6 +591,28 @@ scale of an imported model by eye.
 Everything the game imposes is gathered in
 [`paraforge/spec.py`](paraforge/spec.py), so a game update should never require
 touching another file.
+
+## Clearing out a mod folder
+
+**Items in this mod** lists every item the mod puts in the catalogue, with the
+picture the game itself rendered for it, and a button to take one out again.
+
+Removing an item is not removing a file. An item is a prefab, a mesh, its
+textures, a sidecar for each of those, an entry in `Items.setting`, an entry in
+`Translations.setting` and a thumbnail the game cached somewhere else entirely.
+Leave any of them and the mod carries a name with nothing behind it, or a
+catalogue entry pointing at a prefab that is gone.
+
+So the tree is walked from the item's own GUID outwards, by GUID and never by
+name, because names collide and prefixes lie: `Chaise1` is a prefix of
+`Chaise10`. A mesh or a texture another item in the same mod still points at is
+listed as shared and kept. Everything goes through the journal, so Undo the
+last write puts a removal back.
+
+The pictures are the game's own: it renders one for every item it loads and
+caches it as a PNG named after the item's GUID, under
+`_GeneratedThumbnails/Items` in one of the mod folders. An item the game has
+never loaded has none, and the panel says how many rather than showing blanks.
 
 ## Undo, and safety
 
