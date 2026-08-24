@@ -276,9 +276,24 @@ class PARAFORGE_PT_facing(_Base, Panel):
         ))
 
         row = layout.row(align=True)
-        for steps in ("90", "180", "270"):
-            operator = row.operator("paraforge.rotate_to_face", text=steps)
+        for steps, label in (("315", "-45"), ("45", "45"), ("90", "90"),
+                             ("180", "180"), ("270", "270")):
+            operator = row.operator("paraforge.rotate_to_face", text=label)
             operator.steps = steps
+
+        # The origin lives here too, because turning an item and placing its
+        # origin are the same job done twice, and hunting for the second one
+        # three panels away is how it gets forgotten.
+        layout.separator()
+        column = layout.column(align=True)
+        column.operator("paraforge.fix_origin", icon="OBJECT_ORIGIN")
+        paragraph(column, context, _(
+            "Not Blender's origin to geometry, which centres on the bounding "
+            "box. This applies the rule for the chosen item type: a floor "
+            "item centred in X and Y with its base at Z=0, a wall item with "
+            "its back at Y=0. Fix everything safe already does it when the "
+            "checklist asks for it."
+        ), scale=0.7)
 
         row = layout.row()
         row.scale_y = 1.2

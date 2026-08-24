@@ -178,16 +178,22 @@ class PARAFORGE_OT_confirm_facing(Operator):
 
 class PARAFORGE_OT_rotate_to_face(Operator):
     bl_idname = "paraforge.rotate_to_face"
-    bl_label = _("Rotate 90 degrees")
-    bl_description = _("Turn the geometry a quarter turn around Z, then re-check")
+    bl_label = _("Rotate")
+    bl_description = _(
+        "Turn the geometry around Z and re-check. The rotation is baked "
+        "into the mesh, not left on the object, because the game reads "
+        "the vertices and ignores the node"
+    )
     bl_options = {"REGISTER", "UNDO"}
 
     steps: EnumProperty(
         name=_("Rotation"),
         items=(
+            ("45", "45", _("Eighth turn counter clockwise")),
             ("90", "90", _("Quarter turn counter clockwise")),
             ("180", "180", _("Half turn")),
             ("270", "270", _("Quarter turn clockwise")),
+            ("315", "-45", _("Eighth turn clockwise")),
         ),
         default="90",
     )

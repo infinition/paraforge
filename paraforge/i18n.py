@@ -330,6 +330,24 @@ FR = {
     # -- Checklist --------------------------------------------------------
     "{0} ok   {1} warn   {2} blocking": "{0} ok   {1} alerte   {2} bloquant",
     "Items in this mod": "Objets de ce mod",
+    "Rotate": "Tourner",
+    "Turn the geometry around Z and re-check. The rotation is baked into the "
+    "mesh, not left on the object, because the game reads the vertices and "
+    "ignores the node":
+        "Tourner la géométrie autour de Z et revérifier. La rotation est "
+        "cuite dans le mesh et non laissée sur l'objet, parce que le jeu lit "
+        "les sommets et ignore le nœud",
+    "Eighth turn counter clockwise": "Huitième de tour anti-horaire",
+    "Eighth turn clockwise": "Huitième de tour horaire",
+    "Not Blender's origin to geometry, which centres on the bounding box. "
+    "This applies the rule for the chosen item type: a floor item centred in "
+    "X and Y with its base at Z=0, a wall item with its back at Y=0. Fix "
+    "everything safe already does it when the checklist asks for it.":
+        "Ce n'est pas l'origine vers la géométrie de Blender, qui centre sur "
+        "la boîte englobante. Ceci applique la règle du type d'objet choisi : "
+        "un objet au sol centré en X et Y avec sa base à Z=0, un objet mural "
+        "avec son dos à Y=0. Réparer tout ce qui est sûr le fait déjà quand "
+        "la checklist le demande.",
     "One part per object": "Une partie par objet",
     "Write an FBX for each selected object and a prefab that holds them as "
     "separate parts, the way the game ships a couch as a frame file and a "

@@ -2104,6 +2104,61 @@ def test_usage_guides():
           "the wall is the plane Y=0, which is what a wall item backs onto")
 
 
+def test_rotate_and_origin():
+    """Turning an item, and putting its origin where the game wants it.
+
+    Not Blender's origin to geometry, which centres on the bounding box. The
+    rule depends on the item type: a floor item is centred in X and Y with its
+    base at Z=0, so a chair sits on the floor rather than half through it.
+    """
+    section("Rotate and origin")
+    fresh_scene()
+    make_cube("Marker", size=1.0)
+    obj = bpy.context.active_object
+
+    # A vertex pushed out along Y, so the turn can be seen at all.
+    front = max(range(len(obj.data.vertices)),
+                key=lambda i: obj.data.vertices[i].co[1])
+    obj.data.vertices[front].co[1] = 2.0
+    obj.data.update()
+
+    bpy.ops.paraforge.rotate_to_face(steps="45")
+    turned = max(obj.data.vertices, key=lambda v: v.co.length).co
+    check(abs(turned[0]) > 0.5 and abs(turned[1]) > 0.5,
+          "45 degrees puts the marked corner between the two axes",
+          "({0:.2f}, {1:.2f})".format(turned[0], turned[1]))
+
+    bpy.ops.paraforge.rotate_to_face(steps="315")
+    back = max(obj.data.vertices, key=lambda v: v.co.length).co
+    check(abs(abs(back[0]) - 0.5) < 0.01 and back[1] > 1.9,
+          "and -45 puts it back where it was",
+          "({0:.2f}, {1:.2f})".format(back[0], back[1]))
+
+    # The origin rule, on an object deliberately left off the floor.
+    fresh_scene()
+    make_cube("Floating", size=1.0)
+    obj = bpy.context.active_object
+    obj.location = (3.0, -2.0, 5.0)
+    settings = props.settings(bpy.context)
+    settings.asset_name = "FloatingThing"
+    settings.item_type = "FLOOR"
+
+    bpy.ops.paraforge.fix_origin()
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    measured = geo.measure([obj], depsgraph)
+    check(abs(measured.min[2]) < 1e-4,
+          "a floor item ends up standing on Z=0",
+          "{0:.4f}".format(float(measured.min[2])))
+    check(abs(measured.center[0]) < 1e-4 and abs(measured.center[1]) < 1e-4,
+          "centred in X and Y, which is the rule and not the bounding box",
+          "({0:.4f}, {1:.4f})".format(float(measured.center[0]),
+                                      float(measured.center[1])))
+
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "origin") == validate.OK,
+          "so the checklist stops asking", detail_of(report, "origin"))
+
+
 def test_multi_part():
     """An item built from several pieces, the way the game builds one.
 
@@ -2572,6 +2627,7 @@ def main():
         test_shared_surface_fallback()
         test_repair_stale_entry()
         test_surface_cleanup()
+        test_rotate_and_origin()
         test_multi_part()
         test_stackable()
         test_tag_filter()

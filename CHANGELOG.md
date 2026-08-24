@@ -9,6 +9,25 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.38.0]
+
+### Added
+
+- **Eighths of a turn, and the origin next to them.** The orientation panel
+  gains -45 and 45 alongside the quarter turns, and the origin button now
+  lives with them. Turning an item and placing its origin are the same job
+  done twice, and hunting for the second one three panels away is how it gets
+  forgotten.
+
+### Note
+
+- Snapping the origin was already automatic: Fix everything safe runs it
+  whenever the checklist asks for it. It is not Blender's origin to geometry,
+  which centres on the bounding box. It applies the rule for the chosen item
+  type instead, so a floor item is centred in X and Y with its base at Z=0 and
+  a wall item has its back at Y=0, and the transforms are applied first so
+  local space equals world space before anything is measured.
+
 ## [0.37.0]
 
 ### Added
