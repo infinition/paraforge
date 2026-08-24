@@ -38,6 +38,9 @@ Blender 4.2 or newer. Developed and tested against Blender 5.2 LTS.
 > [!TIP]
 > **Complementary Modding Tool**: Pair **ParaForge** with [**ParaReload**](https://github.com/infinition/parareload), an in-game BepInEx plugin for Paralives that hot-reloads modified 3D models, textures, and settings live without restarting the game. Save in Blender with ParaForge, and see your asset update instantly in-game!
 
+> [!TIP]
+> **Exporting something detailed?** [**ParaLOD**](https://github.com/infinition/paralod) makes high poly assets usable in Paralives. The game gives the physics collider the same mesh as the renderer, so a 393,214 triangle model also carries a 393,214 triangle collider. Measured at 6 frames per second, against 380 once the collider is simplified. ParaLOD does it automatically and leaves the rendered mesh untouched.
+
 > [!NOTE]
 > **Extracting from The Sims**: [**sims-package2glb**](https://github.com/infinition/sims-package2glb) reads The Sims 2, 3 and 4 `.package` mods and writes the models and textures out as glTF.
 
