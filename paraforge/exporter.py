@@ -81,6 +81,36 @@ def base_name(settings, objects):
     return textures.pascal_case(raw)
 
 
+def part_name(base, obj, index):
+    """The file name for one part of a multi part item.
+
+    Deterministic, so regenerating an item writes over its own parts instead
+    of leaving orphans behind. The first part keeps the item's own name, the
+    way the game does it: SeatingCouchBohoCabriole holds the frame and
+    SeatingCouchBohoCabrioleCushion the cushions.
+    """
+    if index == 0:
+        return base
+    suffix = "".join(c for c in (obj.name or "") if c.isalnum())
+    if not suffix or suffix.lower() == base.lower():
+        suffix = "Part{0}".format(index)
+    return base + suffix[:1].upper() + suffix[1:]
+
+
+def sort_parts(objects):
+    """Largest first, so the biggest piece is the item's own mesh.
+
+    The root carries the item's name and its size; the frame of a couch is a
+    better root than one of its cushions, and the frame is the bigger of the
+    two in every couch the game ships.
+    """
+    def volume(obj):
+        size = obj.dimensions
+        return float(size[0]) * float(size[1]) * float(size[2])
+
+    return sorted(objects, key=volume, reverse=True)
+
+
 def export(context, settings, objects, report=None):
     """Write the FBX and its textures into the selected mod folder."""
     result = ExportResult()
@@ -113,16 +143,30 @@ def export(context, settings, objects, report=None):
             )
 
     name = base_name(settings, objects)
+
+    # One FBX per object when the item is built from parts, which is how the
+    # game ships anything with a moving or a stretching piece: a couch is a
+    # frame file and a cushion file, not one file with two meshes in it.
+    if getattr(settings, "split_parts", False) and len(objects) > 1:
+        groups = [(part_name(name, obj, index), [obj])
+                  for index, obj in enumerate(sort_parts(objects))]
+    else:
+        groups = [(name, list(objects))]
+
+    for label, members in groups:
+        fbx_path = os.path.join(target_dir, label + ".fbx")
+        if not settings.overwrite and os.path.exists(fbx_path):
+            raise ValueError(
+                "File already exists and overwrite is off: " + fbx_path)
+        _export_fbx(context, members, fbx_path, settings.triangulate,
+                    settings.recolourable,
+                    getattr(settings, "fbx_unit_scale", spec.FBX_UNITS_PER_METRE),
+                    label)
+        result.files.append(fbx_path)
+        if settings.write_sidecars:
+            result.files.append(sidecar.write_for_mesh(mod_path, fbx_path))
+
     fbx_path = os.path.join(target_dir, name + ".fbx")
-
-    if not settings.overwrite and os.path.exists(fbx_path):
-        raise ValueError("File already exists and overwrite is off: " + fbx_path)
-
-    _export_fbx(context, objects, fbx_path, settings.triangulate,
-                settings.recolourable,
-                getattr(settings, "fbx_unit_scale", spec.FBX_UNITS_PER_METRE),
-                name)
-    result.files.append(fbx_path)
 
     # Worth saying only when there was something to leave out.
     if not settings.recolourable and _has_color_attribute(objects):
@@ -130,9 +174,6 @@ def export(context, settings, objects, report=None):
             "The colour zones were left out of the FBX on purpose. A non "
             "recolourable item that carries them does not render in game"
         ))
-    if settings.write_sidecars:
-        result.files.append(sidecar.write_for_mesh(mod_path, fbx_path))
-
     if settings.export_textures:
         plan = (report.texture_plan if report else None) or textures.build_plan(
             objects,

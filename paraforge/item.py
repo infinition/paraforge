@@ -109,7 +109,7 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
                 resizable_axes=spec.DEFAULT_RESIZABLE_AXES,
                 min_size_factor=spec.MIN_SIZE_FACTOR,
                 max_size_factor=spec.MAX_SIZE_FACTOR, seats=False,
-                stackable=False):
+                stackable=False, parts=()):
     """One root object holding one mesh, which is what an item minimally is.
 
     Size is in metres, in the game's axis order: width, height, depth. Blender
@@ -210,10 +210,27 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
             "  HasMaxSize:True",
             "  MaxSizes:" + _sizes(size, max_size_factor),
         ])
+    # An item made of several pieces is several files, each with its own
+    # ItemObject under the root. That is how the game ships anything built in
+    # parts: SeatingCouchBohoCabriole holds the frame and
+    # SeatingCouchBohoCabrioleCushion the cushions, two assets and two objects
+    # rather than one mesh with two islands in it.
+    part_guids = [
+        sidecar.guid_for("paraforge", "part{0}".format(index + 1), root)
+        for index in range(len(parts))
+    ]
+
     lines.extend([
         " ItemMeshReferences:",
         "  GUID:" + root,
         "   AssetMesh:" + mesh_guid,
+    ])
+    for guid, part in zip(part_guids, parts):
+        lines.extend([
+            "  GUID:" + guid,
+            "   AssetMesh:" + part["mesh_guid"],
+        ])
+    lines.extend([
         "ItemCubeTransform:",
         " Pivot:({0:.4f}, {1:.4f}, {2:.4f})".format(*pivot),
         " Size:({0:.4f}, {1:.4f}, {2:.4f})".format(*size),
@@ -235,6 +252,39 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
     if colorzone_guid:
         lines.append(" ColorZoneMap:" + colorzone_guid)
     lines.append("---")
+
+    # Each part after the root, anchored at the middle of the item's cube and
+    # offset by where it sits in Blender, in the game's axis order. Centred
+    # rather than pinned to an edge: a part pinned to an edge follows the
+    # stretch, which is what the game's cushions do, and getting that wrong
+    # tears the item apart the first time somebody drags it.
+    for index, (guid, part) in enumerate(zip(part_guids, parts)):
+        offset = part.get("offset", (0.0, 0.0, 0.0))
+        lines.extend([
+            "ItemObject:" + guid,
+            " Name:" + part.get("name", "Part{0}".format(index + 1)),
+            " ParentGUID:" + root,
+            " ChildIndex:{0}".format(index),
+            "ItemCubeTransform:",
+            " LocalPosition:({0:.4f}, {1:.4f}, {2:.4f})".format(*offset),
+            " MinAnchor:(0.5000, 0.5000, 0.5000)",
+            " MaxAnchor:(0.5000, 0.5000, 0.5000)",
+            " Pivot:(0.5000, 0.5000, 0.5000)",
+            " Size:(1.0000, 1.0000, 1.0000)",
+            "ItemMeshReference:",
+            " MeshIndex:{0}".format(index + 1),
+        ])
+        if part.get("surface_guid"):
+            lines.extend([
+                " Surfaces:",
+                "  Surface:",
+                "   GUID:" + sidecar.guid_for("paraforge", "partsurface", guid),
+                "   Value:" + part["surface_guid"],
+            ])
+        if part.get("detail_guid"):
+            lines.append(" DetailMap:" + part["detail_guid"])
+        lines.append("---")
+
     return "\r\n".join(lines) + "\r\n"
 
 
@@ -381,7 +431,46 @@ def resolve_swatch(settings):
     return (guid or ""), wanted
 
 
-def generate(mod_path, name, settings, report, zone_count=1):
+def part_records(mod_path, name, objects):
+    """Every piece after the first, with its file and where it sits.
+
+    The offset is measured in Blender and turned into the game's axes, the
+    same way the export turns the mesh: a half turn around Z, then Y up. Get
+    that wrong and the parts are mirrored across the item, which reads as a
+    couch with its cushions behind it.
+    """
+    from . import exporter, geo
+
+    parts = []
+    ordered = exporter.sort_parts(objects)
+    if len(ordered) < 2:
+        return parts
+
+    whole = geo.measure(ordered)
+    if whole.empty:
+        return parts
+    centre = whole.center
+
+    for index, obj in enumerate(ordered[1:], start=1):
+        label = exporter.part_name(name, obj, index)
+        mesh_file = label + ".fbx"
+        if not os.path.isfile(os.path.join(mod_path, mesh_file)):
+            continue
+        piece = geo.measure([obj])
+        if piece.empty:
+            continue
+        delta = piece.center - centre
+        parts.append({
+            "name": label[len(name):] or "Part{0}".format(index),
+            "mesh_guid": existing_guid(mod_path, mesh_file),
+            # Blender (x, y, z), half turned, then the game's width, height,
+            # depth: (-x, z, -y).
+            "offset": (-float(delta[0]), float(delta[2]), -float(delta[1])),
+        })
+    return parts
+
+
+def generate(mod_path, name, settings, report, zone_count=1, objects=()):
     """Write the prefab and register the item. Returns a Result."""
     result = Result()
     mesh_file = name + ".fbx"
@@ -459,6 +548,11 @@ def generate(mod_path, name, settings, report, zone_count=1):
 
     size = game_size(getattr(report, "measurement", None))
 
+    parts = (part_records(mod_path, name, objects)
+             if getattr(settings, "split_parts", False) else [])
+    for part in parts:
+        result.notes.append(_("Part: {0}", part["name"]))
+
     # Regenerating an unchanged item must be a no-op, otherwise every press
     # of the button adds a step to the undo history that undoes nothing.
     wanted = prefab_text(name, mesh_guid, size, overlay_guid, colorzone_guid,
@@ -477,7 +571,8 @@ def generate(mod_path, name, settings, report, zone_count=1):
                          max_size_factor=getattr(settings, "max_size_factor",
                                                  spec.MAX_SIZE_FACTOR),
                          seats=sits_on_it(settings),
-                         stackable=getattr(settings, "stackable", True))
+                         stackable=getattr(settings, "stackable", True),
+                         parts=parts)
     if setting.read(prefab_path) != wanted:
         run.will_modify(prefab_path)
         setting.write(prefab_path, wanted)

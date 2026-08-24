@@ -9,6 +9,40 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.37.0]
+
+### Added
+
+- **Items built from several pieces.** A couch the game ships is two assets
+  and two objects, not one mesh with two islands in it:
+  `SeatingCouchBohoCabriole` holds the frame and
+  `SeatingCouchBohoCabrioleCushion` the cushions, the second an `ItemObject`
+  under the root with its own mesh reference, its own `MeshIndex` and its own
+  place. Beds go further, at five objects apiece.
+
+  One part per object writes an FBX for each selected object and a prefab that
+  holds them as separate parts. The biggest piece becomes the root, since it
+  carries the item's name and its size and the frame of a couch is a better
+  root than one of its cushions. The others take their name from the object,
+  so regenerating writes over its own parts instead of leaving orphans.
+
+  Each part is placed by measuring where it sits in Blender and turning that
+  into the game's axes exactly as the export turns the mesh, a half turn
+  around Z and then Y up. Getting that wrong mirrors the parts across the
+  item, which reads as a couch with its cushions behind it.
+
+  Parts are anchored at the middle of the item rather than pinned to an edge.
+  The game's cushions are pinned, which is what makes them stretch with the
+  frame, and a part pinned wrongly tears the item apart the first time
+  somebody drags it. Centred is the safe half of that, and it is what a non
+  stretchable item wants anyway.
+
+### Still not done
+
+- Item states, which is what opens a fridge door or an oven. They need a state
+  GUID, a `LerpBasedOnState` block per moving piece and a transform per state,
+  and none of it can be guessed from a mesh. It wants its own design pass.
+
 ## [0.36.0]
 
 ### Added

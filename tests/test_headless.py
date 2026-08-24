@@ -2104,6 +2104,63 @@ def test_usage_guides():
           "the wall is the plane Y=0, which is what a wall item backs onto")
 
 
+def test_multi_part():
+    """An item built from several pieces, the way the game builds one.
+
+    A couch it ships is two assets and two objects, not one mesh with two
+    islands in it: SeatingCouchBohoCabriole holds the frame and
+    SeatingCouchBohoCabrioleCushion the cushions, the second an ItemObject
+    under the root with its own mesh reference and its own place.
+    """
+    section("Items in parts")
+    from paraforge import exporter as exporter_module
+    from paraforge import item as item_module
+
+    fresh_scene()
+    bpy.ops.mesh.primitive_cube_add(size=1.0)
+    frame = bpy.context.active_object
+    frame.name = "Frame"
+    frame.scale = (1.0, 0.5, 0.4)
+    bpy.ops.object.transform_apply(scale=True)
+
+    bpy.ops.mesh.primitive_cube_add(size=1.0)
+    cushion = bpy.context.active_object
+    cushion.name = "Cushion"
+    cushion.scale = (0.9, 0.4, 0.1)
+    cushion.location = (0.0, 0.0, 0.35)
+    bpy.ops.object.transform_apply(location=True, scale=True)
+
+    ordered = exporter_module.sort_parts([cushion, frame])
+    check(ordered[0] is frame, "the biggest piece becomes the root",
+          ordered[0].name)
+
+    check(exporter_module.part_name("Sofa", frame, 0) == "Sofa",
+          "which keeps the item's own name")
+    check(exporter_module.part_name("Sofa", cushion, 1) == "SofaCushion",
+          "and the others take theirs from the object",
+          exporter_module.part_name("Sofa", cushion, 1))
+
+    parts = [{"name": "Cushion", "mesh_guid": "4242",
+              "offset": (0.0, 0.35, 0.0)}]
+    text = item_module.prefab_text("Sofa", "111", (2.0, 0.8, 1.0),
+                                   parts=parts)
+    check("  GUID:" in text and "   AssetMesh:4242" in text,
+          "the part's mesh joins the root's list of references")
+    check(text.count("ItemObject:") == 2,
+          "and it gets an object of its own under the root",
+          str(text.count("ItemObject:")))
+    check(" MeshIndex:1" in text,
+          "addressed by its index, the way the game's couch does")
+    check(" LocalPosition:(0.0000, 0.3500, 0.0000)" in text,
+          "placed where it sits, in the game's axis order",
+          [l for l in text.splitlines() if "LocalPosition" in l])
+    check(" ParentGUID:" in text, "and parented to the root")
+
+    plain = item_module.prefab_text("Sofa", "111", (2.0, 0.8, 1.0))
+    check(plain.count("ItemObject:") == 1,
+          "one object when nothing was split, which is most items")
+
+
 def test_stackable():
     """Whether a Para can set something down on the item.
 
@@ -2515,6 +2572,7 @@ def main():
         test_shared_surface_fallback()
         test_repair_stale_entry()
         test_surface_cleanup()
+        test_multi_part()
         test_stackable()
         test_tag_filter()
         test_usage_guides()

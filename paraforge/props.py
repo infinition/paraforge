@@ -421,6 +421,18 @@ class ParaForgeSettings(PropertyGroup):
         update=_invalidate,
     )
 
+    split_parts: BoolProperty(
+        name=_("One part per object"),
+        description=_(
+            "Write an FBX for each selected object and a prefab that holds "
+            "them as separate parts, the way the game ships a couch as a "
+            "frame file and a cushion file. Off, everything selected goes "
+            "into one mesh"
+        ),
+        default=False,
+        update=_invalidate,
+    )
+
     stackable: BoolProperty(
         name=_("Things can be put on it"),
         description=_(

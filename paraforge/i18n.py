@@ -330,6 +330,15 @@ FR = {
     # -- Checklist --------------------------------------------------------
     "{0} ok   {1} warn   {2} blocking": "{0} ok   {1} alerte   {2} bloquant",
     "Items in this mod": "Objets de ce mod",
+    "One part per object": "Une partie par objet",
+    "Write an FBX for each selected object and a prefab that holds them as "
+    "separate parts, the way the game ships a couch as a frame file and a "
+    "cushion file. Off, everything selected goes into one mesh":
+        "Écrire un FBX par objet sélectionné et un prefab qui les tient "
+        "comme des parties distinctes, comme le jeu livre un canapé en un "
+        "fichier de structure et un fichier de coussins. Désactivé, tout ce "
+        "qui est sélectionné part dans un seul mesh",
+    "Part: {0}": "Partie : {0}",
     "Find a category": "Chercher une catégorie",
     "Narrows the dropdown to the categories whose name or path contains this. "
     "Whatever is already chosen stays in the list":

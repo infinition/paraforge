@@ -368,7 +368,8 @@ class PARAFORGE_OT_generate_item(Operator):
         name = exporter.base_name(settings, objects)
         try:
             result = item.generate(
-                mod_path, name, settings, report, _zone_count(report)
+                mod_path, name, settings, report, _zone_count(report),
+                objects,
             )
         except Exception as error:
             self.report({"ERROR"}, str(error))

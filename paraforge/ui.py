@@ -529,6 +529,8 @@ class PARAFORGE_PT_options(_Base, Panel):
             ), 6):
                 warning.label(text=line)
 
+        box.prop(settings, "split_parts", text=_("One part per object"))
+
         stack = box.row()
         stack.enabled = not sits
         stack.prop(settings, "stackable",
