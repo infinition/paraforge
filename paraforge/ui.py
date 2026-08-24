@@ -660,6 +660,19 @@ class PARAFORGE_PT_inspector(_Base, Panel):
 
         column = layout.column(align=True)
         column.enabled = bool(settings.mod_folder and os.path.isdir(settings.mod_folder))
+        # When the game refuses an item and will not say why, it can be
+        # asked: every one of these loggers ships turned off.
+        from . import ops as ops_module
+
+        on = os.path.isfile(ops_module._loggers_path(settings.mod_folder))             if settings.mod_folder else False
+        row = column.row()
+        row.operator(
+            "paraforge.toggle_diagnostics",
+            text=(_("Stop explaining") if on
+                  else _("Ask the game to explain itself")),
+            icon="CONSOLE", depress=on,
+        )
+
         column.operator("paraforge.snapshot_mod",
                         text=_("Snapshot mod folder"), icon="FILE_TICK")
         column.operator("paraforge.diff_mod",

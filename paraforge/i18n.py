@@ -441,6 +441,21 @@ FR = {
     "Write nothing, so the item is decoration":
         "N'écrire rien, l'objet reste une décoration",
     "A Para can sit on it: {0}": "Un Para peut s'y asseoir : {0}",
+    "Ask the game to explain itself": "Demander au jeu de s'expliquer",
+    "Stop explaining": "Arrêter les explications",
+    "Turn on the game's own item slot logging, from inside your mod. It then "
+    "writes into Player.log exactly why a Para refuses an item: the slot it "
+    "wanted, the type it found, and whether the item had any slot at all. "
+    "Press again to turn it off":
+        "Active le journal interne du jeu sur les emplacements, depuis ton "
+        "mod. Il écrit alors dans Player.log exactement pourquoi un Para "
+        "refuse un objet : l'emplacement voulu, le type trouvé, et si l'objet "
+        "en avait un. Appuie encore pour l'éteindre",
+    "Diagnostics off": "Diagnostic désactivé",
+    "Diagnostics on. Restart Paralives, ask a Para to use the item, then read "
+    "Player.log":
+        "Diagnostic activé. Relance Paralives, demande à un Para de se servir "
+        "de l'objet, puis lis Player.log",
     "Used by a Para": "Utilisé par un Para",
     "A tag typed by hand, so this cannot be checked":
         "Un tag saisi à la main, donc invérifiable ici",

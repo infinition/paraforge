@@ -10,7 +10,7 @@ from bpy.types import Operator
 
 from . import (
     cache, exporter, i18n, inspector, journal, modfolder, prefs, props,
-    validate,
+    setting, sidecar, spec, validate,
 )
 
 _ = i18n.t
@@ -127,6 +127,76 @@ class PARAFORGE_OT_preview(Operator):
                 ", ".join(missing),
             ))
         self.report({"INFO"}, _("Showing {0}", ", ".join(written)))
+        return {"FINISHED"}
+
+
+LOGGERS_FILE = "Loggers.setting"
+
+#: The game writes its settings with CRLF.
+LINE_END = chr(13) + chr(10)
+
+#: What the game logs once these are on. Every one of them is a field of
+#: Setting.Loggers, which ships with all of them False, and a mod's own
+#: Settings folder merges over the game's.
+LOGGERS = (
+    "LogItemSlotManager",
+    "LogItemFinderRuleManager",
+    "LogItemLocatorManager",
+    "LogCharacterInteractions",
+    "LogCharacterActions",
+)
+
+
+def _loggers_path(mod_path):
+    return os.path.join(mod_path, "Settings", LOGGERS_FILE)
+
+
+class PARAFORGE_OT_toggle_diagnostics(Operator):
+    bl_idname = "paraforge.toggle_diagnostics"
+    bl_label = _("Ask the game to explain itself")
+    bl_description = _(
+        "Turn on the game's own item slot logging, from inside your mod. It "
+        "then writes into Player.log exactly why a Para refuses an item: the "
+        "slot it wanted, the type it found, and whether the item had any slot "
+        "at all. Press again to turn it off"
+    )
+    bl_options = {"REGISTER"}
+
+    @classmethod
+    def poll(cls, context):
+        settings = props.settings(context)
+        return bool(settings and settings.mod_folder)
+
+    def execute(self, context):
+        settings = props.settings(context)
+        mod_path = (settings.mod_folder or "").strip()
+        if not os.path.isdir(mod_path):
+            self.report({"ERROR"}, _("Pick a valid mod folder first"))
+            return {"CANCELLED"}
+
+        path = _loggers_path(mod_path)
+        if os.path.isfile(path):
+            os.remove(path)
+            meta = path + ".meta"
+            if os.path.isfile(meta):
+                os.remove(meta)
+            self.report({"INFO"}, _("Diagnostics off"))
+            return {"FINISHED"}
+
+        lines = ["#Setting.Loggers"]
+        # Without this every line is wrapped in colour markup.
+        lines.append(" RemoveColorStyleTags:True")
+        for name in LOGGERS:
+            lines.append(" {0}:True".format(name))
+        setting.write(path, LINE_END.join(lines) + LINE_END)
+        sidecar.write(path, spec.META_TYPE_SETTING,
+                      sidecar.asset_guid(mod_path, LOGGERS_FILE),
+                      {"IsSettingType": "True",
+                       "SettingType": "Setting.Loggers"})
+
+        self.report({"INFO"}, _(
+            "Diagnostics on. Restart Paralives, ask a Para to use the item, "
+            "then read Player.log"))
         return {"FINISHED"}
 
 
@@ -461,6 +531,7 @@ def _show_text(context, block):
 
 classes = (
     PARAFORGE_OT_export,
+    PARAFORGE_OT_toggle_diagnostics,
     PARAFORGE_OT_preview,
     PARAFORGE_OT_open_mod_folder,
     PARAFORGE_OT_create_mod,

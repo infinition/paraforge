@@ -9,6 +9,38 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.26.0]
+
+### Added
+
+- **Ask the game to explain itself.** A Para refusing to use an item says
+  nothing, and every guess about why costs a restart. The game does keep a
+  reason, behind `Setting.Loggers`, which ships with every logger off:
+
+  ```
+  =LogItemSlotManager:False
+  =LogItemFinderRuleManager:False
+  =LogItemLocatorManager:False
+  ```
+
+  A mod's own Settings merge over the game's, so the button writes a
+  `Loggers.setting` that turns them on, and `Player.log` then carries the real
+  reason in the game's own words:
+
+  ```
+  !! Item has no item slots !!
+  Slot has no ItemObjectChairSlot component.
+  Slot is of type X instead of required type Y.
+  ```
+
+  Press again to remove the file.
+
+  Decompiled from `Paralives.dll`, the sit chain is
+  `SetTargetedLocatorProcessor` reading `UsedItemSlotGUIDsOfPreviousInteraction`,
+  which `ItemSlotManager` only fills for an item registered in `ItemsWithSlots`,
+  which in turn requires `root.GetChildren<ItemObjectSlot>()` to be non empty.
+  Every step of that is now observable rather than inferred.
+
 ## [0.25.0]
 
 ### Fixed
