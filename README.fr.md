@@ -426,6 +426,25 @@ Lu dans les fichiers `.import`, qui sont ce que le jeu a fait de chaque FBX :
 Aucune option d'export Blender ne produit ça, parce que Blender met le facteur
 sur le nœud. ParaForge met donc la géométrie à l'échelle sur une copie jetable.
 
+### Et il part retourné
+
+Un objet asymétrique exporté sans demi-tour arrive avec son avant là où devrait
+être son arrière. Sur une chaise ça se voit deux fois, et les deux symptômes
+sont la même rotation : la miniature du catalogue est prise de dos, et un Para
+s'assoit face à son propre dossier. Les objets symétriques ne le montrent
+jamais.
+
+ParaForge applique un demi-tour autour de Z avant la rotation Y-up, pour que ce
+que tu construis face à la flèche verte soit ce que le jeu appelle l'avant.
+
+Celui-là s'est tranché dans le jeu et non dans les fichiers. Trois tentatives
+de le lire dans les meshes livrés ont donné trois réponses différentes, parce
+que la conversion d'axes de l'importateur FBX n'est pas l'inverse de celle de
+l'export et que chaque lecture dépendait d'un signe invérifiable. Le résultat
+concorde indépendamment avec le template : `ChairSlotAndLocator` place les
+pieds avant en Z +0,42, et le +Y de Blender part sur le +Z du jeu, donc les
+genoux atterrissent là où pointe la flèche.
+
 ### Et il doit être Y-up, dans la géométrie
 
 Même cause. Blender écrit sa conversion d'axes comme une rotation sur le nœud,

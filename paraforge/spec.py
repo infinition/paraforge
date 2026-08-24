@@ -58,6 +58,24 @@ FBX_IDENTITY_UP = "Z"
 # geometry is scaled on a throwaway copy instead.
 FBX_UNITS_PER_METRE = 100.0
 
+# And it leaves turned around.
+#
+# An asymmetric item exported without this arrives with its front where its
+# back should be. On a chair it shows twice over, and both symptoms are the
+# same half turn: the catalogue thumbnail is shot from behind, and a Para sits
+# down facing their own backrest.
+#
+# Measured in the game rather than in the files. Three attempts to settle it
+# by reading the shipped meshes gave three different answers, because the FBX
+# importer's axis conversion is not the inverse of the export's, and every
+# reading needed a sign nobody could check. A chair built facing the viewport
+# arrow, exported, and looked at in game settles it in one go and cannot be
+# argued with.
+#
+# Applied in Blender space, before the Y up rotation, so what you build facing
+# the green arrow is what the game calls the front.
+FBX_YAW = 180.0
+
 #: Items must face Y+ before export.
 FACING_AXIS = "Y+"
 

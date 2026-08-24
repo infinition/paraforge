@@ -209,6 +209,10 @@ def scaled_copies(context, objects, factor, name=""):
     scale = Matrix.Scale(factor, 4)
     # Blender is Z up, the game's meshes are Y up: (x, y, z) becomes (x, z, -y).
     to_y_up = Matrix.Rotation(math.radians(-90.0), 4, "X")
+    # And the game's front is the other end from Blender's. Without this an
+    # asymmetric item arrives backwards: the catalogue thumbnail is shot from
+    # behind and a Para sits down facing their own backrest.
+    half_turn = Matrix.Rotation(math.radians(spec.FBX_YAW), 4, "Z")
     created = []
 
     for index, obj in enumerate(objects):
@@ -217,6 +221,7 @@ def scaled_copies(context, objects, factor, name=""):
             evaluated, preserve_all_data_layers=True, depsgraph=depsgraph
         )
         mesh.transform(obj.matrix_world)
+        mesh.transform(half_turn)
         mesh.transform(to_y_up)
         mesh.transform(scale)
 

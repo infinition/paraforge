@@ -1664,6 +1664,48 @@ def test_seat_height():
           "and choosing no seat stops the question being asked at all")
 
 
+def test_export_yaw():
+    """The item leaves turned around, and it has to.
+
+    Exported without the half turn, an asymmetric item arrives with its front
+    where its back should be. On a chair it shows twice over, and both
+    symptoms are the same rotation: the catalogue thumbnail is shot from
+    behind, and a Para sits down facing their own backrest.
+
+    Pinned here on a marked vertex so nothing can quietly undo it, because
+    reading it back out of the shipped meshes gave three different answers.
+    """
+    section("Export yaw")
+    fresh_scene()
+    make_cube("YawProbe", size=1.0)
+    obj = bpy.context.active_object
+
+    # One vertex pushed out along +Y, the direction the viewport arrow points.
+    front = max(range(len(obj.data.vertices)),
+                key=lambda i: obj.data.vertices[i].co[1])
+    obj.data.vertices[front].co[1] = 3.0
+    obj.data.update()
+
+    copies = exporter.scaled_copies(bpy.context, [obj],
+                                    spec.FBX_UNITS_PER_METRE)
+    try:
+        coords = [tuple(v.co) for v in copies[0].data.vertices]
+        # Y up in the game, so the depth axis is the third one.
+        marked = max(coords, key=lambda c: abs(c[2]))
+        check(abs(marked[2] - 300.0) < 1.0,
+              "what faces the arrow in Blender leaves on the game's +Z",
+              "{0:.1f}".format(marked[2]))
+        check(spec.FBX_YAW == 180.0,
+              "which is the half turn, applied before the Y up rotation")
+
+        heights = [c[1] for c in coords]
+        check(max(heights) - min(heights) > 99.0,
+              "and up is still up, so the half turn is around Z only",
+              "{0:.1f}".format(max(heights) - min(heights)))
+    finally:
+        exporter.discard(copies)
+
+
 def test_backrest_side():
     """Which way round the chair is, which nothing in the game will tell you.
 
@@ -2148,6 +2190,7 @@ def main():
         test_usable_by_a_para()
         test_seat_height()
         test_backrest_side()
+        test_export_yaw()
         test_asset_name_guard()
         test_shared_surface_fallback()
         test_repair_stale_entry()

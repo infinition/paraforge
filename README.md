@@ -420,6 +420,24 @@ Read out of the `.import` files, which are what the game made of each FBX:
 No Blender export option produces this, because Blender puts the factor on the
 node. ParaForge scales the geometry on a throwaway copy instead.
 
+### And it leaves turned around
+
+An asymmetric item exported without a half turn arrives with its front where
+its back should be. On a chair it shows twice over, and both symptoms are the
+same rotation: the catalogue thumbnail is shot from behind, and a Para sits
+down facing their own backrest. Symmetrical items never show it at all.
+
+ParaForge applies a half turn around Z before the Y up rotation, so what you
+build facing the green viewport arrow is what the game calls the front.
+
+This one was settled in the game rather than in the files. Three attempts to
+read it out of the shipped meshes gave three different answers, because the
+FBX importer's axis conversion is not the inverse of the export's and every
+reading needed a sign that could not be checked. It agrees with the slot
+template independently: `ChairSlotAndLocator` puts the front feet at Z +0.42,
+and Blender +Y leaves on the game's +Z, so the knees land where the arrow
+points.
+
 ### And it has to be Y up, in the geometry
 
 Same cause. Blender writes its axis conversion as a rotation on the node, and

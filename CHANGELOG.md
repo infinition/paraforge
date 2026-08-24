@@ -9,6 +9,38 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.31.0]
+
+### Fixed
+
+- **Every item left turned around.** An asymmetric item arrived in the game
+  with its front where its back should be. On a chair it showed twice over,
+  and both symptoms are the same half turn: the catalogue thumbnail is shot
+  from behind, and a Para sits down facing their own backrest. Symmetrical
+  items, which is most of what had been exported until now, never showed it.
+
+  The export now applies a half turn around Z before the Y up rotation, so
+  what you build facing the green viewport arrow is what the game calls the
+  front. Nothing in Blender changes meaning, and nothing has to be remodelled:
+  regenerating an item is enough.
+
+  Settled in the game rather than in the files. Three attempts to read it out
+  of the shipped meshes gave three different answers, because the FBX
+  importer's axis conversion is not the inverse of the export's and every
+  reading needed a sign that could not be checked. A chair built facing the
+  arrow, exported, and looked at in game answers it in one go.
+
+  The half turn is now pinned by a test on a marked vertex, and it agrees with
+  the slot template independently: `ChairSlotAndLocator` puts the front feet
+  at Z +0.42, and Blender +Y now leaves on the game's +Z, so the knees land
+  where the arrow points.
+
+- **The 0.29.0 and 0.30.0 arrows were both symptoms of this.** Neither
+  direction was right, because the export underneath them was turned around.
+  The seat arrow points along Y+ and the backrest check wants the back on the
+  Y- side, which is what 0.27.0 said, and with the export fixed both are now
+  true rather than accidentally half true.
+
 ## [0.30.0]
 
 ### Fixed
