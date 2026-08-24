@@ -480,22 +480,28 @@ FR = {
     "Put the scaling handle on the item once placed, which multiplies the "
     "whole item at once. Without it the game creates no handle and the item "
     "is stuck at the size it was exported. 1114 of the game's 2434 items "
-    "declare it":
+    "declare it. Excludes the per axis stretch: no shipped item carries both":
         "Pose la poignée de mise à l'échelle sur l'objet une fois posé, qui "
         "multiplie l'objet entier d'un coup. Sans elle, le jeu ne crée aucune "
         "poignée et l'objet reste à la taille exportée. 1114 des 2434 objets "
-        "du jeu la déclarent",
+        "du jeu la déclarent. Exclut l'étirement par axe : aucun objet livré "
+        "ne porte les deux",
 
     "Stretchable per axis": "Étirable par axe",
+    "One or the other, never both": "L'un ou l'autre, jamais les deux",
+
 
     "The game's other handle, and a different thing: it stretches the item "
     "along the axes you allow instead of multiplying it whole, so a shelf can "
     "be made wider without becoming taller. 650 of the game's items declare "
-    "it, and 133 carry both":
+    "it. Excludes scaling: of the 353 shipped items with a place to sit, 146 "
+    "stretch, 27 scale, and none do both":
         "L'autre poignée du jeu, et une chose différente : elle étire l'objet "
         "sur les axes que tu autorises au lieu de le multiplier entièrement, "
         "de sorte qu'une étagère s'élargit sans grandir. 650 des objets du jeu "
-        "la déclarent, et 133 portent les deux",
+        "la déclarent. Exclut la mise à l'échelle : sur les 353 objets livrés "
+        "qui ont une place assise, 146 s'étirent, 27 se mettent à l'échelle, "
+        "et aucun ne fait les deux",
 
     "Axes": "Axes",
     "Which axes the player may stretch, width, height, depth":
@@ -746,6 +752,24 @@ FR = {
     "Grid": "Grille",
     "Bounding box": "Boîte englobante",
     "Facing arrow": "Flèche d'orientation",
+    "Seat guide": "Repère d'assise",
+    "Seat height": "Hauteur d'assise",
+    "Nothing to sit on": "Rien où s'asseoir",
+    "Sits at {0:.3f} m, facing the arrow":
+        "Assise à {0:.3f} m, face à la flèche",
+    "{0:.3f} m, {1:.0f}% of the height. The game's chairs sit between "
+    "{2:.3f} and {3:.3f}":
+        "{0:.3f} m, {1:.0f}% de la hauteur. Les chaises du jeu sont entre "
+        "{2:.3f} et {3:.3f}",
+    ". Too low: a Para will sink into it":
+        ". Trop bas : un Para s'enfoncera dedans",
+    ". Too high: a Para will float above it":
+        ". Trop haut : un Para flottera au-dessus",
+    "No flat surface anywhere in the middle of the mesh, so there is nothing "
+    "to sit on. {0} will still seat a Para, hovering over the item":
+        "Aucune surface plane au milieu du maillage, donc rien où "
+        "s'asseoir. {0} y placera quand même un Para, flottant au-dessus "
+        "de l'objet",
     "Grid tiles": "Tuiles de grille",
     "Checklist corner": "Coin de la checklist",
     "Top left": "En haut à gauche",

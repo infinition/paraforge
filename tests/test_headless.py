@@ -1494,6 +1494,134 @@ def test_usable_by_a_para():
           "it is information, never a fault: most items are decoration")
 
 
+def make_chair(seat_z=0.45, name="TestChair"):
+    """A seat plane at seat_z, a backrest above it, four legs below.
+
+    Enough shape for the measurement to have something to choose between: the
+    seat is the only large upward facing surface in the middle of the item.
+    """
+    bpy.ops.mesh.primitive_cube_add(size=1.0)
+    seat = bpy.context.active_object
+    seat.name = name
+    seat.scale = (0.45, 0.45, 0.04)
+    seat.location = (0.0, 0.0, seat_z)
+
+    bpy.ops.mesh.primitive_cube_add(size=1.0)
+    back = bpy.context.active_object
+    back.scale = (0.45, 0.04, 0.25)
+    back.location = (0.0, -0.42, seat_z + 0.27)
+
+    parts = [seat, back]
+    for x in (-0.19, 0.19):
+        for y in (-0.19, 0.19):
+            bpy.ops.mesh.primitive_cube_add(size=1.0)
+            leg = bpy.context.active_object
+            leg.scale = (0.04, 0.04, seat_z)
+            leg.location = (x, y, seat_z * 0.5)
+            parts.append(leg)
+
+    for obj in parts:
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = seat
+    bpy.ops.object.join()
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+    # Sit the item on the floor the way a floor item must.
+    measurement = geo.measure([seat], bpy.context.evaluated_depsgraph_get())
+    seat.data.transform(_translation(0.0, 0.0, -float(measurement.min[2])))
+    seat.data.update()
+    return seat
+
+
+def _translation(x, y, z):
+    import mathutils
+
+    return mathutils.Matrix.Translation((x, y, z))
+
+
+def test_seat_height():
+    """A seat nobody can reach is a chair a Para sits through.
+
+    The slot template holds the Seat and the ButtLocator at a fixed height. If
+    the mesh offers no surface there, the Para still sits, floating or sunk,
+    and no error is ever raised. So the mesh is measured the way the game's own
+    22 chairs were, and the answer is put next to the choice that causes it.
+    """
+    section("Seat height")
+    from paraforge import catalog as cat
+    from paraforge import item as item_mod
+
+    check(cat.template_seats("ShorterChairSlotAndLocator"),
+          "a chair variant puts a Para on the item")
+    check(cat.template_seats("BedSlotsAndLocators"),
+          "so does a bed")
+    check(not cat.template_seats("TableSlots"),
+          "a table puts one beside it, where the item's own height means "
+          "nothing")
+    check(not cat.template_seats("MicrowaveSlotAndLocators"),
+          "and so does a microwave")
+
+    class _Choice:
+        catalog_tag = cat.BY_NAME["Chairs"]
+        seat_template = "AUTO"
+
+    check(item_mod.seat_choice(_Choice()) == ("ChairSlotAndLocator", True),
+          "automatic follows the tag", str(item_mod.seat_choice(_Choice())))
+    _Choice.seat_template = "NONE"
+    check(item_mod.seat_choice(_Choice()) == ("", False),
+          "None seats nobody, so nothing is measured")
+    _Choice.seat_template = "LongChairSlotAndLocator"
+    check(item_mod.seat_choice(_Choice())[1],
+          "and an explicit chair still seats a Para")
+
+    fresh_scene()
+    chair = make_chair(seat_z=0.45)
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    height = geo.seat_height([chair], depsgraph)
+    check(height is not None and abs(height - 0.45) < 0.05,
+          "the measurement finds the seat plane, not the backrest or the floor",
+          "" if height is None else "{0:.3f}".format(height))
+
+    settings = props.settings(bpy.context)
+    settings.asset_name = "MesuredChair"
+    settings.catalog_tag = cat.BY_NAME["Chairs"]
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "seat") == validate.OK,
+          "0.45 m lands inside the band the game's chairs live in",
+          detail_of(report, "seat"))
+    check(report.seat_height is not None,
+          "and the figure is on the report, so the viewport guide draws the "
+          "same number the panel prints")
+
+    settings.catalog_tag = cat.BY_NAME["Build"]
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "seat") is None,
+          "decoration is never asked where its seat is")
+
+    fresh_scene()
+    make_chair(seat_z=0.95, name="BarStool")
+    settings = props.settings(bpy.context)
+    settings.asset_name = "TooTall"
+    settings.catalog_tag = cat.BY_NAME["Chairs"]
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "seat") == validate.WARN,
+          "a seat above the band is flagged before the game is launched",
+          detail_of(report, "seat"))
+    check(not any(c.blocking for c in report.checks if c.key == "seat"),
+          "as a warning, never a block: the game's own range is a habit, "
+          "not a rule")
+
+    fresh_scene()
+    make_cube("SolidBlock")
+    settings = props.settings(bpy.context)
+    settings.asset_name = "NoSeatAnywhere"
+    settings.catalog_tag = cat.BY_NAME["Chairs"]
+    settings.seat_template = "NONE"
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "seat") is None,
+          "and choosing no seat stops the question being asked at all")
+
+
 def test_asset_name_guard():
     """A borrowed name is how one item silently replaces another."""
     section("Asset name")
@@ -1797,10 +1925,15 @@ def test_undo(mod):
     check("HasMinSize" not in stretch,
           "and no HasMinSize, which does not exist anywhere in the game")
 
+    # The two are alternatives. Of the 353 shipped items with a place to sit,
+    # 146 stretch, 27 scale, and not one does both: declaring both puts the
+    # seat locators where no Para can reach them, so the chair sits in the
+    # catalogue, renders correctly, and nobody ever uses it.
     both = item_module.prefab_text("X", "123", (1.0, 1.0, 1.0),
                                    scalable=True, resizable=True)
-    check(" IsScalable:True" in both and " IsResizable:True" in both,
-          "an item can carry both, as 133 of the game's own do")
+    check(" IsResizable:True" in both and " IsScalable:True" not in both,
+          "asking for both writes only the stretch",
+          [l for l in both.splitlines() if "Is" in l])
 
 
 def test_create_mod():
@@ -1900,6 +2033,7 @@ def main():
         test_decimate_rebake()
         test_two_items_share_nothing()
         test_usable_by_a_para()
+        test_seat_height()
         test_asset_name_guard()
         test_shared_surface_fallback()
         test_repair_stale_entry()

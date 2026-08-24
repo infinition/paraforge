@@ -34,6 +34,15 @@ BOUNDS_OK = (0.35, 0.85, 0.45, 0.85)
 BOUNDS_BAD = (1.00, 0.35, 0.35, 0.95)
 ORIGIN_COLOR = (1.00, 0.85, 0.25, 1.0)
 
+# The seat guide. The band the game's own chairs live in is drawn faintly, the
+# height this mesh actually offers is drawn solidly, in green when it lands
+# inside the band and amber when it does not.
+SEAT_BAND_COLOR = (0.55, 0.70, 1.00, 0.30)
+SEAT_OK_COLOR = (0.35, 0.85, 0.45, 0.95)
+SEAT_BAD_COLOR = (1.00, 0.72, 0.20, 0.95)
+SEAT_FILL_OK = (0.35, 0.85, 0.45, 0.16)
+SEAT_FILL_BAD = (1.00, 0.72, 0.20, 0.16)
+
 
 def _get_shader():
     global _shader
@@ -98,6 +107,67 @@ def _arrow_lines(tile):
         (0.0, length, z), (width, length - head, z),
         (-width, length - head, z), (width, length - head, z),
     ]
+
+
+def _seat_rect(low, high, z):
+    """Outline of a horizontal rectangle over the item's footprint."""
+    x0, y0 = float(low[0]), float(low[1])
+    x1, y1 = float(high[0]), float(high[1])
+    corners = [(x0, y0, z), (x1, y0, z), (x1, y1, z), (x0, y1, z)]
+    lines = []
+    for index in range(4):
+        lines.append(corners[index])
+        lines.append(corners[(index + 1) % 4])
+    return lines
+
+
+def _seat_fill(low, high, z):
+    x0, y0 = float(low[0]), float(low[1])
+    x1, y1 = float(high[0]), float(high[1])
+    return [
+        (x0, y0, z), (x1, y0, z), (x1, y1, z),
+        (x0, y0, z), (x1, y1, z), (x0, y1, z),
+    ]
+
+
+def _sit_direction(low, high, z):
+    """Where the knees go: a short arrow along Y+ at seat height.
+
+    The slot template seats a Para facing Y+, the same way the big green arrow
+    on the floor points. Drawing it again up at seat height is the difference
+    between knowing which way the item faces and knowing which way somebody
+    sitting on it will look.
+    """
+    x0, y0 = float(low[0]), float(low[1])
+    x1, y1 = float(high[0]), float(high[1])
+    mid_x = (x0 + x1) * 0.5
+    depth = max(y1 - y0, 1e-4)
+    tip = y1 + depth * 0.45
+    head = depth * 0.18
+    width = max(x1 - x0, 1e-4) * 0.12
+    return [
+        (mid_x, y0 + depth * 0.5, z), (mid_x, tip, z),
+        (mid_x, tip, z), (mid_x - width, tip - head, z),
+        (mid_x, tip, z), (mid_x + width, tip - head, z),
+    ]
+
+
+def _draw_seat_guide(measurement, seat_height):
+    """The band the game's chairs live in, and where this mesh actually sits."""
+    low, high = measurement.min, measurement.max
+    for edge in (spec.SEAT_HEIGHT_MIN, spec.SEAT_HEIGHT_MAX):
+        _draw_lines(_seat_rect(low, high, edge), SEAT_BAND_COLOR, 1.0)
+
+    if seat_height is None:
+        return
+
+    inside = spec.SEAT_HEIGHT_MIN <= seat_height <= spec.SEAT_HEIGHT_MAX
+    line_color = SEAT_OK_COLOR if inside else SEAT_BAD_COLOR
+    fill_color = SEAT_FILL_OK if inside else SEAT_FILL_BAD
+    z = float(low[2]) + seat_height
+    _draw_tris(_seat_fill(low, high, z), fill_color)
+    _draw_lines(_seat_rect(low, high, z), line_color, 2.5)
+    _draw_lines(_sit_direction(low, high, z), line_color, 2.5)
 
 
 def _origin_marker(tile):
@@ -177,6 +247,12 @@ def draw_3d():
     _draw_lines(_origin_marker(tile), ORIGIN_COLOR, 2.0)
 
     report = cache.peek()
+    if (settings.show_seat and report is not None
+            and report.measurement is not None
+            and not report.measurement.empty
+            and any(c.key == "seat" for c in report.checks)):
+        _draw_seat_guide(report.measurement, report.seat_height)
+
     if settings.show_bounds and report is not None and report.measurement is not None:
         measurement = report.measurement
         if not measurement.empty:

@@ -6,7 +6,7 @@ and where possible a button that fixes it. The point is that no failure should
 ever be discovered by relaunching the game.
 """
 
-from . import catalog, geo, i18n, spec, textures, uvxform
+from . import catalog, geo, i18n, item, spec, textures, uvxform
 
 _ = i18n.t
 
@@ -40,6 +40,7 @@ class Report:
         self.checks = []
         self.measurement = None
         self.texture_plan = None
+        self.seat_height = None
 
     def add(self, *args, **kwargs):
         self.checks.append(Check(*args, **kwargs))
@@ -99,6 +100,7 @@ def run(context, settings):
     _check_facing(settings, report)
     _check_asset_name(objects, settings, report)
     _check_usable(settings, report)
+    _check_seat(objects, settings, measurement, depsgraph, report)
     _check_color_zones(objects, settings, report)
     _check_uvs(objects, report)
     _check_uv_transform(objects, report)
@@ -276,6 +278,61 @@ def _check_usable(settings, report):
                _("Decoration: this tag brings neither a place to sit nor an "
                  "interaction, so a Para will walk past it. Seating lives "
                  "under Chairs, Armchairs, OfficeChairs, Couches or Benches"))
+
+
+def _check_seat(objects, settings, measurement, depsgraph, report):
+    """How high the seat is, and which way a Para will face on it.
+
+    Nothing in the mesh tells the game where to sit. The slot template does,
+    and it holds the Seat, the ButtLocator and the feet at heights it was
+    authored for. If the mesh offers no surface at that height the Para still
+    sits, in mid air or knee deep in the cushion, and the item looks broken
+    for a reason no error will ever mention.
+
+    So the seat is measured the way the game's own chairs were: every upward
+    facing triangle between 15% and 75% of the item's height, weighted by
+    area. Across the 22 shipped chair meshes that gives a median of 0.445 m,
+    from 0.316 on a low Adirondack to 0.520 on a camping chair, or 47% of the
+    item's own height.
+
+    Facing cannot be measured at all, only stated: the template seats a Para
+    looking along Y+, the same direction the green viewport arrow points, so
+    the backrest belongs at the far end and the knees at the arrow.
+    """
+    template, seats = item.seat_choice(settings)
+    if not seats:
+        return
+
+    label = _("Seat height")
+    if measurement.empty:
+        return
+
+    height = geo.seat_height(objects, depsgraph)
+    report.seat_height = height
+    span = float(measurement.size[2])
+
+    if height is None:
+        report.add(
+            "seat", label, WARN,
+            _("No flat surface anywhere in the middle of the mesh, so there "
+              "is nothing to sit on. {0} will still seat a Para, hovering "
+              "over the item", template),
+        )
+        return
+
+    ratio = (height / span * 100.0) if span > 1e-6 else 0.0
+    detail = _("{0:.3f} m, {1:.0f}% of the height. The game's chairs sit "
+               "between {2:.3f} and {3:.3f}",
+               height, ratio, spec.SEAT_HEIGHT_MIN, spec.SEAT_HEIGHT_MAX)
+
+    if height < spec.SEAT_HEIGHT_MIN:
+        report.add("seat", label, WARN,
+                   detail + _(". Too low: a Para will sink into it"))
+    elif height > spec.SEAT_HEIGHT_MAX:
+        report.add("seat", label, WARN,
+                   detail + _(". Too high: a Para will float above it"))
+    else:
+        report.add("seat", label, OK, detail)
 
 
 def _check_asset_name(objects, settings, report):

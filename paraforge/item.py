@@ -162,6 +162,15 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
     HasMaxScale gates MaxScale, and there is no HasMinSize anywhere in the
     assembly, so the floor always applies and the ceiling only when declared.
     """
+    # The two widgets are alternatives. Across the 353 shipped items that
+    # carry a place to sit, 146 declare IsResizable, 27 declare IsScalable and
+    # not one declares both. Declaring both puts the seat locators where no
+    # Para can reach them: the item lands in the catalogue, renders correctly,
+    # and nobody ever sits on it. Stretching wins, being the commoner of the
+    # two, and a scene saved before this rule cannot smuggle both through.
+    if scalable and resizable:
+        scalable = False
+
     root = root_guid or sidecar.guid_for("paraforge", "root", mesh_guid)
     lines = [
         "ItemObject:" + root,
@@ -318,6 +327,21 @@ def resolve_seat(settings, tag_guid):
     if choice == "AUTO":
         return catalog.tag_slot_guid(tag_guid)
     return catalog.slot_prefab_guid(choice)
+
+
+def seat_choice(settings):
+    """(template name, does it seat a Para) for the current settings.
+
+    The same answer the export will act on, so the viewport guide and the
+    checklist cannot disagree with what is written to the prefab.
+    """
+    choice = getattr(settings, "seat_template", "AUTO")
+    if choice == "NONE":
+        return "", False
+    if choice != "AUTO":
+        return choice, catalog.template_seats(choice)
+    name = catalog.slot_template(getattr(settings, "catalog_tag", "") or "")
+    return name, catalog.template_seats(name)
 
 
 def resolve_swatch(settings):

@@ -380,6 +380,25 @@ MAX_SCALE = 10.0
 # write MaxSizes and only 47 declare HasMaxSize, which means 92 of them carry a
 # ceiling the game never applies.
 
+# Where a Para's backside lands. Measured on 22 shipped chair meshes, by
+# weighting every upward facing triangle between 15% and 75% of the item's
+# height by its area: median 0.445 m, from 0.316 on a low Adirondack to 0.520
+# on a camping chair, and 47% of the item's own height.
+#
+# A seat is only usable if the mesh actually offers a surface near that height,
+# facing the way the template expects. Nothing enforces it, but seeing it in
+# the viewport costs nothing and saves a game restart.
+SEAT_HEIGHT = 0.445
+SEAT_HEIGHT_MIN = 0.316
+SEAT_HEIGHT_MAX = 0.520
+
+#: Fraction of the item's height the seat surface usually sits at.
+SEAT_HEIGHT_RATIO = 0.47
+
+#: Tags whose items are meant to be sat on, by name, for the viewport guide.
+SEATING_TAGS = ("Chairs", "Armchairs", "OfficeChairs", "Couches", "Benches",
+                "Seating", "Bedding")
+
 #: Stretch limits, as a factor of the item's own exported size. Measured over
 #: the 650 resizable prefabs, the median MinSizes is 0.45 of the item's Size
 #: and the median MaxSizes 2.14. Widened for the same reason as the scale.

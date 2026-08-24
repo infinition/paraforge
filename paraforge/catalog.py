@@ -1812,6 +1812,20 @@ def seats_a_para(guid):
     return slot_template(guid) in SEATING_TEMPLATES
 
 
+# The six above are the ones tags attach. A modder may pick any of the 29 by
+# hand, and 22 of those are chair, couch, bench, bed, crib or toilet variants
+# that also put a Para on the item. The rest, tables, desks, counters, ovens,
+# microwaves and the barbecue, put a Para next to it instead, where the height
+# of the item's own surfaces means nothing.
+SEATING_WORDS = ("chair", "couch", "bench", "bed", "crib", "toilet")
+
+
+def template_seats(name):
+    """True when the template puts a Para on the item rather than beside it."""
+    lowered = (name or "").lower()
+    return any(word in lowered for word in SEATING_WORDS)
+
+
 def tags_with_slots():
     """[(guid, name, template)] for every tag that attaches something."""
     out = []

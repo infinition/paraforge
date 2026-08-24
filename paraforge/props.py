@@ -94,6 +94,26 @@ def _seat_items(self, context):
     return _SEAT_ITEMS
 
 
+def _on_scalable(self, context):
+    """The two resize widgets are alternatives, never both at once.
+
+    Counted across the 353 shipped items that carry a place to sit: 146 declare
+    IsResizable, 27 declare IsScalable, 180 declare neither, and not one
+    declares both. Declaring both puts the seat locators somewhere a Para
+    cannot reach, so the item is in the catalogue, renders, and nobody ever
+    sits on it.
+    """
+    if self.scalable and self.resizable:
+        self.resizable = False
+    _invalidate(self, context)
+
+
+def _on_resizable(self, context):
+    if self.resizable and self.scalable:
+        self.scalable = False
+    _invalidate(self, context)
+
+
 def _invalidate(self, context):
     from . import cache
 
@@ -314,10 +334,11 @@ class ParaForgeSettings(PropertyGroup):
             "Put the scaling handle on the item once placed, which multiplies "
             "the whole item at once. Without it the game creates no handle and "
             "the item is stuck at the size it was exported. 1114 of the game's "
-            "2434 items declare it"
+            "2434 items declare it. Excludes the per axis stretch: no "
+            "shipped item carries both"
         ),
         default=True,
-        update=_invalidate,
+        update=_on_scalable,
     )
 
     min_scale: FloatProperty(
@@ -351,10 +372,12 @@ class ParaForgeSettings(PropertyGroup):
             "The game's other handle, and a different thing: it stretches the "
             "item along the axes you allow instead of multiplying it whole, so "
             "a shelf can be made wider without becoming taller. 650 of the "
-            "game's items declare it, and 133 carry both"
+            "game's items declare it. Excludes scaling: of the 353 shipped "
+            "items with a place to sit, 146 stretch, 27 scale, and none do "
+            "both"
         ),
         default=False,
-        update=_invalidate,
+        update=_on_resizable,
     )
 
     resizable_axes: BoolVectorProperty(
@@ -558,6 +581,7 @@ class ParaForgeSettings(PropertyGroup):
     show_grid: BoolProperty(name=_("Grid"), default=True, update=_redraw)
     show_bounds: BoolProperty(name=_("Bounding box"), default=True, update=_redraw)
     show_arrow: BoolProperty(name=_("Facing arrow"), default=True, update=_redraw)
+    show_seat: BoolProperty(name=_("Seat guide"), default=True, update=_redraw)
 
     grid_extent: IntProperty(
         name=_("Grid tiles"),

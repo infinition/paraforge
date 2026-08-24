@@ -191,3 +191,59 @@ def uv_layer_count(objects):
             continue
         counts.append(len(obj.data.uv_layers))
     return counts
+
+
+def seat_height(objects, depsgraph=None):
+    """Where the mesh actually offers something to sit on, in metres.
+
+    Every upward facing triangle between 15% and 75% of the item's height,
+    weighted by its area, measured from the item's own base. That is exactly
+    how the game's 22 shipped chairs were measured, so the number here is
+    comparable with theirs: median 0.445 m, none below 0.316 or above 0.520.
+
+    Returns None when the mesh offers no horizontal surface in that band, which
+    is itself the answer: there is nowhere to sit.
+    """
+    heights = []
+    areas = []
+    measurement = measure(objects, depsgraph)
+    if measurement.empty:
+        return None
+    base = float(measurement.min[2])
+    span = float(measurement.size[2])
+    if span <= 1e-6:
+        return None
+
+    for obj in objects:
+        if getattr(obj, "type", None) != "MESH":
+            continue
+        evaluated = obj.evaluated_get(depsgraph) if depsgraph else obj
+        try:
+            mesh = evaluated.to_mesh()
+        except (RuntimeError, AttributeError):
+            continue
+        if mesh is None:
+            continue
+        try:
+            # Blender computes these lazily, and older builds need the ask.
+            if hasattr(mesh, "calc_loop_triangles"):
+                mesh.calc_loop_triangles()
+            matrix = np.array(evaluated.matrix_world, dtype=np.float64)
+            rotation = matrix[:3, :3]
+            for triangle in mesh.loop_triangles:
+                normal = rotation @ np.array(triangle.normal, dtype=np.float64)
+                if normal[2] < 0.85:
+                    continue
+                centre = rotation @ np.array(triangle.center, dtype=np.float64)
+                centre = centre + matrix[:3, 3]
+                fraction = (float(centre[2]) - base) / span
+                if not 0.15 <= fraction <= 0.75:
+                    continue
+                heights.append(float(centre[2]) - base)
+                areas.append(float(triangle.area))
+        finally:
+            evaluated.to_mesh_clear()
+
+    if not heights:
+        return None
+    return float(np.average(np.array(heights), weights=np.array(areas)))

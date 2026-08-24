@@ -9,6 +9,50 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.27.0]
+
+### Fixed
+
+- **A chair that declares both resize widgets seats nobody.** Measured on game
+  build 0.1.6b: of the 353 shipped items that carry a place to sit, 146 declare
+  `IsResizable`, 27 declare `IsScalable`, 180 declare neither, and not one
+  declares both. Declaring both moves the seat locators somewhere no Para can
+  path to, so the item appears in the catalogue, renders correctly, and is
+  walked past forever with no error anywhere.
+
+  Confirmed by experiment rather than inferred: stripping both flags from a
+  custom chair made it usable immediately, and putting them back broke it
+  again. The two toggles now switch each other off, the prefab writer refuses
+  to write both even if a scene saved before this rule asks for it, and the
+  panel says so under the pair.
+
+### Added
+
+- **Seat guide.** Nothing in a mesh tells the game where to sit: the slot
+  template does, and it holds the Seat and the ButtLocator at heights it was
+  authored for. A mesh with no surface there still seats a Para, floating above
+  the cushion or sunk into it, and no error is ever raised.
+
+  So the seat is now measured the way the game's own chairs were, by weighting
+  every upward facing triangle between 15% and 75% of the item's height by its
+  area. Across the 22 shipped chair meshes that gives:
+
+  ```
+  median          0.445 m,  47% of the item's height
+  lowest          0.316 m   SeatingChairOutdoorAdirondac
+  highest         0.520 m   SeatingChairCamping
+  ```
+
+  The viewport draws that band as two faint rectangles over the item's
+  footprint, the height your mesh actually offers as a solid one, green inside
+  the band and amber outside, and an arrow at seat height showing which way a
+  Para will face: along Y+, the same direction the big green floor arrow
+  points, so the backrest belongs at the far end. The figure also appears as a
+  checklist line and under the seat template dropdown.
+
+  It is a warning, never a block. The range is what the game's own furniture
+  does, not a rule the engine enforces.
+
 ## [0.26.0]
 
 ### Added

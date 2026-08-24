@@ -152,6 +152,7 @@ where a fix exists.
 | N-gons | They triangulate on export and can shade badly |
 | Texture naming | Every image classified into a role the game knows |
 | Texture size | Nothing in the game is above 2K |
+| Seat height | For items a Para sits on, against the range the game's own chairs use |
 | Target mod folder | Exists, ends in `.mod`, and is not inside the game |
 
 Origin rules, from the wiki:
@@ -263,9 +264,10 @@ never heard of, and re-serialising it would drop them in silence.
 
 ### Two handles, and they are not the same thing
 
-A placed item can carry either of the game's two resize widgets, both, or
-neither. The game keeps them apart itself, in `CancelResizeOrScaleItem`, and
-133 of its prefabs declare both.
+A placed item can carry either of the game's two resize widgets, or neither.
+The game keeps them apart itself, in `CancelResizeOrScaleItem`, and 133 of its
+prefabs declare both, but never one a Para sits on: see
+[Both widgets on a chair](#both-widgets-on-a-chair-and-nobody-sits-on-it).
 
 **Scaling** multiplies the whole item at once. It needs `IsScalable` on the
 root, and the bounds are factors:
@@ -308,6 +310,43 @@ prefabs that set them, `MinScale` runs 0.25 to 1.75 and `MaxScale` 0.5 to 10,
 because each is authored for a purpose. A mod item is handed to someone who
 wants it tiny on a shelf and huge in the garden, so the ceiling is the game's
 own maximum and the floor goes below anything it ships.
+
+### Both widgets on a chair, and nobody sits on it
+
+Of the 353 shipped items that carry a place to sit, 146 declare `IsResizable`,
+27 declare `IsScalable`, 180 declare neither, and not one declares both.
+
+Declaring both puts the seat locators somewhere no Para can path to. The item
+appears in the catalogue, renders correctly, accepts the sit command, and the
+Para walks to a different chair. Nothing is logged, because as far as the game
+is concerned nothing failed.
+
+Confirmed by experiment rather than inferred from the counts: stripping both
+flags from a custom chair made it usable immediately, and putting them back
+broke it again. ParaForge switches one toggle off when you turn the other on,
+and refuses to write both even if a scene saved before this rule asks for it.
+
+### Where the seat is
+
+Nothing in a mesh tells the game where to sit. The slot template does, and it
+holds the Seat and the ButtLocator at heights it was authored for. A mesh with
+no surface at that height still seats a Para, floating above the cushion or
+sunk into it, and no error is raised anywhere.
+
+Measured across the 22 shipped chair meshes, by weighting every upward facing
+triangle between 15% and 75% of the item's height by its area:
+
+| | Seat height | Share of the item's height |
+|---|---|---|
+| Median | 0.445 m | 47% |
+| Lowest, `SeatingChairOutdoorAdirondac` | 0.316 m | 34% |
+| Highest, `SeatingChairCamping` | 0.520 m | 47% |
+
+ParaForge measures your mesh the same way and draws that band in the viewport,
+with an arrow at seat height showing which way a Para will face: along Y+, the
+same direction the floor arrow points, so the backrest belongs at the far end.
+It is a warning, never a block. The range is what the game's own furniture
+does, not a rule the engine enforces.
 
 ## What the wiki does not say, and the game does
 

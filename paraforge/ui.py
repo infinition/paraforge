@@ -68,13 +68,13 @@ class PARAFORGE_PT_main(_Base, Panel):
         # Actions first. They are what the panel is for, and burying them
         # under a dozen check boxes means never scrolling far enough to find
         # the one that finishes the job.
-        self._draw_target(context, layout, settings)
+        self._draw_target(context, layout, settings, report)
         layout.separator()
         self._draw_actions(context, layout, settings, report)
         layout.separator()
         self._draw_checklist(context, layout, settings, report)
 
-    def _draw_target(self, context, layout, settings):
+    def _draw_target(self, context, layout, settings, report):
         root = prefs.mods_root(context)
         box = layout.box()
 
@@ -129,6 +129,24 @@ class PARAFORGE_PT_main(_Base, Panel):
         # The tag names a default seat, the item overrides it. Left on
         # automatic this follows the tag, which is what most items want.
         column.prop(settings, "seat_template", text="", icon="OUTLINER_OB_ARMATURE")
+
+        # Where the Para will land, next to the choice that decides it. The
+        # figure comes from the checklist so the panel and the viewport guide
+        # can never say different things.
+        seat = next((c for c in report.checks if c.key == "seat"), None)             if report is not None else None
+        if seat is not None:
+            note = column.row()
+            note.scale_y = 0.7
+            note.alert = seat.status != validate.OK
+            if report.seat_height is None:
+                text = _("Nothing to sit on")
+            else:
+                text = _("Sits at {0:.3f} m, facing the arrow",
+                         report.seat_height)
+            note.label(text=text,
+                       icon="CHECKMARK" if seat.status == validate.OK
+                       else "ERROR")
+
         column.prop(settings, "asset_name", text="", icon="OUTLINER_OB_MESH")
 
     def _draw_checklist(self, context, layout, settings, report):
@@ -498,6 +516,9 @@ class PARAFORGE_PT_options(_Base, Panel):
         # multiplies the whole item, stretching moves one axis at a time.
         box.separator()
         box.prop(settings, "resizable", text=_("Stretchable per axis"))
+        note = box.row()
+        note.scale_y = 0.7
+        note.label(text=_("One or the other, never both"), icon="INFO")
         column = box.column(align=True)
         column.enabled = settings.resizable
         row = column.row(align=True)
@@ -555,6 +576,7 @@ class PARAFORGE_PT_viewport(_Base, Panel):
         sub.prop(settings, "show_grid", text=_("Grid"))
         sub.prop(settings, "show_bounds", text=_("Bounding box"))
         sub.prop(settings, "show_arrow", text=_("Facing arrow"))
+        sub.prop(settings, "show_seat", text=_("Seat guide"))
         sub.prop(settings, "grid_extent", text=_("Grid tiles"))
 
         layout.separator()

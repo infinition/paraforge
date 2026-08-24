@@ -149,6 +149,7 @@ corrige quand une correction existe.
 | N-gons | Ils sont triangulés à l'export et peuvent mal ombrer |
 | Nommage des textures | Chaque image classée dans un rôle que le jeu connaît |
 | Taille des textures | Rien dans le jeu ne dépasse 2K |
+| Hauteur d'assise | Pour les objets où un Para s'assoit, contre la plage des chaises du jeu |
 | Dossier mod cible | Existe, finit par `.mod`, et n'est pas dans le jeu |
 
 Règles d'origine, tirées du wiki :
@@ -263,8 +264,10 @@ l'extension ne connaît pas, et les réécrire les perdrait en silence.
 ### Deux poignées, et ce ne sont pas la même chose
 
 Un objet posé peut porter l'un des deux widgets de redimensionnement du jeu,
-les deux, ou aucun. Le jeu les distingue lui-même, dans
-`CancelResizeOrScaleItem`, et 133 de ses prefabs déclarent les deux.
+ou aucun. Le jeu les distingue lui-même, dans `CancelResizeOrScaleItem`, et 133
+de ses prefabs déclarent les deux, mais jamais un objet sur lequel un Para
+s'assoit : voir [Les deux widgets sur une
+chaise](#les-deux-widgets-sur-une-chaise-et-personne-ne-sy-assoit).
 
 **La mise à l'échelle** multiplie l'objet entier d'un coup. Elle demande
 `IsScalable` sur la racine, et les bornes sont des facteurs :
@@ -310,6 +313,46 @@ Les plages écrites par ParaForge sont plus larges que celles du jeu. Sur les
 à quelqu'un qui le veut minuscule sur une étagère et immense dans le jardin :
 le plafond est donc le maximum du jeu, et le plancher descend sous tout ce
 qu'il livre.
+
+### Les deux widgets sur une chaise, et personne ne s'y assoit
+
+Sur les 353 objets livrés qui portent une place assise, 146 déclarent
+`IsResizable`, 27 déclarent `IsScalable`, 180 n'en déclarent aucun, et pas un
+seul ne déclare les deux.
+
+Déclarer les deux place les locators d'assise là où aucun Para ne peut aller.
+L'objet apparaît au catalogue, s'affiche correctement, accepte l'ordre de
+s'asseoir, et le Para part vers une autre chaise. Rien n'est journalisé, parce
+que du point de vue du jeu rien n'a échoué.
+
+Confirmé par l'expérience et non déduit des comptages : retirer les deux drapeaux
+d'une chaise custom l'a rendue utilisable immédiatement, les remettre l'a
+cassée de nouveau. ParaForge éteint un interrupteur quand tu allumes l'autre,
+et refuse d'écrire les deux même si une scène enregistrée avant cette règle le
+demande.
+
+### Où se trouve l'assise
+
+Rien dans le mesh ne dit au jeu où s'asseoir. C'est le template de slot qui le
+dit, et il porte le Seat et le ButtLocator à des hauteurs pour lesquelles il a
+été fait. Un mesh sans surface à cette hauteur assoit quand même un Para,
+flottant au-dessus du coussin ou enfoncé dedans, et aucune erreur n'est levée
+nulle part.
+
+Mesuré sur les 22 meshes de chaises livrés, en pondérant par leur aire toutes
+les faces tournées vers le haut entre 15% et 75% de la hauteur de l'objet :
+
+| | Hauteur d'assise | Part de la hauteur de l'objet |
+|---|---|---|
+| Médiane | 0,445 m | 47% |
+| Minimum, `SeatingChairOutdoorAdirondac` | 0,316 m | 34% |
+| Maximum, `SeatingChairCamping` | 0,520 m | 47% |
+
+ParaForge mesure ton mesh de la même façon et dessine cette plage dans la vue,
+avec une flèche à hauteur d'assise indiquant vers où le Para regardera : le long
+de Y+, la même direction que la flèche au sol, donc le dossier va à l'autre
+bout. C'est un avertissement, jamais un blocage. Cette plage est ce que fait le
+mobilier du jeu, pas une règle imposée par le moteur.
 
 ## Ce que le wiki ne dit pas, et que le jeu dit
 
