@@ -1664,6 +1664,67 @@ def test_seat_height():
           "and choosing no seat stops the question being asked at all")
 
 
+def test_backrest_side():
+    """Which way round the chair is, which nothing in the game will tell you.
+
+    A Para sits facing Y+, along the floor arrow. That was stated backwards
+    once from the template's locator coordinates, and is now measured instead:
+    imported into Blender, 43 of the game's 48 chairs and armchairs put their
+    backrest on the Y- side.
+    """
+    section("Which way round")
+    from paraforge import catalog as cat
+
+    fresh_scene()
+    chair = make_chair(seat_z=0.45)
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    offset = geo.backrest_side([chair], depsgraph)
+    check(offset is not None and offset < -spec.BACKREST_MIN_OFFSET,
+          "the test chair's back is on the Y- side, like the game's",
+          "" if offset is None else "{0:+.3f}".format(offset))
+
+    settings = props.settings(bpy.context)
+    settings.asset_name = "RightWayRound"
+    settings.catalog_tag = cat.BY_NAME["Chairs"]
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "backrest") == validate.OK,
+          "so the checklist passes it", detail_of(report, "backrest"))
+
+    # Half a turn, and the Para would sit facing their own backrest.
+    bpy.ops.object.select_all(action="DESELECT")
+    chair.select_set(True)
+    bpy.context.view_layer.objects.active = chair
+    bpy.ops.paraforge.rotate_to_face(steps="180")
+    offset = geo.backrest_side([chair], bpy.context.evaluated_depsgraph_get())
+    check(offset is not None and offset > spec.BACKREST_MIN_OFFSET,
+          "turned around, the back is measured on the Y+ side",
+          "" if offset is None else "{0:+.3f}".format(offset))
+
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "backrest") == validate.WARN,
+          "and the checklist says so, which the game never would",
+          detail_of(report, "backrest"))
+    check(any(c.fix == "paraforge.rotate_to_face"
+              for c in report.checks if c.key == "backrest"),
+          "with the half turn on a button")
+
+    # A pouf has no back, so there is nothing to be the wrong way round.
+    fresh_scene()
+    make_cube("Ottoman", size=0.9)
+    settings = props.settings(bpy.context)
+    settings.asset_name = "PoufNoBack"
+    settings.catalog_tag = cat.BY_NAME["Chairs"]
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "backrest") == validate.OK,
+          "a pouf has no back, so the check stays quiet",
+          detail_of(report, "backrest"))
+
+    settings.catalog_tag = cat.BY_NAME["Build"]
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "backrest") is None,
+          "and decoration is never asked which way round it is")
+
+
 def test_asset_name_guard():
     """A borrowed name is how one item silently replaces another."""
     section("Asset name")
@@ -2086,6 +2147,7 @@ def main():
         test_two_items_share_nothing()
         test_usable_by_a_para()
         test_seat_height()
+        test_backrest_side()
         test_asset_name_guard()
         test_shared_surface_fallback()
         test_repair_stale_entry()

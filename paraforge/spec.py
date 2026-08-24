@@ -427,6 +427,26 @@ SEAT_CLUSTER = 0.04
 # Below this there is no surface, only a sliver: a chair rail or a screw head.
 SEAT_MIN_AREA = 0.02
 
+# Which side of the item the backrest goes on. Measured by importing the
+# game's 48 chairs and armchairs and asking where the geometry in the top
+# third of each one sits, against the middle of the item, in units of its own
+# depth:
+#
+#   43 put the backrest on the Y- side, from -0.10 to -0.47
+#    4 are too symmetrical to say
+#    1 disagrees
+#
+# So a Para sits facing Y+, along the floor arrow, with the backrest behind
+# them. Build one the other way round and it works, seats a Para, and sits
+# them facing their own backrest.
+BACKREST_SIDE = -1.0
+
+# Below this the item has no back worth speaking of: a stool, a pouf, a bench.
+BACKREST_MIN_OFFSET = 0.03
+
+# Geometry above this fraction of the item's height is the back, not the seat.
+BACKREST_BAND = 0.70
+
 
 #: Stretch limits, as a factor of the item's own exported size. Measured over
 #: the 650 resizable prefabs, the median MinSizes is 0.45 of the item's Size

@@ -102,6 +102,7 @@ def run(context, settings):
     _check_usable(settings, report)
     _check_seat(objects, settings, measurement, depsgraph, report)
     _check_handles(settings, report)
+    _check_backrest(objects, settings, depsgraph, report)
     _check_color_zones(objects, settings, report)
     _check_uvs(objects, report)
     _check_uv_transform(objects, report)
@@ -281,6 +282,49 @@ def _check_usable(settings, report):
                  "under Chairs, Armchairs, OfficeChairs, Couches or Benches"))
 
 
+def _check_backrest(objects, settings, depsgraph, report):
+    """Which way round the item is, for anything with a back to it.
+
+    A Para sits facing Y+, along the floor arrow. Not reasoned out of the
+    template's locators, which is how this got stated backwards once already,
+    but measured: imported into Blender, 43 of the game's 48 chairs and
+    armchairs put their backrest on the Y- side, 4 are too symmetrical to say
+    and 1 disagrees.
+
+    Build one the other way round and nothing fails. The item is in the
+    catalogue, a Para walks over, sits down, and faces their own backrest.
+    That is worth catching in Blender, where a half turn fixes it.
+
+    A stool, a pouf and a bench have no back, so there is nothing to be wrong
+    about and the check stays quiet.
+    """
+    template, seats = item.seat_choice(settings)
+    if not seats:
+        return
+
+    offset = geo.backrest_side(objects, depsgraph)
+    label = _("Which way round")
+    if offset is None or abs(offset) < spec.BACKREST_MIN_OFFSET:
+        report.add("backrest", label, OK,
+                   _("Nothing stands above the seat, so there is no back to "
+                     "put the wrong way. A Para sits facing Y+, along the "
+                     "arrow"))
+        return
+
+    if offset < 0.0:
+        report.add("backrest", label, OK, _(
+            "The back is on the Y- side, where 43 of the game's 48 chairs "
+            "put theirs. A Para sits facing the arrow"))
+        return
+
+    report.add(
+        "backrest", label, WARN,
+        _("The back is on the Y+ side, facing the arrow. A Para will sit "
+          "down and face their own backrest. Turn the item half a turn"),
+        fix="paraforge.rotate_to_face", fix_label=_("Turn it around"),
+    )
+
+
 def _check_handles(settings, report):
     """The resize widgets, against what the item is for.
 
@@ -333,11 +377,7 @@ def _check_seat(objects, settings, measurement, depsgraph, report):
     sits. Inside it this is information, because 0.45 against 0.65 is a
     decision about what the item is, not a mistake.
 
-    Facing cannot be measured, only stated, and it is the opposite of what the
-    floor arrow says. ChairSlotAndLocator puts the ButtLocator at Z -0.28 and
-    the front feet at Z +0.42, so the Para faces the item's +Z, and the export
-    maps Blender +Y onto the file's -Z. The knees therefore point at Blender
-    -Y and the backrest belongs on the +Y side, where the floor arrow points.
+    Which way they face is a separate question, answered by _check_backrest.
     """
     template, seats = item.seat_choice(settings)
     if not seats or measurement.empty:

@@ -153,6 +153,7 @@ where a fix exists.
 | Texture naming | Every image classified into a role the game knows |
 | Texture size | Nothing in the game is above 2K |
 | Seat height | For items a Para sits on, against the heights the game's own furniture uses |
+| Which way round | The backrest on the side the game's 43 chairs put theirs, with a half turn to fix it |
 | Target mod folder | Exists, ends in `.mod`, and is not inside the game |
 
 Origin rules, from the wiki:
@@ -372,16 +373,27 @@ ParaForge measures your mesh the same way, names which of the two it matches,
 and draws both heights in the viewport. It only warns outside 0.20 to 0.75,
 where no shipped item sits, and never blocks.
 
-### And a Para sits with their back to the arrow
+### And a Para sits facing the arrow, with the backrest behind
 
-Not along it. `ChairSlotAndLocator` puts the `ButtLocator` at Z -0.28 and the
-front feet at Z +0.42, so a Para faces the item's +Z, and export maps Blender
-+Y onto the file's -Z. The knees land at Blender -Y.
+Measured rather than reasoned, because reasoning it out of the template's
+locator coordinates got the answer backwards once. The game's own chairs,
+imported into Blender, asked where the geometry in the top third of each one
+sits against the middle of the item:
 
-So the backrest belongs on the +Y side, where the floor arrow points, and the
-viewport draws a second arrow at seat height pointing the other way to say so.
-Build a chair to the floor arrow instead and it works, seats a Para, and sits
-them facing their own backrest.
+| | Chairs and armchairs |
+|---|---|
+| Backrest on the Y- side | 43 |
+| Too symmetrical to say | 4 |
+| Backrest on the Y+ side | 1 |
+
+So the knees go at the arrow and the backrest behind it. The viewport draws a
+second arrow at seat height to say so, and the checklist measures your own
+mesh the same way, warning with a half turn on a button when the back is on
+the wrong side. Nothing in the game will tell you: the item lands in the
+catalogue, a Para walks over, sits down, and faces their own backrest.
+
+The floor arrow is a separate thing and is unchanged. It is the item's front,
+and it is what the catalogue thumbnail and the placement rotation use.
 
 ## What the wiki does not say, and the game does
 

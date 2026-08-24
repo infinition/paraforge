@@ -784,8 +784,22 @@ FR = {
         "Aucune surface plane dégagée du sol, donc rien où s'asseoir. {0} y "
         "placera quand même un Para, en plein air",
     "Nothing to sit on": "Rien où s'asseoir",
-    "Sits at {0:.3f} m, back to the arrow":
-        "Assise à {0:.3f} m, dos à la flèche",
+    "Sits at {0:.3f} m, facing the arrow":
+        "Assise à {0:.3f} m, face à la flèche",
+    "Which way round": "Sens de l'objet",
+    "Turn it around": "Faire demi-tour",
+    "Nothing stands above the seat, so there is no back to put the wrong way. "
+    "A Para sits facing Y+, along the arrow":
+        "Rien ne dépasse au-dessus de l'assise, il n'y a donc pas de dossier à "
+        "mettre à l'envers. Un Para s'assoit vers Y+, dans le sens de la flèche",
+    "The back is on the Y- side, where 43 of the game's 48 chairs put theirs. "
+    "A Para sits facing the arrow":
+        "Le dossier est du côté Y-, là où 43 des 48 chaises du jeu mettent le "
+        "leur. Un Para s'assoit face à la flèche",
+    "The back is on the Y+ side, facing the arrow. A Para will sit down and "
+    "face their own backrest. Turn the item half a turn":
+        "Le dossier est du côté Y+, face à la flèche. Un Para s'assoira et "
+        "regardera son propre dossier. Fais faire un demi-tour à l'objet",
     "Grid tiles": "Tuiles de grille",
     "Checklist corner": "Coin de la checklist",
     "Top left": "En haut à gauche",

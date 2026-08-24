@@ -9,6 +9,48 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.30.0]
+
+### Fixed
+
+- **A Para sits facing Y+, along the floor arrow.** 0.29.0 said the opposite,
+  reasoned out of `ChairSlotAndLocator`, whose seat children put the
+  `ButtLocator` at Z -0.28 and the front feet at Z +0.42. The reasoning needed
+  the sign of the Blender to file axis mapping, and that sign was wrong.
+
+  Measured instead of reasoned, by importing the game's own chairs into
+  Blender and asking where the geometry in the top third of each one sits:
+
+  ```
+  48 chairs and armchairs measured
+     43 put the backrest on the Y- side, from -0.10 to -0.47
+      4 too symmetrical to say
+      1 disagrees
+  ```
+
+  So the backrest goes behind the arrow, the knees at the arrow, which is what
+  0.27.0 said before 0.29.0 broke it. The seat height arrow points along Y+
+  again.
+
+  The floor arrow is unchanged and was never in question: it is the item's
+  front, and it is what the catalogue thumbnail and the placement rotation
+  use.
+
+### Added
+
+- **Which way round.** The arrow says which way a Para will face; this says
+  which way the item actually is, which is the half of it you cannot check by
+  eye once the model is symmetrical enough to fool you.
+
+  Geometry in the top third of the item is the back. If its centre sits on the
+  Y- side, the item agrees with the game's 43 chairs and the check passes. On
+  the Y+ side it warns, with a half turn on a button, because nothing in the
+  game will ever tell you: the item is in the catalogue, a Para walks over,
+  sits down, and faces their own backrest.
+
+  A stool, a pouf and a bench have nothing standing above the seat, so there
+  is no back to be wrong and the check stays quiet.
+
 ## [0.29.0]
 
 ### Fixed

@@ -150,6 +150,7 @@ corrige quand une correction existe.
 | Nommage des textures | Chaque image classée dans un rôle que le jeu connaît |
 | Taille des textures | Rien dans le jeu ne dépasse 2K |
 | Hauteur d'assise | Pour les objets où un Para s'assoit, contre les hauteurs du mobilier du jeu |
+| Sens de l'objet | Le dossier du côté où 43 chaises du jeu mettent le leur, avec un demi-tour pour corriger |
 | Dossier mod cible | Existe, finit par `.mod`, et n'est pas dans le jeu |
 
 Règles d'origine, tirées du wiki :
@@ -377,17 +378,28 @@ ParaForge mesure ton mesh de la même façon, nomme laquelle des deux hauteurs i
 approche, et dessine les deux dans la vue. Il n'avertit qu'en dehors de 0,20 à
 0,75, où aucun objet livré ne s'assoit, et ne bloque jamais.
 
-### Et un Para s'assoit dos à la flèche
+### Et un Para s'assoit face à la flèche, dossier derrière
 
-Pas dans son sens. `ChairSlotAndLocator` place le `ButtLocator` en Z -0,28 et
-les pieds avant en Z +0,42 : le Para regarde donc vers le +Z de l'objet, et
-l'export fait correspondre le +Y de Blender au -Z du fichier. Les genoux
-atterrissent en -Y dans Blender.
+Mesuré et non raisonné, parce que le déduire des coordonnées des locators du
+template a donné la réponse à l'envers une fois. Les chaises du jeu, importées
+dans Blender, avec la question : de quel côté se trouve la géométrie du tiers
+supérieur, par rapport au milieu de l'objet ?
 
-Le dossier va donc du côté +Y, là où pointe la flèche au sol, et la vue dessine
-une seconde flèche à hauteur d'assise dans l'autre sens pour le dire. Construis
-une chaise dans le sens de la flèche au sol et elle marche, assoit un Para, et
-l'assoit face à son propre dossier.
+| | Chaises et fauteuils |
+|---|---|
+| Dossier côté Y- | 43 |
+| Trop symétrique pour trancher | 4 |
+| Dossier côté Y+ | 1 |
+
+Les genoux vont donc dans le sens de la flèche et le dossier derrière. La vue
+dessine une seconde flèche à hauteur d'assise pour le dire, et la checklist
+mesure ton propre mesh de la même façon, en avertissant avec un demi-tour sur
+un bouton quand le dossier est du mauvais côté. Rien dans le jeu ne te le dira
+: l'objet arrive au catalogue, un Para vient, s'assoit, et regarde son propre
+dossier.
+
+La flèche au sol est autre chose et ne change pas. C'est l'avant de l'objet, et
+c'est elle qu'utilisent la miniature du catalogue et la rotation de pose.
 
 ## Ce que le wiki ne dit pas, et que le jeu dit
 

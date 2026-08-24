@@ -141,7 +141,7 @@ class PARAFORGE_PT_main(_Base, Panel):
             if report.seat_height is None:
                 text = _("Nothing to sit on")
             else:
-                text = _("Sits at {0:.3f} m, back to the arrow",
+                text = _("Sits at {0:.3f} m, facing the arrow",
                          report.seat_height)
             note.label(text=text,
                        icon="CHECKMARK" if seat.status == validate.OK

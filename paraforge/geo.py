@@ -268,3 +268,49 @@ def seat_height(objects, depsgraph=None):
     if area < spec.SEAT_MIN_AREA:
         return None, area
     return float(np.average(heights[near], weights=areas[near])), area
+
+
+def backrest_side(objects, depsgraph=None):
+    """Which side of Y the item's back stands on, or None when it has none.
+
+    Returns the offset of the geometry in the top third of the item against
+    the middle of the item, in units of the item's own depth, so chairs of
+    different sizes are comparable. Negative means the back is on the Y- side,
+    which is where 43 of the game's 48 chairs put theirs.
+
+    A stool, a pouf and a bench have nothing standing up there and come back
+    as None, which is the honest answer rather than a coin toss.
+    """
+    measurement = measure(objects, depsgraph)
+    if measurement.empty:
+        return None
+    low, high = measurement.min, measurement.max
+    span = high - low
+    if span[2] < 0.05 or span[1] < 1e-4:
+        return None
+
+    tall = []
+    for obj in objects:
+        if getattr(obj, "type", None) != "MESH":
+            continue
+        coords, handle = _world_coords(obj, depsgraph)
+        if handle is None:
+            continue
+        evaluated, _mesh = handle
+        try:
+            if coords is not None and len(coords):
+                keep = coords[:, 2] > low[2] + span[2] * spec.BACKREST_BAND
+                if keep.any():
+                    tall.append(coords[keep])
+        finally:
+            evaluated.to_mesh_clear()
+
+    if not tall:
+        return None
+    tall = np.concatenate(tall)
+    # Four is a face. A real asset has hundreds up there, but a box with a
+    # slab for a back has exactly eight, and it is still a back.
+    if len(tall) < 4:
+        return None
+    middle = (low[1] + high[1]) * 0.5
+    return float((tall[:, 1].mean() - middle) / span[1])
