@@ -465,6 +465,29 @@ BACKREST_MIN_OFFSET = 0.03
 # Geometry above this fraction of the item's height is the back, not the seat.
 BACKREST_BAND = 0.70
 
+# How tall a Para is, measured by assembling the game's own body meshes, which
+# already carry their world position: feet on the floor, top of the skull at
+# 1.702 m.
+#
+#   HumanFoot0Left   0.000 to 0.119
+#   HumanBottom      0.390 to 0.962
+#   HumanTop         0.918 to 1.454
+#   HumanHead        1.427 to 1.702
+#
+# A person, not a hero. Anything built against a 1.80 reference comes out a
+# little large next to the furniture the game ships.
+PARA_HEIGHT = 1.702
+
+# The outline, as fractions of that height. The four heights above are
+# measured; the knee and the elbow are ordinary human proportion, since the
+# game splits its legs into separate meshes per shoe and never puts a knee
+# anywhere this could read it.
+PARA_SHOULDER = 1.454 / PARA_HEIGHT
+PARA_CHIN = 1.427 / PARA_HEIGHT
+PARA_HIP = 0.962 / PARA_HEIGHT
+PARA_ANKLE = 0.119 / PARA_HEIGHT
+PARA_KNEE = 0.28
+
 
 #: Stretch limits, as a factor of the item's own exported size. Measured over
 #: the 650 resizable prefabs, the median MinSizes is 0.45 of the item's Size

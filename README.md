@@ -420,6 +420,23 @@ Read out of the `.import` files, which are what the game made of each FBX:
 No Blender export option produces this, because Blender puts the factor on the
 node. ParaForge scales the geometry on a throwaway copy instead.
 
+### A Para is 1.702 m, not 1.80
+
+The game's own body meshes carry their world position, so assembling them
+answers it outright:
+
+| Mesh | From | To |
+|---|---|---|
+| `HumanFoot0Left` | 0.000 | 0.119 |
+| `HumanBottom` | 0.390 | 0.962 |
+| `HumanTop` | 0.918 | 1.454 |
+| `HumanHead` | 1.427 | 1.702 |
+
+Feet on the floor, top of the skull at 1.702. Anything built against a 1.80
+reference comes out a little large next to the furniture the game ships, which
+is why ParaForge can draw a Para sized outline beside the item, proportioned
+on those four numbers.
+
 ### And it leaves turned around
 
 An asymmetric item exported without a half turn arrives with its front where

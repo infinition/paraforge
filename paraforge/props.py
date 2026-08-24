@@ -562,6 +562,21 @@ class ParaForgeSettings(PropertyGroup):
     show_bounds: BoolProperty(name=_("Bounding box"), default=True, update=_redraw)
     show_arrow: BoolProperty(name=_("Facing arrow"), default=True, update=_redraw)
     show_seat: BoolProperty(name=_("Seat guide"), default=True, update=_redraw)
+    show_human: BoolProperty(
+        name=_("Person for scale"),
+        description=_(
+            "A Para sized outline standing next to the item. The game's own "
+            "body meshes assemble to 1.702 m, so that is the default rather "
+            "than a round 1.80"
+        ),
+        default=False, update=_redraw,
+    )
+    human_height: FloatProperty(
+        name=_("Their height"),
+        description=_("In metres. The game's own Para is 1.702"),
+        default=spec.PARA_HEIGHT, min=0.5, max=2.5, step=1, precision=3,
+        update=_redraw,
+    )
 
     grid_extent: IntProperty(
         name=_("Grid tiles"),

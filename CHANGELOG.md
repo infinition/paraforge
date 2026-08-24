@@ -9,6 +9,29 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.32.0]
+
+### Added
+
+- **A person to build against.** A Para sized outline standing next to the
+  item, off by default, under Viewport guides.
+
+  A Para is not 1.80. The game's own body meshes carry their world position
+  and assemble to exactly 1.702 m:
+
+  ```
+  HumanFoot0Left   0.000 to 0.119
+  HumanBottom      0.390 to 0.962
+  HumanTop         0.918 to 1.454
+  HumanHead        1.427 to 1.702
+  ```
+
+  So 1.702 is the default, and the outline is proportioned on those four
+  numbers rather than on a generic figure. The height is editable for anything
+  built to a different reference. It is drawn as a cross, two outlines at
+  right angles, so it stays readable from any camera angle instead of
+  vanishing edge on.
+
 ## [0.31.0]
 
 ### Fixed

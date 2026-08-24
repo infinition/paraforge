@@ -752,6 +752,16 @@ FR = {
     "Bounding box": "Boîte englobante",
     "Facing arrow": "Flèche d'orientation",
     "Seat guide": "Repère d'assise",
+    "Person for scale": "Silhouette d'échelle",
+    "Their height": "Sa taille",
+    "A Para sized outline standing next to the item. The game's own body "
+    "meshes assemble to 1.702 m, so that is the default rather than a round "
+    "1.80":
+        "Une silhouette à la taille d'un Para, debout à côté de l'objet. Les "
+        "meshes de corps du jeu s'assemblent à 1,702 m, c'est donc la valeur "
+        "par défaut plutôt qu'un 1,80 rond",
+    "In metres. The game's own Para is 1.702":
+        "En mètres. Le Para du jeu mesure 1,702",
     "Seat height": "Hauteur d'assise",
     "Resize handles": "Poignées de redimensionnement",
     "A Para sits on this one, so both handles are left out. Resizing moves "

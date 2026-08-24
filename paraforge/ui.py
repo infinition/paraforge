@@ -590,6 +590,10 @@ class PARAFORGE_PT_viewport(_Base, Panel):
         sub.prop(settings, "show_bounds", text=_("Bounding box"))
         sub.prop(settings, "show_arrow", text=_("Facing arrow"))
         sub.prop(settings, "show_seat", text=_("Seat guide"))
+        sub.prop(settings, "show_human", text=_("Person for scale"))
+        row = sub.row()
+        row.enabled = settings.show_human
+        row.prop(settings, "human_height", text=_("Their height"))
         sub.prop(settings, "grid_extent", text=_("Grid tiles"))
 
         layout.separator()

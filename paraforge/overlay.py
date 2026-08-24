@@ -6,6 +6,8 @@ the asset is oriented, centred and sized the way Paralives wants, without
 launching the game.
 """
 
+import math
+
 import blf
 import gpu
 from gpu_extras.batch import batch_for_shader
@@ -43,6 +45,9 @@ SEAT_OK_COLOR = (0.35, 0.85, 0.45, 0.95)
 SEAT_BAD_COLOR = (1.00, 0.72, 0.20, 0.95)
 SEAT_FILL_OK = (0.35, 0.85, 0.45, 0.16)
 SEAT_FILL_BAD = (1.00, 0.72, 0.20, 0.16)
+
+#: The person standing next to the item, for scale. Quiet on purpose.
+HUMAN_COLOR = (0.65, 0.72, 0.85, 0.75)
 
 
 def _get_shader():
@@ -175,6 +180,55 @@ def _draw_seat_guide(measurement, seat_height):
     _draw_lines(_sit_direction(low, high, z), line_color, 2.5)
 
 
+def _human_outline(height):
+    """Half a standing person, as (across, up) pairs in metres.
+
+    Proportioned on the game's own body meshes, which assemble to 1.702 m with
+    the feet on the floor: shoulders at 1.454, chin at 1.427, hips at 0.962,
+    ankles at 0.119. The knee and the elbow are ordinary human proportion,
+    since the game splits its legs into a separate mesh per shoe and never
+    puts a knee anywhere this could read it.
+    """
+    head = (1.0 - spec.PARA_CHIN) * 0.5
+    points = [
+        (0.005, 0.0),
+        (0.055, 0.0),
+        (0.052, spec.PARA_ANKLE),
+        (0.045, spec.PARA_KNEE),
+        (0.058, spec.PARA_HIP - 0.06),
+        (0.075, spec.PARA_HIP),
+        (0.115, spec.PARA_HIP + 0.02),
+        (0.120, spec.PARA_HIP + 0.16),
+        (0.098, spec.PARA_SHOULDER - 0.16),
+        (0.105, spec.PARA_SHOULDER),
+        (0.048, spec.PARA_SHOULDER + 0.005),
+        (0.042, spec.PARA_CHIN),
+    ]
+    # The head, as an arc closing over the top of the neck.
+    steps = 9
+    for index in range(steps + 1):
+        angle = math.pi * 0.5 * (1.0 - index / float(steps))
+        points.append((head * math.cos(angle) * 0.92,
+                       spec.PARA_CHIN + head + head * math.sin(angle)))
+    return [(x * height, z * height) for x, z in points]
+
+
+def _human_lines(origin, height):
+    """The outline as line segments, drawn as a cross so it reads from any angle."""
+    half = _human_outline(height)
+    chain = [(-x, z) for x, z in reversed(half)] + half
+
+    x0, y0 = float(origin[0]), float(origin[1])
+    lines = []
+    for across, up in ((0, 1), (1, 0)):
+        for index in range(len(chain) - 1):
+            ax, az = chain[index]
+            bx, bz = chain[index + 1]
+            lines.append((x0 + ax * across, y0 + ax * up, az))
+            lines.append((x0 + bx * across, y0 + bx * up, bz))
+    return lines
+
+
 def _origin_marker(tile):
     size = tile * 0.09
     return [
@@ -252,6 +306,17 @@ def draw_3d():
     _draw_lines(_origin_marker(tile), ORIGIN_COLOR, 2.0)
 
     report = cache.peek()
+    if settings.show_human:
+        # Standing clear of the item on +X, so it never hides the mesh.
+        measurement = getattr(cache.peek(), "measurement", None)
+        edge = float(measurement.max[0]) if (
+            measurement is not None and not measurement.empty) else tile * 0.5
+        _draw_lines(
+            _human_lines((edge + tile * 0.35, 0.0),
+                         max(settings.human_height, 0.1)),
+            HUMAN_COLOR, 1.5,
+        )
+
     if (settings.show_seat and report is not None
             and report.measurement is not None
             and not report.measurement.empty

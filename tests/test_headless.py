@@ -1664,6 +1664,38 @@ def test_seat_height():
           "and choosing no seat stops the question being asked at all")
 
 
+def test_human_outline():
+    """The scale silhouette, which is only useful if it is the right size.
+
+    A Para is not 1.80. The game's own body meshes carry their world position
+    and assemble to 1.702 m: feet on the floor, top of the skull at 1.702.
+    """
+    section("Person for scale")
+    from paraforge import overlay
+
+    check(abs(spec.PARA_HEIGHT - 1.702) < 1e-6,
+          "a Para is 1.702 m, measured from the game's own body meshes")
+
+    lines = overlay._human_lines((2.0, 0.0), spec.PARA_HEIGHT)
+    check(len(lines) > 40, "the outline is drawn as line segments",
+          str(len(lines)))
+    heights = [p[2] for p in lines]
+    check(abs(min(heights)) < 1e-6, "standing on the floor, not floating",
+          "{0:.4f}".format(min(heights)))
+    check(abs(max(heights) - spec.PARA_HEIGHT) < 0.02,
+          "and exactly as tall as it claims", "{0:.4f}".format(max(heights)))
+
+    spread = max(p[0] for p in lines) - min(p[0] for p in lines)
+    check(0.2 < spread < 0.9, "as wide as a person, not a door",
+          "{0:.3f}".format(spread))
+    check(any(abs(p[1]) > 0.05 for p in lines),
+          "drawn as a cross, so it reads from any angle too")
+
+    tall = overlay._human_lines((0.0, 0.0), 1.80)
+    check(abs(max(p[2] for p in tall) - 1.80) < 0.02,
+          "and it follows the height asked for")
+
+
 def test_export_yaw():
     """The item leaves turned around, and it has to.
 
@@ -2191,6 +2223,7 @@ def main():
         test_seat_height()
         test_backrest_side()
         test_export_yaw()
+        test_human_outline()
         test_asset_name_guard()
         test_shared_surface_fallback()
         test_repair_stale_entry()

@@ -426,6 +426,23 @@ Lu dans les fichiers `.import`, qui sont ce que le jeu a fait de chaque FBX :
 Aucune option d'export Blender ne produit ça, parce que Blender met le facteur
 sur le nœud. ParaForge met donc la géométrie à l'échelle sur une copie jetable.
 
+### Un Para mesure 1,702 m, pas 1,80
+
+Les meshes de corps du jeu portent leur position dans le monde, donc les
+assembler répond directement :
+
+| Mesh | De | À |
+|---|---|---|
+| `HumanFoot0Left` | 0,000 | 0,119 |
+| `HumanBottom` | 0,390 | 0,962 |
+| `HumanTop` | 0,918 | 1,454 |
+| `HumanHead` | 1,427 | 1,702 |
+
+Les pieds au sol, le sommet du crâne à 1,702. Tout ce qui est construit sur une
+référence de 1,80 sort un peu grand à côté du mobilier livré avec le jeu, d'où
+la silhouette à la taille d'un Para que ParaForge dessine à côté de l'objet,
+proportionnée sur ces quatre nombres.
+
 ### Et il part retourné
 
 Un objet asymétrique exporté sans demi-tour arrive avec son avant là où devrait
