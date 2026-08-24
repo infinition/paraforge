@@ -1997,6 +1997,68 @@ def test_surface_cleanup():
     shutil.rmtree(temp, ignore_errors=True)
 
 
+def test_tag_filter():
+    """Searching 298 categories, and not losing the chosen one doing it.
+
+    Blender stores a dynamic enum by number rather than by its identifier, so
+    a filtered list that renumbers its entries changes what a saved scene
+    means. The numbers here are the position in catalog.TAGS, which is
+    generated and fixed, and which is also what Blender assigned implicitly
+    before the filter existed.
+    """
+    section("Finding a category")
+    fresh_scene()
+    make_cube()
+    settings = props.settings(bpy.context)
+
+    every = props._catalog_items(settings, bpy.context)
+    check(len(every) == len(catalog.TAGS) + 1,
+          "every tag is listed, plus Custom", str(len(every)))
+    numbers = [row[4] for row in every]
+    check(len(set(numbers)) == len(numbers), "with a number of its own each")
+
+    chairs = catalog.BY_NAME["Chairs"]
+    settings.catalog_tag = chairs
+    check(props._TAG_NUMBER[chairs] ==
+          [g for g, _n, _p, _d in catalog.TAGS].index(chairs),
+          "numbered by position, so an old scene keeps its category")
+
+    # A heading is a tag with children of its own. Filing an item under
+    # Seating rather than under Chairs is legal and almost never meant.
+    by_guid = {row[0]: row for row in every}
+    check(by_guid[catalog.BY_NAME["Seating"]][3] == "OUTLINER_COLLECTION",
+          "Seating draws as a heading, having children")
+    check(by_guid[chairs][3] == "DOT",
+          "and Chairs as a leaf", by_guid[chairs][3])
+
+    settings.tag_filter = "chair"
+    found = props._catalog_items(settings, bpy.context)
+    check(len(found) < len(every), "the search narrows the list",
+          "{0} -> {1}".format(len(every), len(found)))
+    names = [row[1].strip() for row in found]
+    check("Chairs" in names and "OfficeChairs" in names,
+          "keeping what matches", str(names[:6]))
+    check("Fridges" not in names, "and dropping what does not")
+
+    # Matching the path too, so a category is reachable by its family name.
+    settings.tag_filter = "seating"
+    found = props._catalog_items(settings, bpy.context)
+    names = [row[1].strip() for row in found]
+    check("Chairs" in names,
+          "a child is found by its parent's name, through the path",
+          str(names[:8]))
+
+    settings.tag_filter = "zzzz"
+    found = props._catalog_items(settings, bpy.context)
+    check(any(row[0] == chairs for row in found),
+          "and what is already chosen never falls out of its own dropdown",
+          str([row[1].strip() for row in found]))
+    check(settings.catalog_tag == chairs,
+          "so the value survives a search that matches nothing")
+
+    settings.tag_filter = ""
+
+
 def test_usage_guides():
     """The viewport guides for what the item offers, drawn where it happens.
 
@@ -2453,9 +2515,10 @@ def main():
         test_shared_surface_fallback()
         test_repair_stale_entry()
         test_surface_cleanup()
-        _t, item_mod, _b = test_generate_item()
         test_stackable()
+        test_tag_filter()
         test_usage_guides()
+        _t, item_mod, _b = test_generate_item()
         test_manage_items(temp)
         test_undo(item_mod)
     except Exception:

@@ -57,23 +57,74 @@ def _item_type_items(self, context):
 _CATALOG_ITEMS = []
 
 
+#: Tags that have children of their own, which are headings as much as
+#: choices: an item filed under Seating rather than under Chairs is legal and
+#: usually not what anybody meant.
+_PARENTS = {parent for _guid, _name, parent, _depth in catalog.TAGS if parent}
+
+# Blender stores a dynamic enum by number, not by the identifier string, so
+# the numbers have to be stable or a saved scene silently changes category
+# when the list is filtered. They are the position in catalog.TAGS, which is
+# generated and fixed, and which is also what Blender assigned implicitly
+# before the filter existed, so scenes saved by earlier versions keep the tag
+# they were given.
+_TAG_NUMBER = {guid: index for index, (guid, _n, _p, _d) in enumerate(catalog.TAGS)}
+_TAG_BY_NUMBER = {number: guid for guid, number in _TAG_NUMBER.items()}
+_CUSTOM_NUMBER = len(catalog.TAGS)
+
+#: Blender does not copy the strings an enum callback returns, so whatever is
+#: handed back has to stay referenced here or the dropdown reads freed memory.
+_FILTERED = []
+
+
+def _tag_entry(guid, name, depth):
+    heading = guid in _PARENTS
+    return (
+        guid,
+        ("    " * depth) + name,
+        catalog.path(guid),
+        "OUTLINER_COLLECTION" if heading else "DOT",
+        _TAG_NUMBER[guid],
+    )
+
+
 def _catalog_items(self, context):
     """The real Build Mode tags, read out of the game by extract_catalog.py.
 
-    Indented by depth so a flat dropdown still reads as the tree it is, and
-    Blender's own search box makes 298 entries perfectly usable.
+    Indented by depth so a flat dropdown still reads as the tree it is, with a
+    folder against the 60 tags that have children and a dot against the leaves,
+    because filing an item under Seating rather than under Chairs is legal and
+    almost never what was meant.
+
+    The search box above the dropdown narrows the 298 entries by name or by
+    any part of the path, so Chairs can be reached by typing seat as easily as
+    by scrolling. Whatever is currently chosen is always in the list, or
+    Blender would drop the value the moment the filter stopped matching it.
     """
-    if _CATALOG_ITEMS:
+    needle = (getattr(self, "tag_filter", "") or "").strip().lower()
+    if not needle:
+        if _CATALOG_ITEMS:
+            return _CATALOG_ITEMS
+        for guid, name, _parent, depth in catalog.TAGS:
+            _CATALOG_ITEMS.append(_tag_entry(guid, name, depth))
+        _CATALOG_ITEMS.append((spec.CUSTOM_TAG, _("Custom"),
+                               _("Type the tag by hand"), "GREASEPENCIL",
+                               _CUSTOM_NUMBER))
         return _CATALOG_ITEMS
+
+    # Reading the raw value rather than the property, which would call this
+    # back while it is still building its own list.
+    stored = self.get("catalog_tag")
+    current = _TAG_BY_NUMBER.get(stored) if isinstance(stored, int) else None
+
+    del _FILTERED[:]
     for guid, name, _parent, depth in catalog.TAGS:
-        _CATALOG_ITEMS.append((
-            guid,
-            ("    " * depth) + name,
-            catalog.path(guid),
-        ))
-    _CATALOG_ITEMS.append((spec.CUSTOM_TAG, _("Custom"),
-                           _("Type the tag by hand")))
-    return _CATALOG_ITEMS
+        if guid == current or needle in name.lower() or needle in catalog.path(guid).lower():
+            _FILTERED.append(_tag_entry(guid, name, depth))
+    _FILTERED.append((spec.CUSTOM_TAG, _("Custom"),
+                      _("Type the tag by hand"), "GREASEPENCIL",
+                      _CUSTOM_NUMBER))
+    return _FILTERED
 
 
 _SEAT_ITEMS = []
@@ -177,6 +228,16 @@ class ParaForgeSettings(PropertyGroup):
     # Catalog placement. These never reach the FBX, they are written to the
     # recipe file so the Control Panel pass becomes a checklist instead of a
     # memory exercise.
+
+    tag_filter: StringProperty(
+        name=_("Find a category"),
+        description=_(
+            "Narrows the dropdown to the categories whose name or path "
+            "contains this. Whatever is already chosen stays in the list"
+        ),
+        default="",
+        options={"TEXTEDIT_UPDATE"},
+    )
 
     catalog_tag: EnumProperty(
         name=_("Catalog"),

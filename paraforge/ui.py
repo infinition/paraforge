@@ -104,6 +104,15 @@ class PARAFORGE_PT_main(_Base, Panel):
 
         column = box.column(align=True)
         column.prop(settings, "item_type", text="")
+        search = column.row(align=True)
+        search.prop(settings, "tag_filter", text="", icon="VIEWZOOM")
+        if settings.tag_filter:
+            search.operator("paraforge.clear_tag_filter", text="", icon="X")
+        elif settings.catalog_tag != spec.CUSTOM_TAG:
+            # Jumping to the branch the current tag lives in, which is the
+            # only way a 298 entry dropdown reopens anywhere near where it
+            # was left.
+            search.operator("paraforge.focus_tag", text="", icon="ZOOM_SELECTED")
         column.prop(settings, "catalog_tag", text="")
         if settings.catalog_tag == spec.CUSTOM_TAG:
             column.prop(settings, "catalog_tag_custom", text="")

@@ -711,7 +711,46 @@ class PARAFORGE_OT_delete_selected(Operator):
                                 len(records), len(removed)))
         return {"FINISHED"}
 
+
+class PARAFORGE_OT_clear_tag_filter(Operator):
+    bl_idname = "paraforge.clear_tag_filter"
+    bl_label = _("Show every category")
+    bl_description = _("Empty the search box")
+    bl_options = {"REGISTER", "INTERNAL"}
+
+    def execute(self, context):
+        props.settings(context).tag_filter = ""
+        return {"FINISHED"}
+
+
+class PARAFORGE_OT_focus_tag(Operator):
+    bl_idname = "paraforge.focus_tag"
+    bl_label = _("Show this branch")
+    bl_description = _(
+        "Fill the search with the branch the chosen category lives in, so the "
+        "dropdown reopens on its neighbours instead of at the top of 298"
+    )
+    bl_options = {"REGISTER", "INTERNAL"}
+
+    def execute(self, context):
+        from . import catalog
+
+        settings = props.settings(context)
+        guid = settings.catalog_tag
+        entry = catalog.BY_GUID.get(guid)
+        if entry is None:
+            return {"CANCELLED"}
+
+        # The parent, so the siblings come with it. A tag at the top of the
+        # tree has none, and is its own branch.
+        name, parent, _depth = entry
+        holder = catalog.BY_GUID.get(parent)
+        settings.tag_filter = holder[0] if holder else name
+        return {"FINISHED"}
+
 classes = (
+    PARAFORGE_OT_clear_tag_filter,
+    PARAFORGE_OT_focus_tag,
     PARAFORGE_OT_toggle_item,
     PARAFORGE_OT_select_items,
     PARAFORGE_OT_delete_selected,

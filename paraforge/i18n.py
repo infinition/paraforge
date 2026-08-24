@@ -330,6 +330,18 @@ FR = {
     # -- Checklist --------------------------------------------------------
     "{0} ok   {1} warn   {2} blocking": "{0} ok   {1} alerte   {2} bloquant",
     "Items in this mod": "Objets de ce mod",
+    "Find a category": "Chercher une catégorie",
+    "Narrows the dropdown to the categories whose name or path contains this. "
+    "Whatever is already chosen stays in the list":
+        "Réduit le menu aux catégories dont le nom ou le chemin contient "
+        "ceci. Ce qui est déjà choisi reste dans la liste",
+    "Show every category": "Afficher toutes les catégories",
+    "Empty the search box": "Vider la recherche",
+    "Show this branch": "Afficher cette branche",
+    "Fill the search with the branch the chosen category lives in, so the "
+    "dropdown reopens on its neighbours instead of at the top of 298":
+        "Remplir la recherche avec la branche où vit la catégorie choisie, "
+        "pour que le menu se rouvre sur ses voisines au lieu du haut des 298",
     "Columns": "Colonnes",
     "How many items to show side by side":
         "Combien d'objets afficher côte à côte",

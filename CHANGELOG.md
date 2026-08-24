@@ -9,6 +9,27 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.36.0]
+
+### Added
+
+- **A search box over the 298 categories.** It narrows the dropdown by name or
+  by any part of the path, so Chairs is reachable by typing seat as easily as
+  by scrolling, and a button next to it fills the search with the branch the
+  chosen category lives in, which is the only way a list that long reopens
+  anywhere near where it was left.
+
+  Whatever is currently chosen is always kept in the list. Blender stores a
+  dynamic enum by number rather than by its identifier, so a filtered list
+  that renumbers its entries would change what a saved scene means. The
+  numbers are now fixed to the position in the generated tag table, which is
+  also what Blender assigned implicitly before, so scenes saved by earlier
+  versions keep the category they were given.
+
+- **Headings look like headings.** The tags that have children of their own
+  draw with a folder, the leaves with a dot. Filing an item under Seating
+  rather than under Chairs is legal and almost never what was meant.
+
 ## [0.35.0]
 
 ### Fixed
