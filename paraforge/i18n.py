@@ -430,15 +430,18 @@ FR = {
     "Used by a Para": "Utilisé par un Para",
     "A tag typed by hand, so this cannot be checked":
         "Un tag saisi à la main, donc invérifiable ici",
-    "The tag attaches {0}, so a Para can use it":
-        "Le tag attache {0}, un Para peut donc s'en servir",
-    "The tag attaches {0}, which is a sound rather than a place to sit":
-        "Le tag attache {0}, qui est un son et non une place assise",
-    "Decoration: this tag attaches nothing, so a Para will walk past it. "
-    "Seating lives under Chairs, Armchairs, OfficeChairs, Couches or Benches":
-        "Décoration : ce tag n'attache rien, un Para passera donc à côté. "
-        "Les assises sont sous Chairs, Armchairs, OfficeChairs, Couches ou "
-        "Benches",
+    "This tag brings ": "Ce tag apporte ",
+    "a place to sit, from {0}": "une place assise, depuis {0}",
+    "{0}, which is a sound rather than a place":
+        "{0}, qui est un son et non une place",
+    "interactions, from the {0} tag": "des interactions, depuis le tag {0}",
+    "Decoration: this tag brings neither a place to sit nor an interaction, "
+    "so a Para will walk past it. Seating lives under Chairs, Armchairs, "
+    "OfficeChairs, Couches or Benches":
+        "Décoration : ce tag n'apporte ni place assise ni interaction, un Para "
+        "passera donc à côté. Les assises sont sous Chairs, Armchairs, "
+        "OfficeChairs, Couches ou Benches",
+    "Interactions from ": "Interactions depuis ",
     "A Para can use it: ": "Un Para peut s'en servir : ",
     "Attaches ": "Attache ",
     "Decoration, no Para uses it": "Décoration, aucun Para ne s'en sert",

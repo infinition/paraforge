@@ -112,11 +112,14 @@ class PARAFORGE_PT_main(_Base, Panel):
             # template the game attaches, so a chair filed under the wrong one
             # is furniture nobody sits on.
             template = catalog.slot_template(settings.catalog_tag)
+            source = catalog.interaction_source(settings.catalog_tag)
             hint = column.row()
             hint.scale_y = 0.7
             if catalog.seats_a_para(settings.catalog_tag):
                 hint.label(text=_("A Para can use it: ") + template,
                            icon="OUTLINER_OB_ARMATURE")
+            elif source:
+                hint.label(text=_("Interactions from ") + source, icon="PLAY")
             elif template:
                 hint.label(text=_("Attaches ") + template, icon="SOUND")
             else:

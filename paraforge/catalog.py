@@ -1821,3 +1821,85 @@ def tags_with_slots():
         entry = BY_GUID.get(guid)
         out.append((guid, entry[0] if entry else guid, template))
     return sorted(out, key=lambda row: row[1])
+
+# What a Para can do with an item is decided by its catalogue tag too, through
+# a second field: InteractionGroup. 47 tags carry one, against 13 that carry a
+# slot template, and the two are separate. Chairs carries both. Armchairs
+# carries only the template and still seats a Para, because a tag inherits from
+# its parents and Seating carries the interactions.
+#
+# Read out of Main.mod/Settings/BuildModeCatalogTags.setting.
+
+INTERACTION_TAGS = {
+    "604085153922562519": "Baths",
+    "4628778472043362227": "Bedding",
+    "6444879227766942280": "Bookshelves",
+    "3400317259593598351": "CeilingFans",
+    "9105849566942677340": "Chairs",
+    "1616462328011360211": "Closets",
+    "7985540924855390150": "Computers",
+    "7447449227539394204": "Couches",
+    "8461709061774362586": "CountersAndCabinets",
+    "4647535654631335830": "Doors",
+    "5234230757320379395": "Dressers",
+    "4924269558178068359": "Fireplaces",
+    "460710503665464322": "FloorLamps",
+    "3591542995555286041": "Flowers",
+    "642202484693579278": "Frames",
+    "3108863021855919330": "Fridges",
+    "2779062035506052039": "Lighting",
+    "3090969998361602773": "Mailboxes",
+    "5676720021332220820": "Microwaves",
+    "3265636272264671824": "Mirrors",
+    "4076339812397061500": "Ranges",
+    "8535178522425522383": "Rugs",
+    "1577919339783889004": "Seating",
+    "2067641458504236188": "Showers",
+    "108320156183816049": "Sinks",
+    "6014339009269246888": "TVs",
+    "8901024204529792639": "TableLamps",
+    "3379229577763952217": "Toilets",
+    "8001521036836752277": "Trash",
+    "8372779771154572480": "Trash",
+    "3701994551219430330": "Trees",
+    "8634782218500074114": "_BedAdultModel",
+    "4575609469802988211": "_BedCrib",
+    "5855831541297902823": "_BuildableSandCastle",
+    "4369724328259993374": "_CityJournalDispenser",
+    "8243536152945723335": "_CityTrafficCone",
+    "758181910550224109": "_DrawablePaper",
+    "5564997046115680029": "_EducativeBook",
+    "4530928373772042014": "_EducativeToy",
+    "5615717779103809048": "_FlowerBushsAndPlanters",
+    "2285893339648069873": "_Guitar",
+    "9009564337597788863": "_HighChair",
+    "2616680388127829501": "_PlayableHopscotch",
+    "6333900641183854484": "_PlayablePlush",
+    "4741678931641170149": "_SittableBench",
+    "523991108259902175": "_ToddlersToy",
+    "6713782805470202312": "_Well",
+}
+
+
+def _up(guid, table):
+    """Walk a tag and its ancestors, returning the first hit in table."""
+    seen = set()
+    current = guid
+    while current and current not in seen:
+        seen.add(current)
+        if current in table:
+            return table[current]
+        entry = BY_GUID.get(current)
+        if entry is None:
+            return ""
+        current = entry[1]
+    return ""
+
+
+def interaction_source(guid):
+    """The tag that brings the interactions, which may be an ancestor."""
+    return _up(guid, INTERACTION_TAGS)
+
+
+def has_interactions(guid):
+    return bool(interaction_source(guid))

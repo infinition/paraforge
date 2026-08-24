@@ -1426,6 +1426,20 @@ def test_usable_by_a_para():
           "13 tags attach something, out of the game's 298",
           str(len(cat.tags_with_slots())))
 
+    # Interactions are the tag's other field, and tags inherit, which is why
+    # an armchair seats a Para without declaring anything itself.
+    check(cat.interaction_source(cat.BY_NAME["Chairs"]) == "Chairs",
+          "a tag can carry its own interactions")
+    check(cat.interaction_source(cat.BY_NAME["Armchairs"]) == "Seating",
+          "or inherit them from a parent tag",
+          cat.interaction_source(cat.BY_NAME["Armchairs"]))
+    check(cat.has_interactions(cat.BY_NAME["Computers"]),
+          "a computer has interactions and no seat")
+    check(not cat.has_interactions(cat.BY_NAME["Build"]),
+          "and the root Build tag has neither")
+    check(not cat.has_interactions(cat.BY_NAME["Food"]),
+          "nor does Food, which is not a placeable item at all")
+
     fresh_scene()
     make_cube()
     settings = props.settings(bpy.context)

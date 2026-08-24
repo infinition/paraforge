@@ -9,7 +9,7 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
-## [0.23.0]
+## [0.24.0]
 
 ### Added
 
@@ -38,9 +38,20 @@ was measured on is recorded with it.
   holds a Seat, a ButtLocator, a FeetFront and a FeetEnter, so nothing about
   the animation has to be authored.
 
-  The picker now says which template the chosen tag brings, right under the
-  choice, and the checklist repeats it. It is information rather than a fault,
-  since most items are decoration and are meant to be.
+  Interactions are the tag's other field, `InteractionGroup`, on 47 tags: what
+  a Para may do with a computer, a fridge, a range, a sink. Tags inherit, which
+  is why `Armchairs` seats a Para through `Seating` without declaring anything
+  itself.
+
+  The picker now says what the chosen tag brings, right under the choice, and
+  the checklist repeats it. It is information rather than a fault, since most
+  items are decoration and are meant to be.
+
+  What this does not cover: food is not a placeable item. `FoodBreadRound`
+  carries `Tag: s0`, no tag at all, and the `Food` tag carries nothing, so a
+  food mesh cannot be made edible by exporting it. Beds are the other gap: they
+  hang their slots off a child object carrying an `ItemNestedPrefabSpawner`
+  rather than off the tag.
 
 ## [0.22.0]
 

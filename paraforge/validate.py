@@ -231,16 +231,23 @@ def _check_facing(settings, report):
 def _check_usable(settings, report):
     """Whether a Para will ever do anything with the item.
 
-    A chair carries no seat of its own. Nothing in its prefab says where to
-    sit, and the 29 shipped chairs that do carry a NestedPrefabToSpawn are the
-    exception. What makes an item usable is its catalogue tag: the tag entry in
-    BuildModeCatalogTags.setting carries the template, and the game attaches it
-    to everything filed under that tag.
+    A chair carries no seat of its own. Of the game's 2434 prefabs only 58 name
+    a NestedPrefabToSpawn, and no couch, stool or bench names one. What makes
+    an item usable is its catalogue tag, through two separate fields on the tag
+    entry in BuildModeCatalogTags.setting:
 
-    So an imported chair filed under the wrong tag is furniture nobody sits on,
-    and the Para walks to another chair instead. That is not something the
-    export can fix, only the tag can, which is why this reads as information
-    next to the choice rather than as a fault.
+        NestedPrefabToSpawn   the slot template, on 13 tags. It holds the Seat,
+                              the ButtLocator and the foot locators, so nothing
+                              about the animation has to be authored.
+        InteractionGroup      what a Para may do with it, on 47 tags.
+
+    Tags inherit, so Armchairs seats a Para through Seating without declaring
+    anything itself.
+
+    An imported chair filed under the wrong tag is furniture nobody sits on,
+    and the Para walks to another chair instead. The export cannot fix that,
+    only the tag can, which is why this reads as information next to the choice
+    rather than as a fault: most items are decoration and are meant to be.
     """
     tag = settings.catalog_tag
     if tag == spec.CUSTOM_TAG:
@@ -249,20 +256,26 @@ def _check_usable(settings, report):
         return
 
     template = catalog.slot_template(tag)
+    source = catalog.interaction_source(tag)
+    parts = []
+
     if catalog.seats_a_para(tag):
+        parts.append(_("a place to sit, from {0}", template))
+    elif template:
+        parts.append(_("{0}, which is a sound rather than a place", template))
+
+    if source:
+        parts.append(_("interactions, from the {0} tag", source))
+
+    if parts:
         report.add("usable", _("Used by a Para"), OK,
-                   _("The tag attaches {0}, so a Para can use it", template))
-        return
-    if template:
-        report.add("usable", _("Used by a Para"), OK,
-                   _("The tag attaches {0}, which is a sound rather than a "
-                     "place to sit", template))
+                   _("This tag brings ") + ", ".join(parts))
         return
 
     report.add("usable", _("Used by a Para"), OK,
-               _("Decoration: this tag attaches nothing, so a Para will walk "
-                 "past it. Seating lives under Chairs, Armchairs, "
-                 "OfficeChairs, Couches or Benches"))
+               _("Decoration: this tag brings neither a place to sit nor an "
+                 "interaction, so a Para will walk past it. Seating lives "
+                 "under Chairs, Armchairs, OfficeChairs, Couches or Benches"))
 
 
 def _check_asset_name(objects, settings, report):
