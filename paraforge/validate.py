@@ -175,6 +175,7 @@ def _check_origin(measurement, settings, report):
             "origin", _("Origin placement"), OK,
             _("Placed by hand, so the rule for this item type is not "
               "applied. The item is anchored here when the game places it"),
+            fix="paraforge.fix_origin", fix_label=_("Back to the rule"),
         )
         return
 
@@ -189,9 +190,14 @@ def _check_origin(measurement, settings, report):
             fix="paraforge.fix_origin", fix_label=_("Snap origin"),
         )
     else:
+        # The button stays under the line even when the line is green: an
+        # origin that follows the rule is still one somebody may want to move,
+        # and a fix that only appears once something is broken cannot be used
+        # to put it back.
         report.add(
             "origin", _("Origin placement"), OK,
             _(spec.ITEM_TYPES[item_type]["description"]),
+            fix="paraforge.fix_origin", fix_label=_("Snap origin"),
         )
 
 

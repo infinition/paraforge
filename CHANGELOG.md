@@ -9,6 +9,23 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.40.0]
+
+### Fixed
+
+- **Snapping the origin is the way back, and now says so.** It moved the
+  geometry to the rule and went on claiming the origin had been placed by
+  hand, which is the checklist describing something that is no longer true.
+  It clears the mark now.
+
+### Changed
+
+- **The origin button stays under its line even when the line is green.** A
+  fix that only appears once something is broken cannot be used to put
+  anything back, and an origin that follows the rule is still one somebody may
+  want to move. It reads Back to the rule when the origin was placed by hand,
+  and Snap origin otherwise.
+
 ## [0.39.0]
 
 ### Added

@@ -2184,11 +2184,33 @@ def test_rotate_and_origin():
           "so the checklist does not ask for the rule that was just "
           "overridden", detail_of(report, "origin"))
 
-    settings.keep_origin = False
+    fix = next((c.fix for c in report.checks if c.key == "origin"), None)
+    check(fix == "paraforge.fix_origin",
+          "with the way back on the line itself, while it is green",
+          str(fix))
+
+    # And the way back really is the way back: the rule again, and the mark
+    # cleared, or the checklist would go on claiming an origin nobody chose.
+    bpy.ops.paraforge.fix_origin()
+    check(not settings.keep_origin,
+          "snapping the origin clears the mark it overrode")
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    measured = geo.measure([obj], depsgraph)
+    check(abs(float(measured.min[2])) < 1e-4
+          and abs(float(measured.center[0])) < 1e-4,
+          "and the geometry is back on the rule",
+          "({0:.4f}, {1:.4f})".format(float(measured.center[0]),
+                                      float(measured.min[2])))
     report = cache.get(bpy.context, settings, force=True)
-    check(status_of(report, "origin") == validate.FAIL,
-          "turn the mark off and the rule applies again",
+    check(status_of(report, "origin") == validate.OK,
+          "which the checklist agrees with", detail_of(report, "origin"))
+
+    settings.keep_origin = True
+    report = cache.get(bpy.context, settings, force=True)
+    check(status_of(report, "origin") == validate.OK,
+          "and the mark on its own is never a fault, only a statement",
           detail_of(report, "origin"))
+    settings.keep_origin = False
 
     bpy.context.scene.cursor.location = (0.0, 0.0, 0.0)
 

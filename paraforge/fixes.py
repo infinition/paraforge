@@ -132,6 +132,13 @@ class PARAFORGE_OT_fix_origin(Operator):
             return {"CANCELLED"}
 
         offsets = geo.anchor_offsets(measurement, settings.item_type)
+
+        # This is the way back from an origin placed by hand, so it clears the
+        # mark too. Leaving it set would move the geometry to the rule and go
+        # on claiming the origin was chosen, which is the checklist describing
+        # something that is no longer true.
+        settings.keep_origin = False
+
         if all(abs(value) <= spec.POSITION_TOLERANCE for value in offsets):
             self.report({"INFO"}, _("Origin already correct"))
             return {"FINISHED"}

@@ -330,6 +330,7 @@ FR = {
     # -- Checklist --------------------------------------------------------
     "{0} ok   {1} warn   {2} blocking": "{0} ok   {1} alerte   {2} bloquant",
     "Items in this mod": "Objets de ce mod",
+    "Back to the rule": "Revenir à la règle",
     "Origin to the 3D cursor": "Origine sur le curseur 3D",
     "Move the geometry so the 3D cursor becomes the item's origin. Place the "
     "cursor where the item should hang from, then press this. The origin is "

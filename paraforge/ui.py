@@ -187,7 +187,10 @@ class PARAFORGE_PT_main(_Base, Panel):
                 column = paragraph(box, context, check.detail)
                 column.enabled = check.status == validate.OK
 
-            if check.fix and check.status != validate.OK:
+            # Shown whenever there is one, not only once something is
+            # broken. The origin carries its button while green so it can be
+            # put back after being moved by hand.
+            if check.fix:
                 row = box.row()
                 row.scale_y = 1.1
                 row.operator(check.fix, text=check.fix_label or _("Fix"),
