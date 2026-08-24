@@ -9,6 +9,68 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.34.0]
+
+### Fixed
+
+- **A couch is resizable, and 0.33.0 was taking its handles away.** The rule
+  was drawn from the only two templates that appear on the shipped prefabs
+  themselves, chairs and kitchen counters, and generalised to every template
+  carrying a `Seat` node. Joining the game's whole catalogue to its prefabs by
+  GUID, which needed the catalogue parsed by indentation because a nested Tag
+  list uses the same `i<n>` marker one level deeper, gives the real picture:
+
+  ```
+  ChairSlotAndLocator              18 items,  1 resizable
+  ShorterChairSlotAndLocator        9 items,  0
+  LongChairSlotAndLocator           8 items,  0
+  ArmchairSlotAndLocator            9 items,  0
+  ShorterArmchairSlotAndLocators    2 items,  0
+  LowerArmchairSlotAndLocators      2 items,  0
+  ToiletSlotAndLocators, x3         6 items,  0
+                                   --------------
+                                   54 items,  1 resizable
+
+  CouchesSlotAndLocators, x6       13 items, 13 resizable
+  BenchSlotsAndLocators            10 items, 10 resizable
+  CounterSlotsAndLocators, x3      79 items, 78 resizable
+  TableSlots                       22 items, 14 resizable
+  ```
+
+  So it is not sitting that the handle breaks. A couch and a bench carry a row
+  of seats and survive being stretched; a chair carries one, and moving it
+  puts it where the Para cannot path to. Handles are now dropped only from
+  chairs, armchairs and toilets, and couches, benches, beds, tables and
+  counters keep theirs.
+
+- **Two writes in the same second lost an undo.** The journal named its
+  backups after a timestamp good to the second, so a second run inside that
+  second wrote its backup over the first one's. The older undo then restored
+  the newer state, quietly losing whatever the first run had replaced.
+  Pressing the button twice was enough to do it. Backup names now take a
+  suffix rather than collide, and a run that touches one file twice keeps only
+  its first backup, which is the state before the run.
+
+### Added
+
+- **Tick several items and remove them together.** Clearing out a month of
+  experiments one confirmation at a time is what stops anybody doing it. The
+  checkbox on each row, select all and clear in the header, and one button
+  that removes everything ticked as a single journal entry, so one undo brings
+  all of them back.
+
+  The list is read again between removals rather than trusted: two items can
+  share a mesh, and once the first is gone the second owns what it used to
+  share. Deleting from a stale list would either leave that mesh behind or
+  take it while something still needs it.
+
+### Changed
+
+- Items in this mod moved to the top of the panel, above the checklist, and
+  draws as a gallery: three columns by default, adjustable to six, with the
+  catalogue picture given the space and the name under it. Twenty items down a
+  single column is a panel nobody scrolls to the bottom of.
+
 ## [0.33.0]
 
 ### Added

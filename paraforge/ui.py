@@ -515,8 +515,8 @@ class PARAFORGE_PT_options(_Base, Panel):
             warning = box.column(align=True)
             warning.alert = True
             for line in util.wrap_to(context, _(
-                "A Para sits on this one, so both handles are left out. "
-                "Resizing moves the seat out of reach and nobody sits down."
+                "A chair has one seat, and resizing moves it out of reach. "
+                "Both handles are left out. Couches and benches keep theirs."
             ), 6):
                 warning.label(text=line)
 
@@ -737,9 +737,25 @@ class PARAFORGE_PT_contents(_Base, Panel):
         root = prefs.mods_root(context)
         records = manage.items(settings.mod_folder, root)
 
+        from . import ops as ops_module
+
+        chosen = set(ops_module.selected_guids(settings))
+
         header = layout.row(align=True)
         header.label(text=_("{0} item(s)", len(records)))
+        header.operator("paraforge.select_items", text="",
+                        icon="CHECKBOX_HLT").all = True
+        header.operator("paraforge.select_items", text="",
+                        icon="CHECKBOX_DEHLT").all = False
         header.operator("paraforge.refresh_items", text="", icon="FILE_REFRESH")
+        header.prop(settings, "gallery_columns", text="")
+
+        if chosen:
+            bar = layout.row()
+            bar.alert = True
+            bar.operator("paraforge.delete_selected",
+                         text=_("Remove {0} ticked", len(chosen)),
+                         icon="TRASH")
 
         if not records:
             paragraph(layout, context, _(
@@ -758,36 +774,45 @@ class PARAFORGE_PT_contents(_Base, Panel):
             note.label(text=_("{0} without a picture yet, load the mod in "
                               "the game once", missing), icon="INFO")
 
+        # A grid rather than a list: twenty items down one column is a panel
+        # nobody scrolls to the bottom of, and the picture is the part worth
+        # the space.
+        grid = layout.grid_flow(row_major=True, columns=settings.gallery_columns,
+                                even_columns=True, even_rows=False, align=False)
         for record in records:
-            box = layout.box()
-            row = box.row(align=True)
+            picked = record.guid in chosen
+            cell = grid.box().column(align=True)
+            cell.alert = picked
 
             icon = thumbs.icon_id(record.thumbnail)
+            picture = cell.row()
+            picture.alignment = "CENTER"
             if icon:
-                row.template_icon(icon_value=icon, scale=3.0)
+                picture.template_icon(icon_value=icon,
+                                      scale=settings.gallery_scale)
             else:
-                sub = row.column()
-                sub.scale_y = 3.0
-                sub.label(text="", icon="MESH_CUBE")
+                blank = picture.column()
+                blank.scale_y = settings.gallery_scale
+                blank.label(text="", icon="MESH_CUBE")
 
-            column = row.column(align=True)
-            column.label(text=record.name or record.guid)
-            detail = column.row()
-            detail.scale_y = 0.7
-            detail.label(text=_("{0} file(s)", len(manage.files_of(record))))
+            name = cell.row()
+            name.alignment = "CENTER"
+            name.scale_y = 0.8
+            name.label(text=record.name or record.guid)
+
+            buttons = cell.row(align=True)
+            buttons.operator(
+                "paraforge.toggle_item", text="",
+                icon="CHECKBOX_HLT" if picked else "CHECKBOX_DEHLT",
+            ).guid = record.guid
             if record.shared:
-                shared = column.row()
-                shared.scale_y = 0.7
-                shared.label(text=_("shares {0} with another item",
-                                    len(record.shared)), icon="LINKED")
-
-            side = row.column(align=True)
-            remove = side.operator("paraforge.delete_item", text="",
-                                   icon="TRASH")
-            remove.guid = record.guid
+                buttons.label(text=str(len(record.shared)), icon="LINKED")
+            buttons.operator("paraforge.delete_item", text="",
+                             icon="TRASH").guid = record.guid
 
 classes = (
     PARAFORGE_PT_main,
+    PARAFORGE_PT_contents,
     PARAFORGE_PT_facing,
     PARAFORGE_PT_zones,
     PARAFORGE_PT_textures,
@@ -795,6 +820,5 @@ classes = (
     PARAFORGE_PT_viewport,
     PARAFORGE_PT_calibration,
     PARAFORGE_PT_remesh,
-    PARAFORGE_PT_contents,
     PARAFORGE_PT_inspector,
 )

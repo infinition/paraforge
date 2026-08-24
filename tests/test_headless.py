@@ -2094,6 +2094,36 @@ def test_manage_items(temp):
     check("Item_Alpha" not in translations, "the translation is out too")
     check("Item_Beta" in translations, "and again only that one")
 
+    # Several at once, as one step, because clearing out a month of
+    # experiments one confirmation at a time is what stops people doing it.
+    write("Gamma.prefab", "ItemObject:7\n")
+    write("Gamma.prefab.meta", "GUID:777\nType:201\n")
+    text = setting.read(os.path.join(mod, "Settings", "Items.setting"))
+    setting.write(os.path.join(mod, "Settings", "Items.setting"),
+                  text + "  @3000\n   =GUID:3000\n   =DisplayName:Gamma\n"
+                         "   =Prefab:777\n")
+
+    records = manage.items(mod, temp)
+    check(len(records) == 2, "the mod is read again after the first removal",
+          str([r.name for r in records]))
+
+    removed, notes = manage.delete_many(mod, records, temp)
+    check(not notes, "several go together without trouble", str(notes))
+    check(not os.path.exists(os.path.join(mod, "Beta.prefab")),
+          "both prefabs are gone")
+    check(not os.path.exists(os.path.join(mod, "Gamma.prefab")),
+          "the second one too")
+    check(not os.path.exists(os.path.join(mod, "Alpha.fbx")),
+          "and the shared mesh finally goes, since nothing points at it now")
+
+    check(len(manage.items(mod, temp)) == 0, "the catalogue is empty")
+
+    undone = journal.undo_last(mod)
+    check(undone is not None, "recorded as one step")
+    check(len(manage.items(mod, temp)) == 2,
+          "so one undo brings both back, not one of them",
+          str([r.name for r in manage.items(mod, temp)]))
+
     # All of it recoverable, because a delete you cannot undo is a delete
     # nobody presses.
     undone = journal.undo_last(mod)

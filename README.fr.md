@@ -316,30 +316,40 @@ Les plages écrites par ParaForge sont plus larges que celles du jeu. Sur les
 le plafond est donc le maximum du jeu, et le plancher descend sous tout ce
 qu'il livre.
 
-### Une chaise ne porte aucune poignée de redimensionnement
+### Une chaise ne porte aucune poignée, mais un canapé si
 
-Pas l'une des deux. Aucune. Compté sur les prefabs livrés qui nomment un
-template de slot, groupés selon que ce template possède un nœud `Seat`, ce qui
-décide si le Para finit sur l'objet ou debout à côté :
+En joignant tout le catalogue du jeu à ses prefabs par GUID et en groupant
+chaque objet selon le template que son tag ou son propre override lui donne :
 
-| Template | Prefabs | Déclarant une poignée |
+| Template | Objets | Redimensionnables |
 |---|---|---|
-| `ChairSlotAndLocator` | 29 | 0 |
-| `CounterSlotsAndLocators` | 29 | 29 |
+| `ChairSlotAndLocator` | 18 | 1 |
+| `ShorterChairSlotAndLocator` | 9 | 0 |
+| `LongChairSlotAndLocator` | 8 | 0 |
+| `ArmchairSlotAndLocator` | 9 | 0 |
+| `ShorterArmchairSlotAndLocators` | 2 | 0 |
+| `LowerArmchairSlotAndLocators` | 2 | 0 |
+| `ToiletSlotAndLocators` et deux variantes | 6 | 0 |
+| **Chaises, fauteuils et toilettes** | **54** | **1** |
+| `CouchesSlotAndLocators` et cinq variantes | 13 | 13 |
+| `BenchSlotsAndLocators` | 10 | 10 |
+| `CounterSlotsAndLocators` et deux variantes | 79 | 78 |
+| `TableSlots` | 22 | 14 |
 
-Aucune exception d'un côté ni de l'autre. Une poignée sur un objet où un Para
-s'assoit déplace les locators d'assise là où il ne peut pas aller. L'objet
-apparaît au catalogue, s'affiche correctement, accepte l'ordre de s'asseoir, et
-le Para part vers une autre chaise. Rien n'est journalisé, parce que du point
-de vue du jeu rien n'a échoué.
+Ce n'est donc pas le fait de s'asseoir que la poignée casse. Un canapé et un
+banc portent une rangée d'assises et survivent à l'étirement ; une chaise en
+porte une seule, et la déplacer la met là où le Para ne peut pas aller.
+L'objet apparaît au catalogue, s'affiche correctement, accepte l'ordre de
+s'asseoir, et le Para part vers une autre chaise. Rien n'est journalisé, parce
+que du point de vue du jeu rien n'a échoué.
 
 Confirmé sur deux objets custom dont les entrées de catalogue sont identiques
 jusqu'au tag et au GUID de slot, et qui ne diffèrent que par le prefab : celui
 sans poignée est utilisé, celui qui déclare `IsResizable` est contourné.
 
-ParaForge retire les deux poignées de tout objet dont le template porte un nœud
-`Seat`, quoi que le panneau affiche, et les grise en donnant la raison. Les
-deux poignées ensemble restent disponibles sur tout le reste.
+ParaForge retire les deux poignées des chaises, fauteuils et toilettes, quoi
+que le panneau affiche, et les grise en donnant la raison. Les canapés, bancs,
+lits, tables et comptoirs gardent les leurs.
 
 ### Où se trouve l'assise
 

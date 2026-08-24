@@ -1826,24 +1826,36 @@ def template_seats(name):
     return any(word in lowered for word in SEATING_WORDS)
 
 
-# The templates that carry a Seat node, read out of the template prefabs in
-# Environments/Items/Prefabs. The node is what lands the Para on the item, and
-# its presence is what separates the two populations that decide the resize
-# rule below.
-SEAT_NODE_TEMPLATES = (
+# One chair, one Para, one seat: the templates where a resize handle breaks
+# the sit. Joining the game's whole catalogue to its prefabs, by GUID, and
+# grouping every item by the template its tag or its own override gives it:
+#
+#   ChairSlotAndLocator              18 items,  1 resizable
+#   ShorterChairSlotAndLocator        9 items,  0
+#   LongChairSlotAndLocator           8 items,  0
+#   ArmchairSlotAndLocator            9 items,  0
+#   ShorterArmchairSlotAndLocators    2 items,  0
+#   LowerArmchairSlotAndLocators      2 items,  0
+#   ToiletSlotAndLocators, x3         6 items,  0
+#                                    --------------
+#                                    54 items,  1 resizable
+#
+# Against everything else a Para also sits on, which is resizable throughout:
+#
+#   CouchesSlotAndLocators and its five variants   13 items, 13 resizable
+#   BenchSlotsAndLocators                          10 items, 10 resizable
+#
+# So it is not sitting that the handle breaks. A couch and a bench carry a row
+# of seats and survive being stretched; a chair carries one, and moving it
+# puts it where the Para cannot path to. Confirmed on a custom chair whose
+# only difference from a working one was IsResizable.
+NO_HANDLE_TEMPLATES = (
     "ArmchairSlotAndLocator",
     "ChairSlotAndLocator",
-    "ClassicChesterfieldCoucheSlotAndLocators",
-    "CouchEclecticCactusSlotAndLocators",
-    "CouchesSlotAndLocators",
-    "EclecticModularCouchSlotAndLocators",
     "LongChairSlotAndLocator",
     "LowerArmchairSlotAndLocators",
-    "MidCenturyTuffedCouchSlotAndLocators",
-    "ModernModularCouchSlotAndLocators",
     "ShorterArmchairSlotAndLocators",
     "ShorterChairSlotAndLocator",
-    "ShorterCouchesSlotAndLocators",
     "ToiletSlotAndLocatorFlushOnTop",
     "ToiletSlotAndLocators",
     "ToiletSlotAndLocatorsHighTech",
@@ -1851,18 +1863,8 @@ SEAT_NODE_TEMPLATES = (
 
 
 def template_has_seat_node(name):
-    """True when the template sits the Para down on the item itself.
-
-    Counted over the shipped prefabs that name a template, split on exactly
-    this question:
-
-        ChairSlotAndLocator       29 prefabs,  0 declaring a resize widget
-        CounterSlotsAndLocators   29 prefabs, 29 declaring one
-
-    No exception on either side. A resize widget on something a Para sits on
-    moves the seat locators out of reach, and the sit silently fails.
-    """
-    return (name or "") in SEAT_NODE_TEMPLATES
+    """True when a resize handle on this template would break the sit."""
+    return (name or "") in NO_HANDLE_TEMPLATES
 
 
 def tags_with_slots():

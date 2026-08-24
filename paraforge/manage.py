@@ -237,11 +237,14 @@ def remove_entry(text, list_key, guid):
     return ending.join(lines) + ending
 
 
-def delete(mod_path, record, root="", dry_run=False):
+def delete(mod_path, record, root="", dry_run=False, run=None):
     """Remove one item from the mod, all of it, recoverably.
 
     Everything removed goes through the journal first, so Undo the last write
     puts it back exactly as it was. Returns (removed_files, notes).
+
+    Pass a run to fold several removals into one entry, so clearing out ten
+    experiments is one undo rather than ten in the wrong order.
     """
     notes = []
     targets = files_of(record)
@@ -270,7 +273,9 @@ def delete(mod_path, record, root="", dry_run=False):
     if dry_run:
         return targets, edits
 
-    run = journal.Run(mod_path, _("Removed {0}", record.name or record.guid))
+    owned = run is None
+    if owned:
+        run = journal.Run(mod_path, _("Removed {0}", record.name or record.guid))
     removed = []
     for path in targets:
         run.will_modify(path)
@@ -283,6 +288,38 @@ def delete(mod_path, record, root="", dry_run=False):
     for path, updated in edits:
         run.will_modify(path)
         setting.write(path, updated)
+
+    if owned:
+        run.record()
+    return removed, notes
+
+
+def delete_many(mod_path, records, root=""):
+    """Remove several items as one undoable step.
+
+    Read again between removals rather than trusting the list: two items can
+    share a mesh, and once the first is gone the second owns what it used to
+    share. Deleting from a stale list would either leave that mesh behind or
+    take it while somebody still needs it.
+    """
+    if not records:
+        return [], []
+
+    wanted = [record.guid for record in records]
+    label = (records[0].name or records[0].guid) if len(records) == 1 else \
+        _("{0} items", len(records))
+    run = journal.Run(mod_path, _("Removed {0}", label))
+
+    removed = []
+    notes = []
+    for guid in wanted:
+        current = next((r for r in items(mod_path, root) if r.guid == guid),
+                       None)
+        if current is None:
+            continue
+        gone, trouble = delete(mod_path, current, root, run=run)
+        removed.extend(gone)
+        notes.extend(trouble)
 
     run.record()
     return removed, notes

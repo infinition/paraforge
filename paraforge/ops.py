@@ -586,6 +586,8 @@ class PARAFORGE_OT_delete_item(Operator):
 
         root = prefs.mods_root(context)
         removed, notes = manage.delete(settings.mod_folder, record, root)
+        set_selected(settings, [g for g in selected_guids(settings)
+                                if g != record.guid])
         thumbs.clear()
         for note in notes[:3]:
             self.report({"WARNING"}, note)
@@ -607,7 +609,112 @@ class PARAFORGE_OT_refresh_items(Operator):
         thumbs.clear()
         return {"FINISHED"}
 
+
+def selected_guids(settings):
+    """The ticked rows, as a list of GUIDs."""
+    raw = getattr(settings, "selected_items", "") or ""
+    return [guid for guid in raw.split(",") if guid]
+
+
+def set_selected(settings, guids):
+    settings.selected_items = ",".join(guids)
+
+
+class PARAFORGE_OT_toggle_item(Operator):
+    bl_idname = "paraforge.toggle_item"
+    bl_label = _("Select")
+    bl_description = _("Tick this item, to remove several at once")
+    bl_options = {"REGISTER", "INTERNAL"}
+
+    guid: StringProperty(name="GUID", default="")
+
+    def execute(self, context):
+        settings = props.settings(context)
+        chosen = selected_guids(settings)
+        if self.guid in chosen:
+            chosen.remove(self.guid)
+        else:
+            chosen.append(self.guid)
+        set_selected(settings, chosen)
+        return {"FINISHED"}
+
+
+class PARAFORGE_OT_select_items(Operator):
+    bl_idname = "paraforge.select_items"
+    bl_label = _("Select all")
+    bl_description = _("Tick or untick every item in the list")
+    bl_options = {"REGISTER", "INTERNAL"}
+
+    all: BoolProperty(name="All", default=True)
+
+    def execute(self, context):
+        settings = props.settings(context)
+        if not self.all:
+            set_selected(settings, [])
+            return {"FINISHED"}
+        root = prefs.mods_root(context)
+        records = manage.items(settings.mod_folder, root)
+        set_selected(settings, [record.guid for record in records])
+        return {"FINISHED"}
+
+
+class PARAFORGE_OT_delete_selected(Operator):
+    bl_idname = "paraforge.delete_selected"
+    bl_label = _("Remove the ticked items")
+    bl_description = _(
+        "Remove every ticked item from the mod, as one step. Undo the last "
+        "write puts them all back together"
+    )
+    bl_options = {"REGISTER", "INTERNAL"}
+
+    def _records(self, context):
+        settings = props.settings(context)
+        root = prefs.mods_root(context)
+        chosen = set(selected_guids(settings))
+        return settings, [r for r in manage.items(settings.mod_folder, root)
+                          if r.guid in chosen]
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=380)
+
+    def draw(self, context):
+        layout = self.layout
+        _settings, records = self._records(context)
+        if not records:
+            layout.label(text=_("Nothing is ticked"))
+            return
+
+        files = sum(len(manage.files_of(r)) for r in records)
+        layout.label(text=_("{0} item(s), {1} file(s)", len(records), files),
+                     icon="TRASH")
+        column = layout.column(align=True)
+        column.scale_y = 0.7
+        for record in records[:12]:
+            column.label(text=record.name or record.guid)
+        if len(records) > 12:
+            column.label(text=_("and {0} more", len(records) - 12))
+        column.label(text=_("plus its catalogue and translation entries"))
+
+    def execute(self, context):
+        settings, records = self._records(context)
+        if not records:
+            self.report({"WARNING"}, _("Nothing is ticked"))
+            return {"CANCELLED"}
+
+        root = prefs.mods_root(context)
+        removed, notes = manage.delete_many(settings.mod_folder, records, root)
+        set_selected(settings, [])
+        thumbs.clear()
+        for note in notes[:3]:
+            self.report({"WARNING"}, note)
+        self.report({"INFO"}, _("Removed {0} item(s), {1} file(s)",
+                                len(records), len(removed)))
+        return {"FINISHED"}
+
 classes = (
+    PARAFORGE_OT_toggle_item,
+    PARAFORGE_OT_select_items,
+    PARAFORGE_OT_delete_selected,
     PARAFORGE_OT_delete_item,
     PARAFORGE_OT_refresh_items,
     PARAFORGE_OT_export,

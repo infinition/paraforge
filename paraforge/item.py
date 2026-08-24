@@ -162,22 +162,20 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
     HasMaxScale gates MaxScale, and there is no HasMinSize anywhere in the
     assembly, so the floor always applies and the ceiling only when declared.
     """
-    # An item a Para sits on carries neither widget. Not one or the other:
-    # neither. Counted over the prefabs that name a slot template, split by
-    # whether that template has a Seat node, which is what decides whether the
-    # Para ends up on the item or standing beside it:
+    # A chair carries neither widget. Not one or the other: neither. Joining
+    # the game's catalogue to its prefabs and grouping by slot template, the
+    # 54 items on a chair, armchair or toilet template hold one resize handle
+    # between them, while the 13 on a couch template and the 10 on a bench
+    # template are resizable to the last one.
     #
-    #   sits on it (chairs, couches, toilets)   29 prefabs,  0 with a widget
-    #   stands beside it (kitchen counters)     29 prefabs, 29 with a widget
+    # So it is not sitting that the handle breaks. A couch carries a row of
+    # seats and survives being stretched; a chair carries one, and moving it
+    # puts it where the Para cannot path to. The item is in the catalogue,
+    # renders, accepts the sit command, and the Para walks off to another
+    # chair with nothing logged, because as far as the game is concerned
+    # nothing failed.
     #
-    # No exception either way. Resizing moves the seat locators somewhere the
-    # Para cannot path to, so the item is in the catalogue, renders, accepts
-    # the sit command, and the Para walks off to another chair with nothing
-    # logged, because as far as the game is concerned nothing failed.
-    #
-    # Both widgets together are fine on anything else, and 133 shipped prefabs
-    # do exactly that, so the rule is about seating and nothing else. A scene
-    # saved before this rule cannot smuggle a widget through.
+    # A scene saved before this rule cannot smuggle a widget through.
     if seats:
         scalable = False
         resizable = False

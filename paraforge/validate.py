@@ -328,19 +328,17 @@ def _check_backrest(objects, settings, depsgraph, report):
 def _check_handles(settings, report):
     """The resize widgets, against what the item is for.
 
-    Split over the shipped prefabs that name a slot template, on whether that
-    template carries a Seat node and so lands the Para on the item:
+    Joining the game's whole catalogue to its prefabs by GUID and grouping
+    every item by the template it gets: the 54 items on a chair, armchair or
+    toilet template hold one resize handle between them, while the 13 on a
+    couch template and the 10 on a bench template are resizable to the last
+    one, as are the 79 counters and the 22 tables.
 
-        ChairSlotAndLocator       29 prefabs,  0 declaring a resize widget
-        CounterSlotsAndLocators   29 prefabs, 29 declaring one
-
-    No exception either way. A widget on something a Para sits on moves the
-    seat locators somewhere they cannot path to, and the sit fails in silence:
-    the item is in the catalogue, renders, accepts the command, and the Para
-    walks off to another chair with nothing logged.
-
-    On anything else both widgets together are fine, and 133 shipped prefabs
-    declare both.
+    So it is not sitting that the handle breaks. A couch carries a row of
+    seats and survives being stretched; a chair carries one, and moving it
+    puts it where the Para cannot path to. The sit then fails in silence: the
+    item is in the catalogue, renders, accepts the command, and the Para walks
+    off to another chair with nothing logged.
     """
     if not item.sits_on_it(settings):
         return
@@ -350,9 +348,9 @@ def _check_handles(settings, report):
         return
     report.add(
         "handles", _("Resize handles"), OK,
-        _("Left out, because a Para sits on this one. Of the game's 29 items "
-          "with a chair slot not one is resizable, and of its 29 counters, "
-          "where the Para stands beside instead, all 29 are"),
+        _("Left out. The game's 54 chairs, armchairs and toilets hold one "
+          "resize handle between them, because a chair has a single seat and "
+          "moving it puts it out of reach. Couches and benches keep theirs"),
     )
 
 

@@ -561,6 +561,23 @@ class ParaForgeSettings(PropertyGroup):
     show_grid: BoolProperty(name=_("Grid"), default=True, update=_redraw)
     show_bounds: BoolProperty(name=_("Bounding box"), default=True, update=_redraw)
     show_arrow: BoolProperty(name=_("Facing arrow"), default=True, update=_redraw)
+    gallery_columns: IntProperty(
+        name=_("Columns"),
+        description=_("How many items to show side by side"),
+        default=3, min=1, max=6,
+    )
+    gallery_scale: FloatProperty(
+        name=_("Picture size"),
+        description=_("How large the catalogue pictures are drawn"),
+        default=4.0, min=1.0, max=10.0,
+    )
+
+    # Ticked rows, as GUIDs. A collection property would have to be kept in
+    # step with a folder that changes underneath it; a string cannot go stale
+    # in a way that deletes the wrong thing, because every GUID is looked up
+    # again before anything is removed.
+    selected_items: StringProperty(name=_("Selected"), default="")
+
     show_seat: BoolProperty(name=_("Seat guide"), default=True, update=_redraw)
     show_human: BoolProperty(
         name=_("Person for scale"),

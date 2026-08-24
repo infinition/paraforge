@@ -330,6 +330,41 @@ FR = {
     # -- Checklist --------------------------------------------------------
     "{0} ok   {1} warn   {2} blocking": "{0} ok   {1} alerte   {2} bloquant",
     "Items in this mod": "Objets de ce mod",
+    "Columns": "Colonnes",
+    "How many items to show side by side":
+        "Combien d'objets afficher côte à côte",
+    "Picture size": "Taille des images",
+    "How large the catalogue pictures are drawn":
+        "À quelle taille les images du catalogue sont dessinées",
+    "Selected": "Sélectionnés",
+    "Select": "Sélectionner",
+    "Select all": "Tout sélectionner",
+    "Tick this item, to remove several at once":
+        "Cocher cet objet, pour en retirer plusieurs d'un coup",
+    "Tick or untick every item in the list":
+        "Cocher ou décocher tous les objets de la liste",
+    "Remove {0} ticked": "Retirer les {0} cochés",
+    "Remove the ticked items": "Retirer les objets cochés",
+    "Remove every ticked item from the mod, as one step. Undo the last write "
+    "puts them all back together":
+        "Retirer du mod tous les objets cochés, en une seule étape. Annuler "
+        "la dernière écriture les remet tous ensemble",
+    "Nothing is ticked": "Rien n'est coché",
+    "{0} item(s), {1} file(s)": "{0} objet(s), {1} fichier(s)",
+    "Removed {0} item(s), {1} file(s)": "{0} objet(s) retiré(s), {1} fichier(s)",
+    "{0} items": "{0} objets",
+    "A chair has one seat, and resizing moves it out of reach. Both handles "
+    "are left out. Couches and benches keep theirs.":
+        "Une chaise a une seule assise, et la redimensionner la met hors de "
+        "portée. Les deux poignées sont omises. Les canapés et les bancs "
+        "gardent les leurs.",
+    "Left out. The game's 54 chairs, armchairs and toilets hold one resize "
+    "handle between them, because a chair has a single seat and moving it "
+    "puts it out of reach. Couches and benches keep theirs":
+        "Omises. Les 54 chaises, fauteuils et toilettes du jeu portent une "
+        "seule poignée à eux tous, parce qu'une chaise a une seule assise et "
+        "que la déplacer la met hors de portée. Les canapés et les bancs "
+        "gardent les leurs",
     "No mod folder chosen": "Aucun dossier de mod choisi",
     "That folder is not there any more": "Ce dossier n'existe plus",
     "Nothing in the catalogue yet. Export a mesh, then press Create the item "
@@ -793,17 +828,6 @@ FR = {
         "En mètres. Le Para du jeu mesure 1,702",
     "Seat height": "Hauteur d'assise",
     "Resize handles": "Poignées de redimensionnement",
-    "A Para sits on this one, so both handles are left out. Resizing moves "
-    "the seat out of reach and nobody sits down.":
-        "Un Para s'assoit dessus, les deux poignées sont donc omises. "
-        "Redimensionner éloigne l'assise hors de portée et plus personne ne "
-        "s'assoit.",
-    "Left out, because a Para sits on this one. Of the game's 29 items with a "
-    "chair slot not one is resizable, and of its 29 counters, where the Para "
-    "stands beside instead, all 29 are":
-        "Omises, parce qu'un Para s'assoit dessus. Sur les 29 objets du jeu "
-        "avec un slot de chaise, aucun n'est redimensionnable, et sur ses 29 "
-        "comptoirs, où le Para se tient à côté, les 29 le sont",
     "{0:.3f} m, {1:.0f}% of the height, over {2:.2f} m2":
         "{0:.3f} m, {1:.0f}% de la hauteur, sur {2:.2f} m2",
     ". Chair height: the game's sit at {0:.2f}":

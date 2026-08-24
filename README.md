@@ -313,30 +313,39 @@ because each is authored for a purpose. A mod item is handed to someone who
 wants it tiny on a shelf and huge in the garden, so the ceiling is the game's
 own maximum and the floor goes below anything it ships.
 
-### A chair carries no resize handle
+### A chair carries no resize handle, but a couch does
 
-Not one of the two. Neither. Counted over the shipped prefabs that name a slot
-template, grouped by whether that template has a `Seat` node, which is what
-decides whether the Para ends up on the item or standing beside it:
+Joining the game's whole catalogue to its prefabs by GUID and grouping every
+item by the template its tag or its own override gives it:
 
-| Template | Prefabs | Declaring a resize widget |
+| Template | Items | Resizable |
 |---|---|---|
-| `ChairSlotAndLocator` | 29 | 0 |
-| `CounterSlotsAndLocators` | 29 | 29 |
+| `ChairSlotAndLocator` | 18 | 1 |
+| `ShorterChairSlotAndLocator` | 9 | 0 |
+| `LongChairSlotAndLocator` | 8 | 0 |
+| `ArmchairSlotAndLocator` | 9 | 0 |
+| `ShorterArmchairSlotAndLocators` | 2 | 0 |
+| `LowerArmchairSlotAndLocators` | 2 | 0 |
+| `ToiletSlotAndLocators` and two variants | 6 | 0 |
+| **Chairs, armchairs and toilets** | **54** | **1** |
+| `CouchesSlotAndLocators` and five variants | 13 | 13 |
+| `BenchSlotsAndLocators` | 10 | 10 |
+| `CounterSlotsAndLocators` and two variants | 79 | 78 |
+| `TableSlots` | 22 | 14 |
 
-No exception on either side. A resize widget on something a Para sits on moves
-the seat locators somewhere they cannot path to. The item appears in the
-catalogue, renders correctly, accepts the sit command, and the Para walks to a
-different chair. Nothing is logged, because as far as the game is concerned
-nothing failed.
+So it is not sitting that the handle breaks. A couch and a bench carry a row of
+seats and survive being stretched; a chair carries one, and moving it puts it
+where the Para cannot path to. The item appears in the catalogue, renders
+correctly, accepts the sit command, and the Para walks to a different chair.
+Nothing is logged, because as far as the game is concerned nothing failed.
 
 Confirmed on two custom items whose catalogue entries are identical down to the
 tag and the slot GUID, differing only in the prefab: the one declaring no
 widget is sat on, the one declaring `IsResizable` is walked past.
 
-ParaForge drops both handles from any item whose template carries a `Seat`
-node, whatever is ticked in the panel, and greys them out with the reason.
-Both handles together stay available on everything else.
+ParaForge drops both handles from chairs, armchairs and toilets, whatever is
+ticked in the panel, and greys them out with the reason. Couches, benches,
+beds, tables and counters keep theirs.
 
 ### Where the seat is
 

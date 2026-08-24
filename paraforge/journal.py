@@ -71,16 +71,45 @@ class Run:
         return False
 
     def will_modify(self, path):
-        """Copy a file aside before it is changed. Returns the backup path."""
+        """Copy a file aside before it is changed. Returns the backup path.
+
+        Only the first time. A run that touches one file twice, which is what
+        removing several items does to Items.setting, would otherwise take its
+        second backup from the already half edited file, and the undo would
+        restore the middle of the run instead of the state before it.
+
+        The backup name is built from the run's own timestamp, so the second
+        copy lands on the first one and there is no trace of the mistake
+        beyond an undo that brings back some of what it should.
+        """
         if not os.path.isfile(path):
             return self.will_create(path)
+
+        relative = self._relative(path)
+        if relative in self.created:
+            return None
+        for change in self.modified:
+            if change["path"] == relative:
+                return os.path.join(self.mod_path, change["backup"])
 
         folder = os.path.join(self.mod_path, BACKUPS)
         os.makedirs(folder, exist_ok=True)
         stamp = self.stamp.replace(":", "").replace("-", "")
-        backup = os.path.join(
-            folder, "{0}.{1}.bak".format(os.path.basename(path), stamp)
-        )
+
+        # The stamp is only good to the second, and two runs inside one second
+        # is not a hypothetical: pressing the button twice does it, and so did
+        # every removal of several items before this was found. The second run
+        # wrote its backup over the first one's, and the older undo then
+        # restored the newer state, quietly losing whatever the first run had
+        # replaced.
+        base = os.path.join(
+            folder, "{0}.{1}".format(os.path.basename(path), stamp))
+        backup = base + ".bak"
+        attempt = 1
+        while os.path.exists(backup):
+            backup = "{0}.{1}.bak".format(base, attempt)
+            attempt += 1
+
         shutil.copy2(path, backup)
         self.modified.append({
             "path": self._relative(path),
