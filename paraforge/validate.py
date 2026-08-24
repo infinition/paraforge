@@ -101,6 +101,7 @@ def run(context, settings):
     _check_asset_name(objects, settings, report)
     _check_usable(settings, report)
     _check_seat(objects, settings, measurement, depsgraph, report)
+    _check_handles(settings, report)
     _check_color_zones(objects, settings, report)
     _check_uvs(objects, report)
     _check_uv_transform(objects, report)
@@ -280,6 +281,37 @@ def _check_usable(settings, report):
                  "under Chairs, Armchairs, OfficeChairs, Couches or Benches"))
 
 
+def _check_handles(settings, report):
+    """The resize widgets, against what the item is for.
+
+    Split over the shipped prefabs that name a slot template, on whether that
+    template carries a Seat node and so lands the Para on the item:
+
+        ChairSlotAndLocator       29 prefabs,  0 declaring a resize widget
+        CounterSlotsAndLocators   29 prefabs, 29 declaring one
+
+    No exception either way. A widget on something a Para sits on moves the
+    seat locators somewhere they cannot path to, and the sit fails in silence:
+    the item is in the catalogue, renders, accepts the command, and the Para
+    walks off to another chair with nothing logged.
+
+    On anything else both widgets together are fine, and 133 shipped prefabs
+    declare both.
+    """
+    if not item.sits_on_it(settings):
+        return
+    asked = getattr(settings, "scalable", False) or getattr(
+        settings, "resizable", False)
+    if not asked:
+        return
+    report.add(
+        "handles", _("Resize handles"), OK,
+        _("Left out, because a Para sits on this one. Of the game's 29 items "
+          "with a chair slot not one is resizable, and of its 29 counters, "
+          "where the Para stands beside instead, all 29 are"),
+    )
+
+
 def _check_seat(objects, settings, measurement, depsgraph, report):
     """How high the seat is, and which way a Para will face on it.
 
@@ -301,9 +333,11 @@ def _check_seat(objects, settings, measurement, depsgraph, report):
     sits. Inside it this is information, because 0.45 against 0.65 is a
     decision about what the item is, not a mistake.
 
-    Facing cannot be measured at all, only stated: the template seats a Para
-    looking along Y+, the same direction the green viewport arrow points, so
-    the backrest belongs at the far end and the knees at the arrow.
+    Facing cannot be measured, only stated, and it is the opposite of what the
+    floor arrow says. ChairSlotAndLocator puts the ButtLocator at Z -0.28 and
+    the front feet at Z +0.42, so the Para faces the item's +Z, and the export
+    maps Blender +Y onto the file's -Z. The knees therefore point at Blender
+    -Y and the backrest belongs on the +Y side, where the floor arrow points.
     """
     template, seats = item.seat_choice(settings)
     if not seats or measurement.empty:

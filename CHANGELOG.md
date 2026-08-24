@@ -9,6 +9,43 @@ Every entry below was driven by something measured in the game's own data
 rather than assumed. Paralives is in early access, so the game build a finding
 was measured on is recorded with it.
 
+## [0.29.0]
+
+### Fixed
+
+- **An item a Para sits on carries neither resize handle. Not one of the two:
+  neither.** 0.27.0 said the two were alternatives, which was the wrong
+  conclusion drawn from a population that mixed items you sit on with items
+  you stand beside. The real split, counted over the shipped prefabs that name
+  a slot template and grouped by whether that template has a `Seat` node:
+
+  ```
+  ChairSlotAndLocator       29 prefabs,  0 declaring a resize widget
+  CounterSlotsAndLocators   29 prefabs, 29 declaring one
+  ```
+
+  No exception either way. A resize widget on something a Para sits on moves
+  the seat locators somewhere they cannot path to, and the sit fails in
+  silence.
+
+  Two of the user's own items settle it, since their catalogue entries are
+  identical down to the tag and the slot GUID and they differ only in the
+  prefab: the one with no widget is sat on, the one declaring `IsResizable` is
+  walked past. So both handles are now dropped from any item whose template
+  carries a `Seat` node, whatever the panel has ticked, and the panel greys
+  them out and says why. Both handles together remain fine on anything else,
+  and 133 shipped prefabs declare both.
+
+- **The sit direction arrow pointed the wrong way.** Read out of
+  `ChairSlotAndLocator`, the seat's own children put the `ButtLocator` at
+  Z -0.28 and the front feet at Z +0.42, so a Para faces the item's +Z. Export
+  maps Blender +Y onto the file's -Z. The knees therefore land at Blender -Y,
+  against the floor arrow rather than along it, and the backrest belongs on
+  the +Y side where the arrow points.
+
+  0.27.0 drew it the other way and said so in both READMEs. A chair built to
+  that arrow works, seats a Para, and sits them facing their own backrest.
+
 ## [0.28.0]
 
 ### Fixed

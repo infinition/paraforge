@@ -264,10 +264,10 @@ never heard of, and re-serialising it would drop them in silence.
 
 ### Two handles, and they are not the same thing
 
-A placed item can carry either of the game's two resize widgets, or neither.
-The game keeps them apart itself, in `CancelResizeOrScaleItem`, and 133 of its
-prefabs declare both, but never one a Para sits on: see
-[Both widgets on a chair](#both-widgets-on-a-chair-and-nobody-sits-on-it).
+A placed item can carry either of the game's two resize widgets, both, or
+neither. The game keeps them apart itself, in `CancelResizeOrScaleItem`, and
+133 of its prefabs declare both. An item a Para sits on declares neither: see
+[A chair carries no resize handle](#a-chair-carries-no-resize-handle).
 
 **Scaling** multiplies the whole item at once. It needs `IsScalable` on the
 root, and the bounds are factors:
@@ -311,20 +311,30 @@ because each is authored for a purpose. A mod item is handed to someone who
 wants it tiny on a shelf and huge in the garden, so the ceiling is the game's
 own maximum and the floor goes below anything it ships.
 
-### Both widgets on a chair, and nobody sits on it
+### A chair carries no resize handle
 
-Of the 353 shipped items that carry a place to sit, 146 declare `IsResizable`,
-27 declare `IsScalable`, 180 declare neither, and not one declares both.
+Not one of the two. Neither. Counted over the shipped prefabs that name a slot
+template, grouped by whether that template has a `Seat` node, which is what
+decides whether the Para ends up on the item or standing beside it:
 
-Declaring both puts the seat locators somewhere no Para can path to. The item
-appears in the catalogue, renders correctly, accepts the sit command, and the
-Para walks to a different chair. Nothing is logged, because as far as the game
-is concerned nothing failed.
+| Template | Prefabs | Declaring a resize widget |
+|---|---|---|
+| `ChairSlotAndLocator` | 29 | 0 |
+| `CounterSlotsAndLocators` | 29 | 29 |
 
-Confirmed by experiment rather than inferred from the counts: stripping both
-flags from a custom chair made it usable immediately, and putting them back
-broke it again. ParaForge switches one toggle off when you turn the other on,
-and refuses to write both even if a scene saved before this rule asks for it.
+No exception on either side. A resize widget on something a Para sits on moves
+the seat locators somewhere they cannot path to. The item appears in the
+catalogue, renders correctly, accepts the sit command, and the Para walks to a
+different chair. Nothing is logged, because as far as the game is concerned
+nothing failed.
+
+Confirmed on two custom items whose catalogue entries are identical down to the
+tag and the slot GUID, differing only in the prefab: the one declaring no
+widget is sat on, the one declaring `IsResizable` is walked past.
+
+ParaForge drops both handles from any item whose template carries a `Seat`
+node, whatever is ticked in the panel, and greys them out with the reason.
+Both handles together stay available on everything else.
 
 ### Where the seat is
 
@@ -359,10 +369,19 @@ assembled from several meshes, cushions apart from frames, so one file measured
 alone means nothing and they are left out.
 
 ParaForge measures your mesh the same way, names which of the two it matches,
-and draws both heights in the viewport with an arrow at seat height showing
-which way a Para will face: along Y+, the same direction the floor arrow
-points, so the backrest belongs at the far end. It only warns outside 0.20 to
-0.75, where no shipped item sits, and never blocks.
+and draws both heights in the viewport. It only warns outside 0.20 to 0.75,
+where no shipped item sits, and never blocks.
+
+### And a Para sits with their back to the arrow
+
+Not along it. `ChairSlotAndLocator` puts the `ButtLocator` at Z -0.28 and the
+front feet at Z +0.42, so a Para faces the item's +Z, and export maps Blender
++Y onto the file's -Z. The knees land at Blender -Y.
+
+So the backrest belongs on the +Y side, where the floor arrow points, and the
+viewport draws a second arrow at seat height pointing the other way to say so.
+Build a chair to the floor arrow instead and it works, seats a Para, and sits
+them facing their own backrest.
 
 ## What the wiki does not say, and the game does
 

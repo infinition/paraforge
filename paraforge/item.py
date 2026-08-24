@@ -108,7 +108,7 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
                 max_scale=spec.MAX_SCALE, resizable=False,
                 resizable_axes=spec.DEFAULT_RESIZABLE_AXES,
                 min_size_factor=spec.MIN_SIZE_FACTOR,
-                max_size_factor=spec.MAX_SIZE_FACTOR):
+                max_size_factor=spec.MAX_SIZE_FACTOR, seats=False):
     """One root object holding one mesh, which is what an item minimally is.
 
     Size is in metres, in the game's axis order: width, height, depth. Blender
@@ -162,14 +162,25 @@ def prefab_text(name, mesh_guid, size, detail_guid="", colorzone_guid="",
     HasMaxScale gates MaxScale, and there is no HasMinSize anywhere in the
     assembly, so the floor always applies and the ceiling only when declared.
     """
-    # The two widgets are alternatives. Across the 353 shipped items that
-    # carry a place to sit, 146 declare IsResizable, 27 declare IsScalable and
-    # not one declares both. Declaring both puts the seat locators where no
-    # Para can reach them: the item lands in the catalogue, renders correctly,
-    # and nobody ever sits on it. Stretching wins, being the commoner of the
-    # two, and a scene saved before this rule cannot smuggle both through.
-    if scalable and resizable:
+    # An item a Para sits on carries neither widget. Not one or the other:
+    # neither. Counted over the prefabs that name a slot template, split by
+    # whether that template has a Seat node, which is what decides whether the
+    # Para ends up on the item or standing beside it:
+    #
+    #   sits on it (chairs, couches, toilets)   29 prefabs,  0 with a widget
+    #   stands beside it (kitchen counters)     29 prefabs, 29 with a widget
+    #
+    # No exception either way. Resizing moves the seat locators somewhere the
+    # Para cannot path to, so the item is in the catalogue, renders, accepts
+    # the sit command, and the Para walks off to another chair with nothing
+    # logged, because as far as the game is concerned nothing failed.
+    #
+    # Both widgets together are fine on anything else, and 133 shipped prefabs
+    # do exactly that, so the rule is about seating and nothing else. A scene
+    # saved before this rule cannot smuggle a widget through.
+    if seats:
         scalable = False
+        resizable = False
 
     root = root_guid or sidecar.guid_for("paraforge", "root", mesh_guid)
     lines = [
@@ -329,6 +340,16 @@ def resolve_seat(settings, tag_guid):
     return catalog.slot_prefab_guid(choice)
 
 
+def sits_on_it(settings):
+    """True when the Para ends up on the item and the resize widgets must go.
+
+    Narrower than seat_choice: a bench and a bed seat a Para too, but their
+    templates carry no Seat node and were not part of the count that produced
+    the rule, so nothing is stripped from them on a guess.
+    """
+    return catalog.template_has_seat_node(seat_choice(settings)[0])
+
+
 def seat_choice(settings):
     """(template name, does it seat a Para) for the current settings.
 
@@ -449,7 +470,8 @@ def generate(mod_path, name, settings, report, zone_count=1):
                          min_size_factor=getattr(settings, "min_size_factor",
                                                  spec.MIN_SIZE_FACTOR),
                          max_size_factor=getattr(settings, "max_size_factor",
-                                                 spec.MAX_SIZE_FACTOR))
+                                                 spec.MAX_SIZE_FACTOR),
+                         seats=sits_on_it(settings))
     if setting.read(prefab_path) != wanted:
         run.will_modify(prefab_path)
         setting.write(prefab_path, wanted)

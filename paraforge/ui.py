@@ -12,8 +12,8 @@ import bpy
 from bpy.types import Panel
 
 from . import (
-    cache, catalog, i18n, modfolder, prefs, props, spec, textures, util,
-    validate,
+    cache, catalog, i18n, item, modfolder, prefs, props, spec, textures,
+    util, validate,
 )
 
 _ = i18n.t
@@ -141,7 +141,7 @@ class PARAFORGE_PT_main(_Base, Panel):
             if report.seat_height is None:
                 text = _("Nothing to sit on")
             else:
-                text = _("Sits at {0:.3f} m, facing the arrow",
+                text = _("Sits at {0:.3f} m, back to the arrow",
                          report.seat_height)
             note.label(text=text,
                        icon="CHECKMARK" if seat.status == validate.OK
@@ -506,20 +506,33 @@ class PARAFORGE_PT_options(_Base, Panel):
 
         layout.separator()
         box = layout.box()
-        box.prop(settings, "scalable", text=_("Scalable in game"))
-        row = box.row(align=True)
-        row.enabled = settings.scalable
+
+        # An item a Para sits on gets neither handle, whatever is ticked here,
+        # so the panel says so where the ticks are rather than letting the
+        # export quietly disagree with the interface.
+        sits = item.sits_on_it(settings)
+        if sits:
+            warning = box.column(align=True)
+            warning.alert = True
+            for line in util.wrap_to(context, _(
+                "A Para sits on this one, so both handles are left out. "
+                "Resizing moves the seat out of reach and nobody sits down."
+            ), 6):
+                warning.label(text=line)
+
+        handles = box.column()
+        handles.enabled = not sits
+        handles.prop(settings, "scalable", text=_("Scalable in game"))
+        row = handles.row(align=True)
+        row.enabled = settings.scalable and not sits
         row.prop(settings, "min_scale", text=_("Smallest"))
         row.prop(settings, "max_scale", text=_("Largest"))
 
         # The game's second handle, and a separate declaration. Scaling
         # multiplies the whole item, stretching moves one axis at a time.
-        box.separator()
-        box.prop(settings, "resizable", text=_("Stretchable per axis"))
-        note = box.row()
-        note.scale_y = 0.7
-        note.label(text=_("One or the other, never both"), icon="INFO")
-        column = box.column(align=True)
+        handles.separator()
+        handles.prop(settings, "resizable", text=_("Stretchable per axis"))
+        column = handles.column(align=True)
         column.enabled = settings.resizable
         row = column.row(align=True)
         row.prop(settings, "resizable_axes", text="")

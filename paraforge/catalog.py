@@ -1826,6 +1826,45 @@ def template_seats(name):
     return any(word in lowered for word in SEATING_WORDS)
 
 
+# The templates that carry a Seat node, read out of the template prefabs in
+# Environments/Items/Prefabs. The node is what lands the Para on the item, and
+# its presence is what separates the two populations that decide the resize
+# rule below.
+SEAT_NODE_TEMPLATES = (
+    "ArmchairSlotAndLocator",
+    "ChairSlotAndLocator",
+    "ClassicChesterfieldCoucheSlotAndLocators",
+    "CouchEclecticCactusSlotAndLocators",
+    "CouchesSlotAndLocators",
+    "EclecticModularCouchSlotAndLocators",
+    "LongChairSlotAndLocator",
+    "LowerArmchairSlotAndLocators",
+    "MidCenturyTuffedCouchSlotAndLocators",
+    "ModernModularCouchSlotAndLocators",
+    "ShorterArmchairSlotAndLocators",
+    "ShorterChairSlotAndLocator",
+    "ShorterCouchesSlotAndLocators",
+    "ToiletSlotAndLocatorFlushOnTop",
+    "ToiletSlotAndLocators",
+    "ToiletSlotAndLocatorsHighTech",
+)
+
+
+def template_has_seat_node(name):
+    """True when the template sits the Para down on the item itself.
+
+    Counted over the shipped prefabs that name a template, split on exactly
+    this question:
+
+        ChairSlotAndLocator       29 prefabs,  0 declaring a resize widget
+        CounterSlotsAndLocators   29 prefabs, 29 declaring one
+
+    No exception on either side. A resize widget on something a Para sits on
+    moves the seat locators out of reach, and the sit silently fails.
+    """
+    return (name or "") in SEAT_NODE_TEMPLATES
+
+
 def tags_with_slots():
     """[(guid, name, template)] for every tag that attaches something."""
     out = []

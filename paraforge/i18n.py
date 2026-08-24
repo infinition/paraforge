@@ -488,7 +488,6 @@ FR = {
         "ne porte les deux",
 
     "Stretchable per axis": "Étirable par axe",
-    "One or the other, never both": "L'un ou l'autre, jamais les deux",
 
 
     "The game's other handle, and a different thing: it stretches the item "
@@ -754,6 +753,18 @@ FR = {
     "Facing arrow": "Flèche d'orientation",
     "Seat guide": "Repère d'assise",
     "Seat height": "Hauteur d'assise",
+    "Resize handles": "Poignées de redimensionnement",
+    "A Para sits on this one, so both handles are left out. Resizing moves "
+    "the seat out of reach and nobody sits down.":
+        "Un Para s'assoit dessus, les deux poignées sont donc omises. "
+        "Redimensionner éloigne l'assise hors de portée et plus personne ne "
+        "s'assoit.",
+    "Left out, because a Para sits on this one. Of the game's 29 items with a "
+    "chair slot not one is resizable, and of its 29 counters, where the Para "
+    "stands beside instead, all 29 are":
+        "Omises, parce qu'un Para s'assoit dessus. Sur les 29 objets du jeu "
+        "avec un slot de chaise, aucun n'est redimensionnable, et sur ses 29 "
+        "comptoirs, où le Para se tient à côté, les 29 le sont",
     "{0:.3f} m, {1:.0f}% of the height, over {2:.2f} m2":
         "{0:.3f} m, {1:.0f}% de la hauteur, sur {2:.2f} m2",
     ". Chair height: the game's sit at {0:.2f}":
@@ -773,8 +784,8 @@ FR = {
         "Aucune surface plane dégagée du sol, donc rien où s'asseoir. {0} y "
         "placera quand même un Para, en plein air",
     "Nothing to sit on": "Rien où s'asseoir",
-    "Sits at {0:.3f} m, facing the arrow":
-        "Assise à {0:.3f} m, face à la flèche",
+    "Sits at {0:.3f} m, back to the arrow":
+        "Assise à {0:.3f} m, dos à la flèche",
     "Grid tiles": "Tuiles de grille",
     "Checklist corner": "Coin de la checklist",
     "Top left": "En haut à gauche",

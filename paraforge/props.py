@@ -94,26 +94,6 @@ def _seat_items(self, context):
     return _SEAT_ITEMS
 
 
-def _on_scalable(self, context):
-    """The two resize widgets are alternatives, never both at once.
-
-    Counted across the 353 shipped items that carry a place to sit: 146 declare
-    IsResizable, 27 declare IsScalable, 180 declare neither, and not one
-    declares both. Declaring both puts the seat locators somewhere a Para
-    cannot reach, so the item is in the catalogue, renders, and nobody ever
-    sits on it.
-    """
-    if self.scalable and self.resizable:
-        self.resizable = False
-    _invalidate(self, context)
-
-
-def _on_resizable(self, context):
-    if self.resizable and self.scalable:
-        self.scalable = False
-    _invalidate(self, context)
-
-
 def _invalidate(self, context):
     from . import cache
 
@@ -338,7 +318,7 @@ class ParaForgeSettings(PropertyGroup):
             "shipped item carries both"
         ),
         default=True,
-        update=_on_scalable,
+        update=_invalidate,
     )
 
     min_scale: FloatProperty(
@@ -377,7 +357,7 @@ class ParaForgeSettings(PropertyGroup):
             "both"
         ),
         default=False,
-        update=_on_resizable,
+        update=_invalidate,
     )
 
     resizable_axes: BoolVectorProperty(

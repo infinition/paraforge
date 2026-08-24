@@ -264,10 +264,10 @@ l'extension ne connaît pas, et les réécrire les perdrait en silence.
 ### Deux poignées, et ce ne sont pas la même chose
 
 Un objet posé peut porter l'un des deux widgets de redimensionnement du jeu,
-ou aucun. Le jeu les distingue lui-même, dans `CancelResizeOrScaleItem`, et 133
-de ses prefabs déclarent les deux, mais jamais un objet sur lequel un Para
-s'assoit : voir [Les deux widgets sur une
-chaise](#les-deux-widgets-sur-une-chaise-et-personne-ne-sy-assoit).
+les deux, ou aucun. Le jeu les distingue lui-même, dans
+`CancelResizeOrScaleItem`, et 133 de ses prefabs déclarent les deux. Un objet
+sur lequel un Para s'assoit n'en déclare aucun : voir [Une chaise ne porte
+aucune poignée](#une-chaise-ne-porte-aucune-poignée-de-redimensionnement).
 
 **La mise à l'échelle** multiplie l'objet entier d'un coup. Elle demande
 `IsScalable` sur la racine, et les bornes sont des facteurs :
@@ -314,22 +314,30 @@ Les plages écrites par ParaForge sont plus larges que celles du jeu. Sur les
 le plafond est donc le maximum du jeu, et le plancher descend sous tout ce
 qu'il livre.
 
-### Les deux widgets sur une chaise, et personne ne s'y assoit
+### Une chaise ne porte aucune poignée de redimensionnement
 
-Sur les 353 objets livrés qui portent une place assise, 146 déclarent
-`IsResizable`, 27 déclarent `IsScalable`, 180 n'en déclarent aucun, et pas un
-seul ne déclare les deux.
+Pas l'une des deux. Aucune. Compté sur les prefabs livrés qui nomment un
+template de slot, groupés selon que ce template possède un nœud `Seat`, ce qui
+décide si le Para finit sur l'objet ou debout à côté :
 
-Déclarer les deux place les locators d'assise là où aucun Para ne peut aller.
-L'objet apparaît au catalogue, s'affiche correctement, accepte l'ordre de
-s'asseoir, et le Para part vers une autre chaise. Rien n'est journalisé, parce
-que du point de vue du jeu rien n'a échoué.
+| Template | Prefabs | Déclarant une poignée |
+|---|---|---|
+| `ChairSlotAndLocator` | 29 | 0 |
+| `CounterSlotsAndLocators` | 29 | 29 |
 
-Confirmé par l'expérience et non déduit des comptages : retirer les deux drapeaux
-d'une chaise custom l'a rendue utilisable immédiatement, les remettre l'a
-cassée de nouveau. ParaForge éteint un interrupteur quand tu allumes l'autre,
-et refuse d'écrire les deux même si une scène enregistrée avant cette règle le
-demande.
+Aucune exception d'un côté ni de l'autre. Une poignée sur un objet où un Para
+s'assoit déplace les locators d'assise là où il ne peut pas aller. L'objet
+apparaît au catalogue, s'affiche correctement, accepte l'ordre de s'asseoir, et
+le Para part vers une autre chaise. Rien n'est journalisé, parce que du point
+de vue du jeu rien n'a échoué.
+
+Confirmé sur deux objets custom dont les entrées de catalogue sont identiques
+jusqu'au tag et au GUID de slot, et qui ne diffèrent que par le prefab : celui
+sans poignée est utilisé, celui qui déclare `IsResizable` est contourné.
+
+ParaForge retire les deux poignées de tout objet dont le template porte un nœud
+`Seat`, quoi que le panneau affiche, et les grise en donnant la raison. Les
+deux poignées ensemble restent disponibles sur tout le reste.
 
 ### Où se trouve l'assise
 
@@ -366,10 +374,20 @@ plusieurs meshes, coussins séparés des structures, donc un fichier mesuré seu
 ne veut rien dire et ils sont laissés de côté.
 
 ParaForge mesure ton mesh de la même façon, nomme laquelle des deux hauteurs il
-approche, et dessine les deux dans la vue avec une flèche à hauteur d'assise
-indiquant vers où le Para regardera : le long de Y+, la même direction que la
-flèche au sol, donc le dossier va à l'autre bout. Il n'avertit qu'en dehors de
-0,20 à 0,75, où aucun objet livré ne s'assoit, et ne bloque jamais.
+approche, et dessine les deux dans la vue. Il n'avertit qu'en dehors de 0,20 à
+0,75, où aucun objet livré ne s'assoit, et ne bloque jamais.
+
+### Et un Para s'assoit dos à la flèche
+
+Pas dans son sens. `ChairSlotAndLocator` place le `ButtLocator` en Z -0,28 et
+les pieds avant en Z +0,42 : le Para regarde donc vers le +Z de l'objet, et
+l'export fait correspondre le +Y de Blender au -Z du fichier. Les genoux
+atterrissent en -Y dans Blender.
+
+Le dossier va donc du côté +Y, là où pointe la flèche au sol, et la vue dessine
+une seconde flèche à hauteur d'assise dans l'autre sens pour le dire. Construis
+une chaise dans le sens de la flèche au sol et elle marche, assoit un Para, et
+l'assoit face à son propre dossier.
 
 ## Ce que le wiki ne dit pas, et que le jeu dit
 

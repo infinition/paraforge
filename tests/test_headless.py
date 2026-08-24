@@ -1973,9 +1973,19 @@ def test_undo(mod):
     # catalogue, renders correctly, and nobody ever uses it.
     both = item_module.prefab_text("X", "123", (1.0, 1.0, 1.0),
                                    scalable=True, resizable=True)
-    check(" IsResizable:True" in both and " IsScalable:True" not in both,
-          "asking for both writes only the stretch",
+    check(" IsResizable:True" in both and " IsScalable:True" in both,
+          "both handles together are fine, and 133 shipped prefabs do it",
           [l for l in both.splitlines() if "Is" in l])
+
+    # Unless a Para sits on it. Counted over the prefabs that name a template:
+    # 29 with a chair slot, none resizable; 29 counters, all 29 resizable.
+    seated = item_module.prefab_text("X", "123", (1.0, 1.0, 1.0),
+                                     scalable=True, resizable=True, seats=True)
+    check(" IsResizable:True" not in seated and " IsScalable:True" not in seated,
+          "but an item a Para sits on gets neither, whatever was asked for",
+          [l for l in seated.splitlines() if "Is" in l])
+    check("IsResizable:bool3" not in seated,
+          "including the second declaration on the mesh reference")
 
 
 def test_create_mod():

@@ -132,24 +132,28 @@ def _seat_fill(low, high, z):
 
 
 def _sit_direction(low, high, z):
-    """Where the knees go: a short arrow along Y+ at seat height.
+    """Where the knees go: a short arrow along Y-, at seat height.
 
-    The slot template seats a Para facing Y+, the same way the big green arrow
-    on the floor points. Drawing it again up at seat height is the difference
-    between knowing which way the item faces and knowing which way somebody
-    sitting on it will look.
+    Against the floor arrow, not along it. Read out of ChairSlotAndLocator,
+    where the seat's own children put the ButtLocator at Z -0.28 and the front
+    feet at Z +0.42, so the Para faces the item's +Z. Export maps Blender +Y
+    onto the file's -Z, which lands the knees at Blender -Y.
+
+    So the backrest belongs on the +Y side, where the floor arrow points. Get
+    it the other way round and the chair works, seats a Para, and sits them
+    facing their own backrest.
     """
     x0, y0 = float(low[0]), float(low[1])
     x1, y1 = float(high[0]), float(high[1])
     mid_x = (x0 + x1) * 0.5
     depth = max(y1 - y0, 1e-4)
-    tip = y1 + depth * 0.45
+    tip = y0 - depth * 0.45
     head = depth * 0.18
     width = max(x1 - x0, 1e-4) * 0.12
     return [
         (mid_x, y0 + depth * 0.5, z), (mid_x, tip, z),
-        (mid_x, tip, z), (mid_x - width, tip - head, z),
-        (mid_x, tip, z), (mid_x + width, tip - head, z),
+        (mid_x, tip, z), (mid_x - width, tip + head, z),
+        (mid_x, tip, z), (mid_x + width, tip + head, z),
     ]
 
 
